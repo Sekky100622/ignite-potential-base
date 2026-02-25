@@ -50,19 +50,6 @@
     margin-bottom: 2rem;
   }
   .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
-  .hero-stats {
-    display: flex;
-    gap: 2.5rem;
-    margin-top: 3rem;
-    flex-wrap: wrap;
-  }
-  .hero-stat { }
-  .hero-stat-num {
-    font-size: 2rem;
-    font-weight: 800;
-    color: var(--orange);
-  }
-  .hero-stat-label { font-size: .8rem; color: var(--gray-400); margin-top: .1rem; }
   .hero-badge {
     position: absolute;
     right: 5%;
@@ -98,40 +85,82 @@
   .feature-title { font-weight: 700; font-size: 1rem; margin-bottom: .4rem; }
   .feature-desc { color: var(--gray-400); font-size: .875rem; line-height: 1.6; }
 
-  /* Pricing */
-  .pricing-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 1.5rem; max-width: 800px; margin: 0 auto; }
-  @media (max-width: 600px) { .pricing-grid { grid-template-columns: 1fr; } }
-  .pricing-card {
-    background: var(--navy-light);
-    border: 1.5px solid rgba(255,255,255,.08);
-    border-radius: 16px;
-    padding: 2rem;
+  /* Membership */
+  .membership-card {
+    background: linear-gradient(135deg, var(--navy-light) 0%, rgba(249,115,22,.08) 100%);
+    border: 2px solid var(--orange);
+    border-radius: 20px;
+    padding: 3rem;
+    max-width: 520px;
+    margin: 0 auto;
+    text-align: center;
     position: relative;
   }
-  .pricing-card.featured {
-    border-color: var(--orange);
-    background: linear-gradient(135deg, var(--navy-light) 0%, rgba(249,115,22,.06) 100%);
-  }
-  .pricing-popular {
-    position: absolute;
-    top: -12px;
-    left: 50%;
-    transform: translateX(-50%);
+  .membership-badge {
     background: var(--orange);
     color: var(--white);
-    padding: .2rem 1rem;
+    padding: .3rem 1.25rem;
     border-radius: 20px;
-    font-size: .75rem;
+    font-size: .8rem;
     font-weight: 700;
+    display: inline-block;
+    margin-bottom: 1.5rem;
   }
-  .pricing-name { font-size: 1.1rem; font-weight: 700; color: var(--gray-200); }
-  .pricing-price { font-size: 2.75rem; font-weight: 900; margin: .75rem 0; }
-  .pricing-price span { font-size: 1rem; font-weight: 400; color: var(--gray-400); }
-  .pricing-features { list-style: none; margin: 1.5rem 0; display: flex; flex-direction: column; gap: .6rem; }
-  .pricing-features li { font-size: .9rem; color: var(--gray-200); display: flex; align-items: flex-start; gap: .5rem; }
-  .pricing-features li::before { content: '✓'; color: var(--orange); font-weight: 700; flex-shrink: 0; }
-  .pricing-features li.no::before { content: '✗'; color: var(--gray-600); }
-  .pricing-features li.no { color: var(--gray-600); }
+  .membership-price {
+    font-size: 3.5rem;
+    font-weight: 900;
+    color: var(--orange);
+    line-height: 1;
+  }
+  .membership-price span { font-size: 1.1rem; font-weight: 400; color: var(--gray-400); }
+  .membership-features {
+    list-style: none;
+    margin: 2rem 0;
+    display: flex;
+    flex-direction: column;
+    gap: .75rem;
+    text-align: left;
+  }
+  .membership-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    font-size: .95rem;
+    color: var(--gray-200);
+  }
+  .membership-features li::before {
+    content: '✓';
+    color: var(--orange);
+    font-weight: 700;
+    flex-shrink: 0;
+    margin-top: .1rem;
+  }
+
+  /* How it works */
+  .step {
+    display: flex;
+    align-items: flex-start;
+    gap: 1.5rem;
+    padding: 1.5rem;
+    background: var(--navy-light);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 12px;
+  }
+  .step-num {
+    width: 40px;
+    height: 40px;
+    background: var(--orange);
+    color: var(--white);
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-weight: 800;
+    font-size: 1rem;
+    flex-shrink: 0;
+  }
+  .step-title { font-weight: 700; margin-bottom: .25rem; }
+  .step-desc { color: var(--gray-400); font-size: .875rem; line-height: 1.6; }
 
   /* CTA */
   .cta-section {
@@ -139,10 +168,10 @@
     border-top: 1px solid rgba(249,115,22,.15);
     border-bottom: 1px solid rgba(249,115,22,.15);
     text-align: center;
-    padding: 4rem 0;
+    padding: 5rem 0;
   }
-  .cta-section h2 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
-  .cta-section p { color: var(--gray-400); margin-bottom: 2rem; }
+  .cta-section h2 { font-size: 2.25rem; font-weight: 800; margin-bottom: .75rem; }
+  .cta-section p { color: var(--gray-400); margin-bottom: 2.5rem; font-size: 1.05rem; }
 </style>
 {% endblock %}
 
@@ -155,25 +184,10 @@
     <p class="hero-sub">
       技術・トレーニング・メンタル・栄養——<br>
       すべての要素を体系的に学び、次のステージへ。<br>
-      現役コーチが監修した実践的コンテンツを提供します。
+      現役コーチが監修した実践的コンテンツをNoteで提供します。
     </p>
     <div class="hero-btns">
-      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">無料で始める</a>
-      <a href="{{ url_for('articles') }}" class="btn btn-outline btn-lg">コンテンツを見る</a>
-    </div>
-    <div class="hero-stats">
-      <div class="hero-stat">
-        <div class="hero-stat-num">6+</div>
-        <div class="hero-stat-label">専門カテゴリー</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-num">¥1,500</div>
-        <div class="hero-stat-label">月額（税込）</div>
-      </div>
-      <div class="hero-stat">
-        <div class="hero-stat-num">FREE</div>
-        <div class="hero-stat-label">無料記事あり</div>
-      </div>
+      <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg">Noteメンバーシップへ →</a>
     </div>
   </div>
   <div class="hero-badge">
@@ -224,67 +238,58 @@
   </div>
 </section>
 
-<!-- Sample Articles -->
-{% if sample_articles %}
-<section class="section">
-  <div class="container">
-    <h2 class="section-title mb-2">無料で読める記事</h2>
-    <p class="section-sub">登録なしで読めるサンプルコンテンツ</p>
-    <div class="grid grid-3">
-      {% for article in sample_articles %}
-      <a href="{{ url_for('article_detail', slug=article.slug) }}" style="color:inherit;text-decoration:none;">
-        <div class="card" style="height:100%;">
-          <div class="card-img-placeholder">📄</div>
-          <div class="card-body">
-            <span class="badge badge-free">FREE</span>
-            <h3 style="font-size:1rem;margin-top:.75rem;margin-bottom:.5rem;">{{ article.title }}</h3>
-            <p class="text-gray text-sm">{{ article.excerpt }}</p>
-          </div>
-        </div>
-      </a>
-      {% endfor %}
-    </div>
-    <div class="text-center mt-4">
-      <a href="{{ url_for('articles') }}" class="btn btn-outline">すべての記事を見る</a>
-    </div>
-  </div>
-</section>
-{% endif %}
-
-<!-- Pricing -->
+<!-- Membership -->
 <section class="section" style="background:var(--navy-mid);">
   <div class="container">
     <div class="text-center">
-      <h2 class="section-title">シンプルな料金プラン</h2>
-      <p class="section-sub">まずは無料で始めて、必要に応じてアップグレード</p>
+      <h2 class="section-title">Noteメンバーシップ</h2>
+      <p class="section-sub">すべてのコンテンツにアクセス</p>
     </div>
-    <div class="pricing-grid">
-      <!-- Free -->
-      <div class="pricing-card">
-        <div class="pricing-name">フリープラン</div>
-        <div class="pricing-price">¥0<span>/月</span></div>
-        <ul class="pricing-features">
-          <li>無料記事が読み放題</li>
-          <li>無料動画が視聴可能</li>
-          <li class="no">プレミアム記事・動画</li>
-          <li class="no">全コンテンツへのアクセス</li>
-          <li class="no">新着コンテンツ優先通知</li>
-        </ul>
-        <a href="{{ url_for('register') }}" class="btn btn-ghost" style="width:100%;justify-content:center;">無料で始める</a>
+    <div class="membership-card">
+      <div class="membership-badge">メンバー限定</div>
+      <div class="membership-price">¥1,500<span>/月</span></div>
+      <ul class="membership-features">
+        <li>すべての記事が読み放題</li>
+        <li>限定動画コンテンツへのアクセス</li>
+        <li>6カテゴリーの専門コンテンツ</li>
+        <li>新着コンテンツの優先通知</li>
+        <li>メンバー限定Q&A</li>
+      </ul>
+      <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;">
+        Noteメンバーシップに参加する →
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- How it works -->
+<section class="section">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="section-title">始め方</h2>
+      <p class="section-sub">3ステップで今すぐ始められます</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="step">
+        <div class="step-num">1</div>
+        <div>
+          <div class="step-title">Noteアカウントを作成</div>
+          <div class="step-desc">note.comに無料登録。すでにアカウントをお持ちの方はそのままご利用いただけます。</div>
+        </div>
       </div>
-      <!-- Premium -->
-      <div class="pricing-card featured">
-        <div class="pricing-popular">人気</div>
-        <div class="pricing-name">プレミアムプラン</div>
-        <div class="pricing-price text-orange">¥1,500<span>/月</span></div>
-        <ul class="pricing-features">
-          <li>すべての記事が読み放題</li>
-          <li>すべての動画が視聴可能</li>
-          <li>プレミアム限定コンテンツ</li>
-          <li>全カテゴリーへのアクセス</li>
-          <li>新着コンテンツ優先通知</li>
-        </ul>
-        <a href="{{ url_for('subscribe') }}" class="btn btn-primary" style="width:100%;justify-content:center;">今すぐ始める</a>
+      <div class="step">
+        <div class="step-num">2</div>
+        <div>
+          <div class="step-title">メンバーシップに参加</div>
+          <div class="step-desc">「Ignite Potential Base」のメンバーシップページから月額プランに参加します。</div>
+        </div>
+      </div>
+      <div class="step">
+        <div class="step-num">3</div>
+        <div>
+          <div class="step-title">コンテンツを楽しむ</div>
+          <div class="step-desc">記事・動画・Q&Aなど、すべての限定コンテンツにアクセスできます。</div>
+        </div>
       </div>
     </div>
   </div>
@@ -294,11 +299,10 @@
 <section class="cta-section">
   <div class="container">
     <h2>今すぐ野球を<span class="text-orange">科学する</span></h2>
-    <p>登録は30秒。クレジットカード不要で無料から始められます。</p>
-    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-      <a href="{{ url_for('register') }}" class="btn btn-primary btn-lg">無料で始める →</a>
-      <a href="{{ url_for('subscribe') }}" class="btn btn-outline btn-lg">プレミアムを見る</a>
-    </div>
+    <p>月額¥1,500。いつでも解約可能。</p>
+    <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg">
+      Noteメンバーシップへ →
+    </a>
   </div>
 </section>
 {% endblock %}
