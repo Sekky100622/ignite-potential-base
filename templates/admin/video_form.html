@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}{% if video %}動画を編集{% else %}動画を追加{% endif %} | イグライトポテンシャルベース{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>🎬 {% if video %}動画を編集{% else %}動画を追加{% endif %}</h1>
+    <p>YouTube動画を埋め込みます</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container" style="max-width:720px;">
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:2rem;">
+      <form method="POST">
+        <div class="form-group">
+          <label class="form-label">タイトル *</label>
+          <input class="form-control" type="text" name="title"
+                 placeholder="動画のタイトル" required
+                 value="{{ video.get('title', '') }}">
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">説明</label>
+          <textarea class="form-control" name="description"
+                    placeholder="動画の説明を入力">{{ video.get('description', '') }}</textarea>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">YouTube URL</label>
+          <input class="form-control" type="url" name="youtube_url"
+                 placeholder="https://www.youtube.com/watch?v=..."
+                 value="{{ video.get('youtube_url', '') }}"
+                 oninput="previewYoutube(this.value)">
+          <div id="youtubePreview" style="margin-top:.75rem;display:none;">
+            <div style="position:relative;padding-bottom:56.25%;height:0;border-radius:8px;overflow:hidden;background:#000;">
+              <iframe id="ytFrame" style="position:absolute;top:0;left:0;width:100%;height:100%;"
+                      frameborder="0" allowfullscreen></iframe>
+            </div>
+          </div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">カテゴリー</label>
+          <select class="form-control" name="category_id">
+            <option value="">カテゴリーを選択</option>
+            {% for cat in categories %}
+            <option value="{{ cat.id }}"
+              {% if video.get('category_id') == cat.id %}selected{% endif %}>
+              {{ cat.name }}
+            </option>
+            {% endfor %}
+          </select>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label">サムネイルURL</label>
+          <input class="form-control" type="url" name="thumbnail_url"
+                 placeholder="https://..."
+                 value="{{ video.get('thumbnail_url', '') }}">
+        </div>
+
+        <div style="display:flex;gap:1.5rem;margin-bottom:1.25rem;">
+          <label class="form-check">
+            <input type="checkbox" name="is_free"
+                   {% if video.get('is_free') %}checked{% endif %}>
+            <span>無料公開</span>
+          </label>
+          <label class="form-check">
+            <input type="checkbox" name="published"
+                   {% if video.get('published') %}checked{% endif %}>
+            <span>公開する</span>
+          </label>
+        </div>
+
+        <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+          <button type="submit" class="btn btn-primary">
+            {% if video %}更新する{% else %}追加する{% endif %}
+          </button>
+          <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost">キャンセル</a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function previewYoutube(url) {
+  const preview = document.getElementById('youtubePreview');
+  const frame = document.getElementById('ytFrame');
+  let videoId = '';
+
+  if (url.includes('youtube.com/watch?v=')) {
+    videoId = url.split('v=')[1].split('&')[0];
+  } else if (url.includes('youtu.be/')) {
+    videoId = url.split('youtu.be/')[1].split('?')[0];
+  }
+
+  if (videoId) {
+    frame.src = `https://www.youtube.com/embed/${videoId}`;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+}
+
+// Init preview if URL exists
+const existingUrl = document.querySelector('[name=youtube_url]').value;
+if (existingUrl) previewYoutube(existingUrl);
+</script>
+{% endblock %}

@@ -1,0 +1,88 @@
+{% extends 'base.html' %}
+{% block title %}記事管理 | イグライトポテンシャルベース{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1>📄 記事管理</h1>
+        <p>全 {{ articles|length }} 件の記事</p>
+      </div>
+      <a href="{{ url_for('admin_articles_new') }}" class="btn btn-primary">+ 新規記事</a>
+    </div>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>タイトル</th>
+              <th>カテゴリー</th>
+              <th>種別</th>
+              <th>状態</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for article in articles %}
+            <tr>
+              <td style="max-width:280px;">
+                <div style="font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ article.title }}</div>
+                <div style="font-size:.75rem;color:var(--gray-400);">{{ article.slug }}</div>
+              </td>
+              <td>
+                {% if article.category %}
+                  <span class="badge badge-cat">{{ article.category.name }}</span>
+                {% else %}
+                  <span class="text-gray">-</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if article.is_free %}
+                  <span class="badge badge-free">FREE</span>
+                {% else %}
+                  <span class="badge badge-premium">PREMIUM</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if article.published %}
+                  <span class="badge" style="background:rgba(34,197,94,.15);color:var(--green);">公開</span>
+                {% else %}
+                  <span class="badge badge-cat">下書き</span>
+                {% endif %}
+              </td>
+              <td>
+                <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
+                  <a href="{{ url_for('article_detail', slug=article.slug) }}" class="btn btn-ghost btn-sm" target="_blank">表示</a>
+                  <a href="{{ url_for('admin_articles_edit', article_id=article.id) }}" class="btn btn-outline btn-sm">編集</a>
+                  <form action="{{ url_for('admin_articles_delete', article_id=article.id) }}" method="POST"
+                        onsubmit="return confirm('この記事を削除しますか？');" style="display:inline;">
+                    <button type="submit" class="btn btn-danger btn-sm">削除</button>
+                  </form>
+                </div>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" style="text-align:center;padding:3rem;color:var(--gray-400);">
+                記事はまだありません。
+                <a href="{{ url_for('admin_articles_new') }}" style="margin-left:.5rem;">最初の記事を作成する →</a>
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

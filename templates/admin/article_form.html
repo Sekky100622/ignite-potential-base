@@ -1,0 +1,279 @@
+{% extends 'base.html' %}
+{% block title %}{% if edit %}記事を編集{% else %}新規記事{% endif %} | イグライトポテンシャルベース{% endblock %}
+
+{% block extra_head %}
+<style>
+  .editor-toolbar {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+    padding: .5rem;
+    background: rgba(0,0,0,.2);
+    border: 1.5px solid rgba(255,255,255,.12);
+    border-bottom: none;
+    border-radius: 8px 8px 0 0;
+  }
+  .editor-toolbar button {
+    padding: .3rem .6rem;
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 4px;
+    color: var(--white);
+    cursor: pointer;
+    font-size: .8rem;
+    font-family: monospace;
+    transition: background .2s;
+  }
+  .editor-toolbar button:hover { background: rgba(249,115,22,.3); }
+  #content {
+    border-radius: 0 0 8px 8px;
+    font-family: 'Courier New', monospace;
+    font-size: .9rem;
+    min-height: 420px;
+  }
+  .preview-box {
+    background: rgba(255,255,255,.04);
+    border: 1.5px solid rgba(255,255,255,.12);
+    border-radius: 8px;
+    padding: 1.25rem;
+    min-height: 200px;
+    margin-top: .5rem;
+    display: none;
+  }
+  .preview-box.active { display: block; }
+  .preview-box h1,h2,h3 { color: var(--white); margin: 1rem 0 .5rem; }
+  .preview-box h2 { border-bottom: 1px solid rgba(249,115,22,.3); padding-bottom: .3rem; }
+  .preview-box p { color: var(--gray-200); line-height: 1.8; margin-bottom: .75rem; }
+  .preview-box ul, .preview-box ol { color: var(--gray-200); padding-left: 1.5rem; margin-bottom: .75rem; }
+  .tab-btn { padding:.4rem 1rem;border-radius:6px;font-size:.85rem;cursor:pointer;border:none;font-weight:500; }
+  .tab-btn.active { background:var(--orange);color:var(--white); }
+  .tab-btn:not(.active) { background:rgba(255,255,255,.08);color:var(--gray-200); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>{% if edit %}✏️ 記事を編集{% else %}📝 新規記事作成{% endif %}</h1>
+    <p>Markdown形式でコンテンツを入力できます</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container" style="max-width:900px;">
+    <form method="POST">
+      <div style="display:grid;grid-template-columns:1fr 280px;gap:1.5rem;">
+
+        <!-- Main form -->
+        <div>
+          <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.75rem;">
+            <div class="form-group">
+              <label class="form-label" for="title">タイトル *</label>
+              <input class="form-control" type="text" id="title" name="title"
+                     placeholder="記事のタイトルを入力"
+                     value="{{ article.get('title', '') }}" required
+                     oninput="autoSlug(this.value)">
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="slug">スラッグ（URL）*</label>
+              <input class="form-control" type="text" id="slug" name="slug"
+                     placeholder="my-article-slug"
+                     value="{{ article.get('slug', '') }}" required>
+              <div class="text-gray text-sm" style="margin-top:.3rem;">URLに使用。英数字とハイフンのみ。</div>
+            </div>
+
+            <div class="form-group">
+              <label class="form-label" for="excerpt">概要（一覧表示用）</label>
+              <textarea class="form-control" id="excerpt" name="excerpt"
+                        style="min-height:80px;"
+                        placeholder="記事の概要を2〜3文で入力">{{ article.get('excerpt', '') }}</textarea>
+            </div>
+
+            <!-- Editor tabs -->
+            <div class="form-group">
+              <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+                <label class="form-label" style="margin:0;">本文（Markdown）*</label>
+                <div style="display:flex;gap:.4rem;">
+                  <button type="button" class="tab-btn active" id="editTab" onclick="showEdit()">編集</button>
+                  <button type="button" class="tab-btn" id="previewTab" onclick="showPreview()">プレビュー</button>
+                </div>
+              </div>
+
+              <!-- Toolbar -->
+              <div class="editor-toolbar">
+                <button type="button" onclick="wrap('## ', '')">H2</button>
+                <button type="button" onclick="wrap('### ', '')">H3</button>
+                <button type="button" onclick="wrap('**', '**')"><b>B</b></button>
+                <button type="button" onclick="wrap('*', '*')"><i>I</i></button>
+                <button type="button" onclick="insertList()">• List</button>
+                <button type="button" onclick="insertCode()">Code</button>
+                <button type="button" onclick="wrap('> ', '')">Quote</button>
+                <button type="button" onclick="insertLink()">Link</button>
+              </div>
+              <textarea class="form-control" id="content" name="content"
+                        placeholder="# タイトル&#10;&#10;ここに本文をMarkdown形式で入力...">{{ article.get('content', '') }}</textarea>
+              <div class="preview-box" id="previewBox"></div>
+            </div>
+          </div>
+        </div>
+
+        <!-- Sidebar settings -->
+        <div>
+          <!-- Publish -->
+          <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;margin-bottom:1rem;">
+            <h4 style="font-size:.85rem;color:var(--gray-400);text-transform:uppercase;margin-bottom:1rem;">公開設定</h4>
+
+            <div class="form-group">
+              <label class="form-check">
+                <input type="checkbox" name="published" id="published"
+                       {% if article.get('published') %}checked{% endif %}>
+                <span>公開する</span>
+              </label>
+            </div>
+
+            <div class="form-group">
+              <label class="form-check">
+                <input type="checkbox" name="is_free" id="is_free"
+                       {% if article.get('is_free') %}checked{% endif %}>
+                <span>無料公開（誰でも読める）</span>
+              </label>
+            </div>
+
+            <div style="display:flex;flex-direction:column;gap:.5rem;margin-top:1rem;">
+              <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+                {% if edit %}更新する{% else %}作成する{% endif %}
+              </button>
+              <a href="{{ url_for('admin_articles') }}" class="btn btn-ghost" style="width:100%;justify-content:center;">
+                キャンセル
+              </a>
+            </div>
+          </div>
+
+          <!-- Category -->
+          <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;margin-bottom:1rem;">
+            <h4 style="font-size:.85rem;color:var(--gray-400);text-transform:uppercase;margin-bottom:1rem;">カテゴリー</h4>
+            <select class="form-control" name="category_id" id="category_id">
+              <option value="">カテゴリーを選択</option>
+              {% for cat in categories %}
+              <option value="{{ cat.id }}"
+                {% if article.get('category_id') == cat.id %}selected{% endif %}>
+                {{ cat.name }}
+              </option>
+              {% endfor %}
+            </select>
+          </div>
+
+          <!-- Thumbnail -->
+          <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;">
+            <h4 style="font-size:.85rem;color:var(--gray-400);text-transform:uppercase;margin-bottom:1rem;">サムネイル</h4>
+            <div class="form-group">
+              <input class="form-control" type="url" name="thumbnail_url" id="thumbnail_url"
+                     placeholder="https://..."
+                     value="{{ article.get('thumbnail_url', '') }}">
+            </div>
+            <div id="thumbPreview" style="display:none;margin-top:.5rem;">
+              <img id="thumbImg" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
+            </div>
+          </div>
+        </div>
+      </div>
+    </form>
+  </div>
+</section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+// Auto-generate slug from title
+function autoSlug(title) {
+  const slugField = document.getElementById('slug');
+  if (!slugField.dataset.manual) {
+    slugField.value = title
+      .toLowerCase()
+      .replace(/[^\w\s-]/g, '')
+      .replace(/[\s_]+/g, '-')
+      .replace(/^-+|-+$/g, '');
+  }
+}
+document.getElementById('slug').addEventListener('input', function() {
+  this.dataset.manual = 'true';
+});
+
+// Markdown toolbar
+function wrap(before, after) {
+  const ta = document.getElementById('content');
+  const start = ta.selectionStart;
+  const end = ta.selectionEnd;
+  const selected = ta.value.substring(start, end);
+  ta.value = ta.value.substring(0, start) + before + selected + after + ta.value.substring(end);
+  ta.focus();
+  ta.setSelectionRange(start + before.length, end + before.length);
+}
+function insertList() {
+  const ta = document.getElementById('content');
+  const pos = ta.selectionStart;
+  const text = '\n- 項目1\n- 項目2\n- 項目3\n';
+  ta.value = ta.value.substring(0, pos) + text + ta.value.substring(pos);
+}
+function insertCode() {
+  wrap('`', '`');
+}
+function insertLink() {
+  const url = prompt('URLを入力:', 'https://');
+  if (url) wrap('[リンクテキスト](', url + ')');
+}
+
+// Preview tabs
+function showEdit() {
+  document.getElementById('content').style.display = 'block';
+  document.getElementById('previewBox').classList.remove('active');
+  document.getElementById('editTab').classList.add('active');
+  document.getElementById('previewTab').classList.remove('active');
+}
+function showPreview() {
+  document.getElementById('content').style.display = 'none';
+  document.getElementById('previewBox').classList.add('active');
+  document.getElementById('editTab').classList.remove('active');
+  document.getElementById('previewTab').classList.add('active');
+  // Simple markdown preview
+  const content = document.getElementById('content').value;
+  const html = simpleMarkdown(content);
+  document.getElementById('previewBox').innerHTML = html;
+}
+function simpleMarkdown(md) {
+  return md
+    .replace(/^### (.+)$/gm, '<h3>$1</h3>')
+    .replace(/^## (.+)$/gm, '<h2>$1</h2>')
+    .replace(/^# (.+)$/gm, '<h1>$1</h1>')
+    .replace(/\*\*(.+?)\*\*/g, '<strong>$1</strong>')
+    .replace(/\*(.+?)\*/g, '<em>$1</em>')
+    .replace(/`(.+?)`/g, '<code>$1</code>')
+    .replace(/^> (.+)$/gm, '<blockquote>$1</blockquote>')
+    .replace(/^- (.+)$/gm, '<li>$1</li>')
+    .replace(/(<li>.*<\/li>)/s, '<ul>$1</ul>')
+    .replace(/\n\n/g, '</p><p>')
+    .replace(/^(?!<[h|u|b|l|p|c])/gm, '<p>')
+    .replace(/$(?![<])/gm, '</p>');
+}
+
+// Thumbnail preview
+document.getElementById('thumbnail_url').addEventListener('input', function() {
+  const url = this.value;
+  const preview = document.getElementById('thumbPreview');
+  const img = document.getElementById('thumbImg');
+  if (url) {
+    img.src = url;
+    preview.style.display = 'block';
+  } else {
+    preview.style.display = 'none';
+  }
+});
+// Init thumbnail preview
+const thumbUrl = document.getElementById('thumbnail_url').value;
+if (thumbUrl) {
+  document.getElementById('thumbImg').src = thumbUrl;
+  document.getElementById('thumbPreview').style.display = 'block';
+}
+</script>
+{% endblock %}

@@ -1,0 +1,138 @@
+{% extends 'base.html' %}
+{% block title %}プレミアムプラン | イグライトポテンシャルベース{% endblock %}
+
+{% block extra_head %}
+<style>
+  .compare-table { width:100%;border-collapse:collapse;margin:2rem 0; }
+  .compare-table th, .compare-table td { padding:.875rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.07); }
+  .compare-table th { font-size:.8rem;text-transform:uppercase;letter-spacing:.05em;color:var(--gray-400); }
+  .compare-table th:nth-child(2), .compare-table td:nth-child(2) { text-align:center;color:var(--gray-600); }
+  .compare-table th:nth-child(3), .compare-table td:nth-child(3) {
+    text-align:center;
+    color:var(--orange);
+    background:rgba(249,115,22,.04);
+  }
+  .check { color:var(--green);font-weight:700; }
+  .cross { color:var(--gray-600); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container" style="text-align:center;">
+    <h1>⭐ プレミアムプラン</h1>
+    <p>野球パフォーマンスを最大化するすべてのコンテンツ</p>
+  </div>
+</div>
+
+<section class="section">
+  <div class="container" style="max-width:800px;">
+
+    <!-- Price card -->
+    <div style="background:linear-gradient(135deg,rgba(249,115,22,.12),rgba(249,115,22,.04));border:2px solid rgba(249,115,22,.4);border-radius:20px;padding:2.5rem;text-align:center;margin-bottom:3rem;">
+      <div style="font-size:.9rem;color:var(--orange);font-weight:600;letter-spacing:.05em;text-transform:uppercase;margin-bottom:.75rem;">プレミアムプラン</div>
+      <div style="font-size:4rem;font-weight:900;line-height:1;">¥1,500</div>
+      <div style="color:var(--gray-400);margin-bottom:2rem;">/月（税込）いつでもキャンセル可能</div>
+
+      {% if session.get('plan') == 'premium' %}
+        <div style="background:rgba(34,197,94,.1);border:1px solid rgba(34,197,94,.3);border-radius:12px;padding:1.25rem;margin-bottom:1.5rem;">
+          <span style="color:var(--green);font-weight:600;">✓ 現在このプランをご利用中です</span>
+        </div>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-lg">ダッシュボードへ</a>
+      {% elif stripe_ready %}
+        {% if session.get('user_id') %}
+          <form action="{{ url_for('subscribe_checkout') }}" method="POST">
+            <button type="submit" class="btn btn-primary btn-lg" style="min-width:280px;justify-content:center;">
+              今すぐプレミアムを始める →
+            </button>
+          </form>
+        {% else %}
+          <a href="{{ url_for('register') }}?next={{ url_for('subscribe') }}" class="btn btn-primary btn-lg" style="min-width:280px;justify-content:center;">
+            無料登録してアップグレード →
+          </a>
+          <div style="margin-top:.75rem;">
+            <a href="{{ url_for('login') }}" class="text-sm text-gray">既にアカウントをお持ちの方はログイン</a>
+          </div>
+        {% endif %}
+      {% else %}
+        <!-- Stripe not configured -->
+        <div style="background:rgba(249,115,22,.1);border:1px solid rgba(249,115,22,.3);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
+          <div style="font-size:1.5rem;margin-bottom:.5rem;">🚧</div>
+          <div style="font-weight:700;margin-bottom:.25rem;">決済システム準備中</div>
+          <div class="text-gray text-sm">現在、お支払いシステムのセットアップ中です。<br>近日公開予定ですのでお待ちください。</div>
+        </div>
+        {% if not session.get('user_id') %}
+          <a href="{{ url_for('register') }}" class="btn btn-outline btn-lg">無料アカウントを作成</a>
+        {% endif %}
+      {% endif %}
+
+      <p class="text-gray text-sm" style="margin-top:1.25rem;">
+        クレジットカードで安全に決済 · いつでもキャンセル可能
+      </p>
+    </div>
+
+    <!-- Comparison table -->
+    <h2 style="font-size:1.25rem;font-weight:700;margin-bottom:.5rem;">プラン比較</h2>
+    <div class="table-wrap">
+      <table class="compare-table">
+        <thead>
+          <tr>
+            <th>機能</th>
+            <th>フリー</th>
+            <th>プレミアム</th>
+          </tr>
+        </thead>
+        <tbody>
+          <tr>
+            <td>無料記事の閲覧</td>
+            <td class="check" style="text-align:center;">✓</td>
+            <td class="check" style="text-align:center;">✓</td>
+          </tr>
+          <tr>
+            <td>無料動画の視聴</td>
+            <td class="check" style="text-align:center;">✓</td>
+            <td class="check" style="text-align:center;">✓</td>
+          </tr>
+          <tr>
+            <td>プレミアム記事の閲覧</td>
+            <td class="cross" style="text-align:center;">✗</td>
+            <td class="check" style="text-align:center;">✓</td>
+          </tr>
+          <tr>
+            <td>プレミアム動画の視聴</td>
+            <td class="cross" style="text-align:center;">✗</td>
+            <td class="check" style="text-align:center;">✓</td>
+          </tr>
+          <tr>
+            <td>全カテゴリーへのアクセス</td>
+            <td class="cross" style="text-align:center;">✗</td>
+            <td class="check" style="text-align:center;">✓</td>
+          </tr>
+          <tr>
+            <td>新着コンテンツ優先通知</td>
+            <td class="cross" style="text-align:center;">✗</td>
+            <td class="check" style="text-align:center;">✓</td>
+          </tr>
+        </tbody>
+      </table>
+    </div>
+
+    <!-- FAQ -->
+    <h2 style="font-size:1.25rem;font-weight:700;margin-top:2.5rem;margin-bottom:1rem;">よくある質問</h2>
+    <div style="display:flex;flex-direction:column;gap:.75rem;">
+      <details style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:1rem;">
+        <summary style="cursor:pointer;font-weight:600;font-size:.95rem;">いつでもキャンセルできますか？</summary>
+        <p class="text-gray text-sm" style="margin-top:.75rem;line-height:1.7;">はい、いつでもキャンセル可能です。解約後は、現在の請求期間の終了まで引き続きご利用いただけます。</p>
+      </details>
+      <details style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:1rem;">
+        <summary style="cursor:pointer;font-weight:600;font-size:.95rem;">支払い方法は何が使えますか？</summary>
+        <p class="text-gray text-sm" style="margin-top:.75rem;line-height:1.7;">Visa、Mastercard、American Express、JCBなど主要なクレジットカードに対応しています。</p>
+      </details>
+      <details style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:1rem;">
+        <summary style="cursor:pointer;font-weight:600;font-size:.95rem;">無料プランからアップグレードできますか？</summary>
+        <p class="text-gray text-sm" style="margin-top:.75rem;line-height:1.7;">もちろんです。ダッシュボードまたはこのページからいつでもアップグレードできます。</p>
+      </details>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,133 @@
+{% extends 'base.html' %}
+{% block title %}管理ダッシュボード | イグライトポテンシャルベース{% endblock %}
+
+{% block extra_head %}
+<style>
+  .stat-card {
+    background: var(--navy-light);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 12px;
+    padding: 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .stat-icon {
+    width: 52px;
+    height: 52px;
+    border-radius: 12px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.5rem;
+    flex-shrink: 0;
+  }
+  .stat-num { font-size: 1.75rem; font-weight: 800; line-height: 1; }
+  .stat-label { font-size: .8rem; color: var(--gray-400); margin-top: .2rem; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1>⚙️ 管理ダッシュボード</h1>
+        <p>イグライトポテンシャルベース 管理者向け</p>
+      </div>
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        <a href="{{ url_for('admin_articles_new') }}" class="btn btn-primary">+ 記事を作成</a>
+        <a href="{{ url_for('admin_videos_new') }}" class="btn btn-outline">+ 動画を追加</a>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+    <!-- Stats -->
+    <div class="grid grid-3" style="margin-bottom:2rem;">
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(249,115,22,.15);">📄</div>
+        <div>
+          <div class="stat-num">{{ article_count }}</div>
+          <div class="stat-label">総記事数</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(34,197,94,.15);">👥</div>
+        <div>
+          <div class="stat-num">{{ member_count }}</div>
+          <div class="stat-label">総メンバー数</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(249,115,22,.15);">⭐</div>
+        <div>
+          <div class="stat-num">{{ premium_count }}</div>
+          <div class="stat-label">プレミアム会員</div>
+        </div>
+      </div>
+    </div>
+
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;">
+      <!-- Recent articles -->
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+          <h3 style="font-size:1rem;font-weight:700;">最新記事</h3>
+          <a href="{{ url_for('admin_articles') }}" class="btn btn-ghost btn-sm">管理する</a>
+        </div>
+        {% for article in recent_articles %}
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.05);">
+          <span>📄</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ article.title }}</div>
+            <div style="font-size:.75rem;color:var(--gray-400);">
+              {% if article.published %}公開{% else %}下書き{% endif %} ·
+              {% if article.is_free %}無料{% else %}有料{% endif %}
+            </div>
+          </div>
+          <a href="{{ url_for('admin_articles_edit', article_id=article.id) }}" class="btn btn-ghost btn-sm">編集</a>
+        </div>
+        {% else %}
+          <p class="text-gray text-sm">記事はありません</p>
+        {% endfor %}
+        <div style="margin-top:1rem;">
+          <a href="{{ url_for('admin_articles_new') }}" class="btn btn-primary btn-sm">+ 新規記事</a>
+        </div>
+      </div>
+
+      <!-- Recent members -->
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
+          <h3 style="font-size:1rem;font-weight:700;">最新メンバー</h3>
+          <a href="{{ url_for('admin_members') }}" class="btn btn-ghost btn-sm">一覧</a>
+        </div>
+        {% for member in recent_members %}
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.05);">
+          <div style="width:32px;height:32px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:.875rem;font-weight:700;flex-shrink:0;">
+            {{ member.name[0] }}
+          </div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-size:.875rem;font-weight:500;">{{ member.name }}</div>
+            <div style="font-size:.75rem;color:var(--gray-400);">{{ member.email }}</div>
+          </div>
+          <span class="badge {% if member.plan == 'premium' %}badge-premium{% else %}badge-cat{% endif %}">
+            {{ member.plan }}
+          </span>
+        </div>
+        {% else %}
+          <p class="text-gray text-sm">メンバーはいません</p>
+        {% endfor %}
+      </div>
+    </div>
+
+    <!-- Quick links -->
+    <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.5rem;">
+      <a href="{{ url_for('admin_articles') }}" class="btn btn-ghost">📄 記事管理</a>
+      <a href="{{ url_for('admin_videos_new') }}" class="btn btn-ghost">🎬 動画追加</a>
+      <a href="{{ url_for('admin_members') }}" class="btn btn-ghost">👥 メンバー管理</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

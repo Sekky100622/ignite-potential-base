@@ -1,0 +1,101 @@
+{% extends 'base.html' %}
+{% block title %}記事一覧 | イグライトポテンシャルベース{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>📄 記事一覧</h1>
+    <p>野球パフォーマンス向上のための専門記事</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+    <!-- Category filter -->
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem;">
+      <a href="{{ url_for('articles') }}"
+         class="btn btn-sm {% if not active_category %}btn-primary{% else %}btn-ghost{% endif %}">
+        全て
+      </a>
+      {% for cat in categories %}
+      <a href="{{ url_for('articles', category=cat.slug) }}"
+         class="btn btn-sm {% if active_category == cat.slug %}btn-primary{% else %}btn-ghost{% endif %}">
+        {{ cat.name }}
+      </a>
+      {% endfor %}
+    </div>
+
+    {% if articles %}
+    <div class="grid grid-3">
+      {% for article in articles %}
+      <div class="card">
+        {% if article.thumbnail_url %}
+          <img class="card-img" src="{{ article.thumbnail_url }}" alt="{{ article.title }}">
+        {% else %}
+          <div class="card-img-placeholder">
+            {% if article.category and article.category.slug == 'skill' %}🏏
+            {% elif article.category and article.category.slug == 'training' %}💪
+            {% elif article.category and article.category.slug == 'mental' %}🧠
+            {% elif article.category and article.category.slug == 'nutrition' %}🥗
+            {% elif article.category and article.category.slug == 'condition' %}🏃
+            {% elif article.category and article.category.slug == 'coaching' %}📋
+            {% else %}📄{% endif %}
+          </div>
+        {% endif %}
+        <div class="card-body">
+          <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap;">
+            {% if article.is_free %}
+              <span class="badge badge-free">FREE</span>
+            {% else %}
+              <span class="badge badge-premium">
+                {% if not session.get('plan') == 'premium' %}🔒 {% endif %}PREMIUM
+              </span>
+            {% endif %}
+            {% if article.category %}
+              <span class="badge badge-cat">{{ article.category.name }}</span>
+            {% endif %}
+          </div>
+          <h3 style="font-size:1rem;margin-bottom:.5rem;line-height:1.4;">
+            <a href="{{ url_for('article_detail', slug=article.slug) }}" style="color:var(--white);">
+              {{ article.title }}
+            </a>
+          </h3>
+          {% if article.excerpt %}
+            <p class="text-gray text-sm" style="line-height:1.6;">{{ article.excerpt }}</p>
+          {% endif %}
+          <div style="margin-top:1rem;">
+            {% if article.is_free or session.get('plan') == 'premium' %}
+              <a href="{{ url_for('article_detail', slug=article.slug) }}" class="btn btn-outline btn-sm">
+                読む →
+              </a>
+            {% else %}
+              <a href="{{ url_for('article_detail', slug=article.slug) }}" class="btn btn-ghost btn-sm">
+                🔒 プレビューを見る
+              </a>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:4rem 0;">
+      <div style="font-size:3rem;margin-bottom:1rem;">📭</div>
+      <h3 style="color:var(--gray-400);">記事はまだありません</h3>
+      {% if session.get('role') == 'admin' %}
+        <a href="{{ url_for('admin_articles_new') }}" class="btn btn-primary mt-3">記事を作成する</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <!-- Premium upsell -->
+    {% if not session.get('plan') == 'premium' %}
+    <div style="background:linear-gradient(135deg,rgba(249,115,22,.1),transparent);border:1px solid rgba(249,115,22,.25);border-radius:16px;padding:2rem;margin-top:3rem;text-align:center;">
+      <h3 style="font-size:1.25rem;margin-bottom:.5rem;">🔒 プレミアムで全記事を解放</h3>
+      <p class="text-gray text-sm" style="margin-bottom:1.25rem;">月額¥1,500で、すべての専門記事・動画にアクセス可能。</p>
+      <a href="{{ url_for('subscribe') }}" class="btn btn-primary">プレミアムプランを見る</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

@@ -1,0 +1,462 @@
+<!DOCTYPE html>
+<html lang="ja">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>{% block title %}イグライトポテンシャルベース{% endblock %}</title>
+  <meta name="description" content="野球パフォーマンスを科学で変える。プロコーチによる技術・トレーニング・メンタル・栄養のサブスクリプションサービス。">
+  <style>
+    :root {
+      --navy: #0f1923;
+      --navy-light: #1a2a3a;
+      --navy-mid: #162030;
+      --orange: #f97316;
+      --orange-dark: #ea6c0a;
+      --orange-light: #fb923c;
+      --white: #ffffff;
+      --gray-100: #f1f5f9;
+      --gray-200: #e2e8f0;
+      --gray-400: #94a3b8;
+      --gray-600: #475569;
+      --green: #22c55e;
+      --red: #ef4444;
+      --yellow: #eab308;
+    }
+    *, *::before, *::after { box-sizing: border-box; margin: 0; padding: 0; }
+    html { font-size: 16px; scroll-behavior: smooth; }
+    body {
+      font-family: 'Helvetica Neue', Arial, 'Hiragino Kaku Gothic ProN', 'Hiragino Sans', Meiryo, sans-serif;
+      background: var(--navy);
+      color: var(--white);
+      line-height: 1.6;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+    a { color: var(--orange); text-decoration: none; transition: color .2s; }
+    a:hover { color: var(--orange-light); }
+    img { max-width: 100%; height: auto; }
+
+    /* ── Navbar ── */
+    .navbar {
+      background: rgba(15,25,35,.97);
+      backdrop-filter: blur(10px);
+      border-bottom: 1px solid rgba(249,115,22,.2);
+      position: sticky;
+      top: 0;
+      z-index: 1000;
+    }
+    .navbar-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      align-items: center;
+      height: 64px;
+      gap: 1.5rem;
+    }
+    .navbar-brand {
+      font-size: 1.15rem;
+      font-weight: 800;
+      color: var(--white);
+      letter-spacing: -.3px;
+      white-space: nowrap;
+    }
+    .navbar-brand span { color: var(--orange); }
+    .navbar-nav {
+      display: flex;
+      align-items: center;
+      gap: .25rem;
+      list-style: none;
+      flex: 1;
+    }
+    .navbar-nav a {
+      color: var(--gray-200);
+      padding: .4rem .75rem;
+      border-radius: 6px;
+      font-size: .9rem;
+      font-weight: 500;
+      transition: background .2s, color .2s;
+    }
+    .navbar-nav a:hover, .navbar-nav a.active {
+      background: rgba(249,115,22,.15);
+      color: var(--orange);
+    }
+    .navbar-actions {
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      margin-left: auto;
+    }
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: .4rem;
+      padding: .5rem 1.25rem;
+      border-radius: 8px;
+      font-size: .875rem;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all .2s;
+      text-decoration: none;
+      white-space: nowrap;
+    }
+    .btn-primary {
+      background: var(--orange);
+      color: var(--white);
+    }
+    .btn-primary:hover { background: var(--orange-dark); color: var(--white); }
+    .btn-outline {
+      background: transparent;
+      color: var(--orange);
+      border: 1.5px solid var(--orange);
+    }
+    .btn-outline:hover { background: var(--orange); color: var(--white); }
+    .btn-ghost {
+      background: rgba(255,255,255,.08);
+      color: var(--white);
+    }
+    .btn-ghost:hover { background: rgba(255,255,255,.15); color: var(--white); }
+    .btn-danger {
+      background: var(--red);
+      color: var(--white);
+    }
+    .btn-danger:hover { opacity: .85; color: var(--white); }
+    .btn-sm { padding: .3rem .75rem; font-size: .8rem; }
+    .btn-lg { padding: .75rem 2rem; font-size: 1rem; }
+
+    /* Hamburger */
+    .hamburger {
+      display: none;
+      flex-direction: column;
+      gap: 5px;
+      cursor: pointer;
+      padding: .5rem;
+      background: none;
+      border: none;
+    }
+    .hamburger span {
+      display: block;
+      width: 24px;
+      height: 2px;
+      background: var(--white);
+      border-radius: 2px;
+      transition: all .3s;
+    }
+    .mobile-menu {
+      display: none;
+      background: var(--navy-mid);
+      border-top: 1px solid rgba(249,115,22,.2);
+      padding: 1rem 1.5rem;
+    }
+    .mobile-menu.open { display: block; }
+    .mobile-menu ul { list-style: none; display: flex; flex-direction: column; gap: .25rem; }
+    .mobile-menu a {
+      display: block;
+      color: var(--gray-200);
+      padding: .6rem .75rem;
+      border-radius: 6px;
+      font-size: .95rem;
+    }
+    .mobile-menu a:hover { background: rgba(249,115,22,.15); color: var(--orange); }
+    .mobile-menu .mobile-actions { margin-top: 1rem; display: flex; gap: .5rem; flex-wrap: wrap; }
+
+    @media (max-width: 768px) {
+      .hamburger { display: flex; margin-left: auto; }
+      .navbar-nav, .navbar-actions { display: none; }
+    }
+
+    /* ── Flash messages ── */
+    .flash-container { max-width: 1200px; margin: 1rem auto; padding: 0 1.5rem; }
+    .flash {
+      padding: .875rem 1.25rem;
+      border-radius: 8px;
+      margin-bottom: .5rem;
+      font-size: .9rem;
+      display: flex;
+      align-items: center;
+      gap: .5rem;
+      border-left: 4px solid;
+    }
+    .flash-success { background: rgba(34,197,94,.12); border-color: var(--green); color: #86efac; }
+    .flash-danger  { background: rgba(239,68,68,.12);  border-color: var(--red);   color: #fca5a5; }
+    .flash-warning { background: rgba(234,179,8,.12);  border-color: var(--yellow); color: #fde047; }
+    .flash-info    { background: rgba(249,115,22,.12); border-color: var(--orange); color: var(--orange-light); }
+
+    /* ── Main content ── */
+    main { flex: 1; }
+    .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
+    .section { padding: 4rem 0; }
+    .section-sm { padding: 2rem 0; }
+
+    /* ── Cards ── */
+    .card {
+      background: var(--navy-light);
+      border: 1px solid rgba(255,255,255,.08);
+      border-radius: 12px;
+      overflow: hidden;
+      transition: transform .2s, box-shadow .2s, border-color .2s;
+    }
+    .card:hover {
+      transform: translateY(-3px);
+      box-shadow: 0 12px 40px rgba(0,0,0,.4);
+      border-color: rgba(249,115,22,.3);
+    }
+    .card-body { padding: 1.25rem; }
+    .card-img { width: 100%; height: 180px; object-fit: cover; background: var(--navy-mid); }
+    .card-img-placeholder {
+      width: 100%;
+      height: 180px;
+      background: linear-gradient(135deg, var(--navy-mid) 0%, #1e3a5f 100%);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+    }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      gap: .25rem;
+      padding: .2rem .6rem;
+      border-radius: 20px;
+      font-size: .75rem;
+      font-weight: 600;
+    }
+    .badge-free    { background: rgba(34,197,94,.2);   color: var(--green); }
+    .badge-premium { background: rgba(249,115,22,.2);  color: var(--orange); }
+    .badge-cat     { background: rgba(255,255,255,.1); color: var(--gray-200); }
+    .badge-admin   { background: rgba(239,68,68,.2);   color: #fca5a5; }
+
+    /* ── Grid ── */
+    .grid { display: grid; gap: 1.5rem; }
+    .grid-3 { grid-template-columns: repeat(3, 1fr); }
+    .grid-2 { grid-template-columns: repeat(2, 1fr); }
+    @media (max-width: 900px) { .grid-3 { grid-template-columns: repeat(2, 1fr); } }
+    @media (max-width: 600px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ── Forms ── */
+    .form-group { margin-bottom: 1.25rem; }
+    .form-label {
+      display: block;
+      margin-bottom: .4rem;
+      font-size: .9rem;
+      font-weight: 600;
+      color: var(--gray-200);
+    }
+    .form-control {
+      width: 100%;
+      padding: .625rem 1rem;
+      background: rgba(255,255,255,.06);
+      border: 1.5px solid rgba(255,255,255,.12);
+      border-radius: 8px;
+      color: var(--white);
+      font-size: .95rem;
+      transition: border-color .2s, background .2s;
+    }
+    .form-control:focus {
+      outline: none;
+      border-color: var(--orange);
+      background: rgba(255,255,255,.09);
+    }
+    .form-control::placeholder { color: var(--gray-400); }
+    textarea.form-control { min-height: 200px; resize: vertical; font-family: inherit; }
+    .form-check { display: flex; align-items: center; gap: .5rem; cursor: pointer; }
+    .form-check input[type=checkbox] { width: 18px; height: 18px; accent-color: var(--orange); cursor: pointer; }
+
+    /* ── Tables ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; font-size: .9rem; }
+    th, td { padding: .75rem 1rem; text-align: left; border-bottom: 1px solid rgba(255,255,255,.07); }
+    th { color: var(--gray-400); font-weight: 600; font-size: .8rem; text-transform: uppercase; letter-spacing: .05em; }
+    tr:hover td { background: rgba(255,255,255,.03); }
+
+    /* ── Page header ── */
+    .page-header {
+      background: linear-gradient(135deg, var(--navy-mid) 0%, #0a1520 100%);
+      border-bottom: 1px solid rgba(249,115,22,.15);
+      padding: 2.5rem 0;
+    }
+    .page-header h1 { font-size: 2rem; font-weight: 800; }
+    .page-header p { color: var(--gray-400); margin-top: .5rem; }
+
+    /* ── Footer ── */
+    footer {
+      background: #090f17;
+      border-top: 1px solid rgba(249,115,22,.15);
+      padding: 2.5rem 0 1.5rem;
+      margin-top: auto;
+    }
+    .footer-inner {
+      max-width: 1200px;
+      margin: 0 auto;
+      padding: 0 1.5rem;
+      display: flex;
+      flex-wrap: wrap;
+      gap: 2rem;
+      justify-content: space-between;
+      align-items: flex-start;
+    }
+    .footer-brand { font-size: 1.1rem; font-weight: 800; }
+    .footer-brand span { color: var(--orange); }
+    .footer-tagline { color: var(--gray-400); font-size: .85rem; margin-top: .3rem; }
+    .footer-links { display: flex; gap: 1.5rem; flex-wrap: wrap; }
+    .footer-links a { color: var(--gray-400); font-size: .875rem; }
+    .footer-links a:hover { color: var(--orange); }
+    .footer-copy { 
+      text-align: center; 
+      color: var(--gray-600); 
+      font-size: .8rem; 
+      margin-top: 2rem;
+      padding-top: 1.5rem;
+      border-top: 1px solid rgba(255,255,255,.05);
+      max-width: 1200px;
+      margin-left: auto;
+      margin-right: auto;
+      padding-left: 1.5rem;
+      padding-right: 1.5rem;
+    }
+
+    /* ── Utility ── */
+    .text-orange { color: var(--orange); }
+    .text-gray   { color: var(--gray-400); }
+    .text-center { text-align: center; }
+    .text-sm     { font-size: .875rem; }
+    .mt-1 { margin-top: .5rem; }
+    .mt-2 { margin-top: 1rem; }
+    .mt-3 { margin-top: 1.5rem; }
+    .mt-4 { margin-top: 2rem; }
+    .mb-2 { margin-bottom: 1rem; }
+    .mb-4 { margin-bottom: 2rem; }
+    .d-flex { display: flex; }
+    .align-center { align-items: center; }
+    .gap-1 { gap: .5rem; }
+    .gap-2 { gap: 1rem; }
+    .flex-wrap { flex-wrap: wrap; }
+    .justify-between { justify-content: space-between; }
+
+    /* ── Lock overlay ── */
+    .lock-overlay {
+      background: linear-gradient(to bottom, transparent 0%, var(--navy) 60%);
+      position: relative;
+      margin-top: -80px;
+      padding-top: 80px;
+      padding-bottom: 2rem;
+    }
+    .lock-box {
+      background: var(--navy-light);
+      border: 1px solid rgba(249,115,22,.3);
+      border-radius: 16px;
+      padding: 2.5rem;
+      text-align: center;
+      max-width: 480px;
+      margin: 0 auto;
+    }
+    .lock-icon { font-size: 3rem; margin-bottom: 1rem; }
+  </style>
+  {% block extra_head %}{% endblock %}
+</head>
+<body>
+  <!-- Navbar -->
+  <nav class="navbar">
+    <div class="navbar-inner">
+      <a href="{{ url_for('index') }}" class="navbar-brand">
+        ⚾ <span>IPB</span> イグライトポテンシャルベース
+      </a>
+      <ul class="navbar-nav">
+        <li><a href="{{ url_for('articles') }}" {% if request.endpoint == 'articles' %}class="active"{% endif %}>記事</a></li>
+        <li><a href="{{ url_for('videos') }}" {% if request.endpoint == 'videos' %}class="active"{% endif %}>動画</a></li>
+        <li><a href="{{ url_for('subscribe') }}" {% if request.endpoint == 'subscribe' %}class="active"{% endif %}>プレミアム</a></li>
+        {% if session.get('role') == 'admin' %}
+        <li><a href="{{ url_for('admin_dashboard') }}" {% if 'admin' in request.endpoint %}class="active"{% endif %}>管理</a></li>
+        {% endif %}
+      </ul>
+      <div class="navbar-actions">
+        {% if session.get('user_id') %}
+          <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">{{ session.name }}</a>
+          <a href="{{ url_for('logout') }}" class="btn btn-outline btn-sm">ログアウト</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-ghost btn-sm">ログイン</a>
+          <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">無料登録</a>
+        {% endif %}
+      </div>
+      <button class="hamburger" onclick="toggleMenu()" aria-label="メニュー">
+        <span></span><span></span><span></span>
+      </button>
+    </div>
+  </nav>
+  <div class="mobile-menu" id="mobileMenu">
+    <ul>
+      <li><a href="{{ url_for('articles') }}">📄 記事</a></li>
+      <li><a href="{{ url_for('videos') }}">🎬 動画</a></li>
+      <li><a href="{{ url_for('subscribe') }}">⭐ プレミアム</a></li>
+      {% if session.get('role') == 'admin' %}
+      <li><a href="{{ url_for('admin_dashboard') }}">⚙️ 管理</a></li>
+      {% endif %}
+    </ul>
+    <div class="mobile-actions">
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">{{ session.name }}</a>
+        <a href="{{ url_for('logout') }}" class="btn btn-outline btn-sm">ログアウト</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn-ghost">ログイン</a>
+        <a href="{{ url_for('register') }}" class="btn btn-primary">無料登録</a>
+      {% endif %}
+    </div>
+  </div>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+    {% if messages %}
+    <div class="flash-container">
+      {% for category, message in messages %}
+        <div class="flash flash-{{ category }}">
+          {% if category == 'success' %}✓{% elif category == 'danger' %}✗{% elif category == 'warning' %}⚠{% else %}ℹ{% endif %}
+          {{ message }}
+        </div>
+      {% endfor %}
+    </div>
+    {% endif %}
+  {% endwith %}
+
+  <!-- Main -->
+  <main>{% block content %}{% endblock %}</main>
+
+  <!-- Footer -->
+  <footer>
+    <div class="footer-inner">
+      <div>
+        <div class="footer-brand">⚾ <span>IPB</span> イグライトポテンシャルベース</div>
+        <div class="footer-tagline">野球パフォーマンスを、科学で変える。</div>
+      </div>
+      <div class="footer-links">
+        <a href="{{ url_for('articles') }}">記事</a>
+        <a href="{{ url_for('videos') }}">動画</a>
+        <a href="{{ url_for('subscribe') }}">プレミアム</a>
+        <a href="{{ url_for('login') }}">ログイン</a>
+        <a href="{{ url_for('register') }}">無料登録</a>
+      </div>
+    </div>
+    <div class="footer-copy">
+      &copy; {{ current_year }} イグライトポテンシャルベース. All rights reserved.
+    </div>
+  </footer>
+
+  <script>
+    function toggleMenu() {
+      document.getElementById('mobileMenu').classList.toggle('open');
+    }
+    // Auto-dismiss flash after 5s
+    setTimeout(() => {
+      document.querySelectorAll('.flash').forEach(el => {
+        el.style.transition = 'opacity .5s';
+        el.style.opacity = '0';
+        setTimeout(() => el.remove(), 500);
+      });
+    }, 5000);
+  </script>
+  {% block scripts %}{% endblock %}
+</body>
+</html>

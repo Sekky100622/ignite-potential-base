@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}動画一覧 | イグライトポテンシャルベース{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>🎬 動画一覧</h1>
+    <p>プロコーチによる実践動画コンテンツ</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+    <!-- Category filter -->
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem;">
+      <a href="{{ url_for('videos') }}"
+         class="btn btn-sm {% if not active_category %}btn-primary{% else %}btn-ghost{% endif %}">全て</a>
+      {% for cat in categories %}
+      <a href="{{ url_for('videos', category=cat.slug) }}"
+         class="btn btn-sm {% if active_category == cat.slug %}btn-primary{% else %}btn-ghost{% endif %}">
+        {{ cat.name }}
+      </a>
+      {% endfor %}
+    </div>
+
+    {% if videos %}
+    <div class="grid grid-3">
+      {% for video in videos %}
+      <div class="card">
+        {% if video.thumbnail_url %}
+          <img class="card-img" src="{{ video.thumbnail_url }}" alt="{{ video.title }}">
+        {% else %}
+          <div class="card-img-placeholder" style="position:relative;">
+            <span style="font-size:3rem;">▶️</span>
+          </div>
+        {% endif %}
+        <div class="card-body">
+          <div style="display:flex;gap:.5rem;margin-bottom:.75rem;flex-wrap:wrap;">
+            {% if video.is_free %}
+              <span class="badge badge-free">FREE</span>
+            {% else %}
+              <span class="badge badge-premium">
+                {% if not session.get('plan') == 'premium' %}🔒 {% endif %}PREMIUM
+              </span>
+            {% endif %}
+            {% if video.category %}
+              <span class="badge badge-cat">{{ video.category.name }}</span>
+            {% endif %}
+          </div>
+          <h3 style="font-size:1rem;margin-bottom:.5rem;line-height:1.4;">{{ video.title }}</h3>
+          {% if video.description %}
+            <p class="text-gray text-sm" style="line-height:1.6;">{{ video.description[:80] }}{% if video.description|length > 80 %}...{% endif %}</p>
+          {% endif %}
+          <div style="margin-top:1rem;">
+            <a href="{{ url_for('video_detail', video_id=video.id) }}" class="btn btn-outline btn-sm">
+              {% if video.is_free or session.get('plan') == 'premium' %}▶ 視聴する{% else %}🔒 プレビュー{% endif %}
+            </a>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:4rem 0;">
+      <div style="font-size:3rem;margin-bottom:1rem;">📹</div>
+      <h3 style="color:var(--gray-400);">動画はまだありません</h3>
+      {% if session.get('role') == 'admin' %}
+        <a href="{{ url_for('admin_videos_new') }}" class="btn btn-primary mt-3">動画を追加する</a>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    {% if not session.get('plan') == 'premium' %}
+    <div style="background:linear-gradient(135deg,rgba(249,115,22,.1),transparent);border:1px solid rgba(249,115,22,.25);border-radius:16px;padding:2rem;margin-top:3rem;text-align:center;">
+      <h3 style="font-size:1.25rem;margin-bottom:.5rem;">🎬 プレミアムで全動画を解放</h3>
+      <p class="text-gray text-sm" style="margin-bottom:1.25rem;">月額¥1,500で、プレミアム動画もすべて視聴可能。</p>
+      <a href="{{ url_for('subscribe') }}" class="btn btn-primary">プレミアムプランを見る</a>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}

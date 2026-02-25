@@ -1,0 +1,75 @@
+{% extends 'base.html' %}
+{% block title %}メンバー管理 | イグライトポテンシャルベース{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>👥 メンバー管理</h1>
+    <p>全 {{ members|length }} 名のメンバー</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>名前</th>
+              <th>メールアドレス</th>
+              <th>権限</th>
+              <th>プラン</th>
+              <th>登録日</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for member in members %}
+            <tr>
+              <td>
+                <div style="display:flex;align-items:center;gap:.75rem;">
+                  <div style="width:36px;height:36px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">
+                    {{ member.name[0] }}
+                  </div>
+                  <div>
+                    <div style="font-weight:500;">{{ member.name }}</div>
+                  </div>
+                </div>
+              </td>
+              <td style="color:var(--gray-400);">{{ member.email }}</td>
+              <td>
+                {% if member.role == 'admin' %}
+                  <span class="badge badge-admin">管理者</span>
+                {% else %}
+                  <span class="badge badge-cat">メンバー</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if member.plan == 'premium' %}
+                  <span class="badge badge-premium">⭐ プレミアム</span>
+                {% else %}
+                  <span class="badge badge-cat">フリー</span>
+                {% endif %}
+              </td>
+              <td style="color:var(--gray-400);font-size:.85rem;">
+                {{ member.created_at[:10] if member.created_at else '-' }}
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" style="text-align:center;padding:3rem;color:var(--gray-400);">
+                メンバーはまだいません
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

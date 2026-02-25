@@ -1,0 +1,181 @@
+{% extends 'base.html' %}
+{% block title %}{{ article.title }} | イグライトポテンシャルベース{% endblock %}
+
+{% block extra_head %}
+<style>
+  .article-layout { display: grid; grid-template-columns: 1fr 280px; gap: 2rem; }
+  @media (max-width: 900px) { .article-layout { grid-template-columns: 1fr; } }
+  .article-content {
+    background: var(--navy-light);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 12px;
+    padding: 2rem;
+  }
+  .article-content h1,h2,h3,h4 { color: var(--white); margin: 1.5rem 0 .75rem; }
+  .article-content h2 { font-size: 1.4rem; border-bottom: 1px solid rgba(249,115,22,.3); padding-bottom: .5rem; }
+  .article-content h3 { font-size: 1.1rem; color: var(--orange-light); }
+  .article-content p { color: var(--gray-200); line-height: 1.8; margin-bottom: 1rem; }
+  .article-content ul, .article-content ol { color: var(--gray-200); padding-left: 1.5rem; margin-bottom: 1rem; }
+  .article-content li { margin-bottom: .4rem; line-height: 1.7; }
+  .article-content code {
+    background: rgba(0,0,0,.3);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 4px;
+    padding: .1rem .4rem;
+    font-family: monospace;
+    font-size: .875rem;
+  }
+  .article-content pre {
+    background: rgba(0,0,0,.4);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 8px;
+    padding: 1rem;
+    overflow-x: auto;
+    margin-bottom: 1rem;
+  }
+  .article-content blockquote {
+    border-left: 3px solid var(--orange);
+    padding-left: 1rem;
+    color: var(--gray-400);
+    font-style: italic;
+    margin: 1rem 0;
+  }
+  .article-content table { width: 100%; margin-bottom: 1rem; }
+  .article-content th { background: rgba(249,115,22,.1); }
+  .sidebar-card {
+    background: var(--navy-light);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1.25rem;
+  }
+  .sidebar-card h4 { font-size: .9rem; color: var(--gray-400); text-transform: uppercase; letter-spacing: .05em; margin-bottom: 1rem; }
+  .related-item {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    padding: .6rem 0;
+    border-bottom: 1px solid rgba(255,255,255,.05);
+  }
+  .related-item:last-child { border-bottom: none; }
+  .related-item-icon { font-size: 1.25rem; flex-shrink: 0; }
+  .related-item-title { font-size: .85rem; line-height: 1.4; color: var(--gray-200); }
+  .related-item-title:hover { color: var(--orange); }
+</style>
+{% endblock %}
+
+{% block content %}
+<section class="section-sm">
+  <div class="container">
+    <!-- Breadcrumb -->
+    <div style="color:var(--gray-400);font-size:.85rem;margin-bottom:1.5rem;">
+      <a href="{{ url_for('articles') }}" style="color:var(--gray-400);">記事一覧</a>
+      {% if article.category %}
+        <span style="margin:0 .5rem;">›</span>
+        <a href="{{ url_for('articles', category=article.category.slug) }}" style="color:var(--gray-400);">{{ article.category.name }}</a>
+      {% endif %}
+      <span style="margin:0 .5rem;">›</span>
+      <span style="color:var(--white);">{{ article.title }}</span>
+    </div>
+
+    <div class="article-layout">
+      <!-- Main -->
+      <div>
+        <!-- Header -->
+        <div style="margin-bottom:1.5rem;">
+          <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;">
+            {% if article.is_free %}
+              <span class="badge badge-free">FREE</span>
+            {% else %}
+              <span class="badge badge-premium">PREMIUM</span>
+            {% endif %}
+            {% if article.category %}
+              <span class="badge badge-cat">{{ article.category.name }}</span>
+            {% endif %}
+          </div>
+          <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;line-height:1.3;margin-bottom:.75rem;">{{ article.title }}</h1>
+          {% if article.excerpt %}
+            <p style="color:var(--gray-400);font-size:1rem;line-height:1.7;">{{ article.excerpt }}</p>
+          {% endif %}
+        </div>
+
+        <!-- Thumbnail -->
+        {% if article.thumbnail_url %}
+          <img src="{{ article.thumbnail_url }}" alt="{{ article.title }}"
+               style="width:100%;height:300px;object-fit:cover;border-radius:12px;margin-bottom:2rem;">
+        {% endif %}
+
+        <!-- Content -->
+        <div class="article-content">
+          {{ article.content_html | safe }}
+        </div>
+
+        <!-- Paywall -->
+        {% if not can_view %}
+        <div class="lock-overlay">
+          <div class="lock-box">
+            <div class="lock-icon">🔒</div>
+            <h3 style="font-size:1.25rem;margin-bottom:.5rem;">プレミアム記事</h3>
+            <p class="text-gray text-sm" style="margin-bottom:1.5rem;">
+              この記事の続きはプレミアムプラン限定です。<br>
+              月額¥1,500で全コンテンツが読み放題。
+            </p>
+            {% if session.get('user_id') %}
+              <a href="{{ url_for('subscribe') }}" class="btn btn-primary">プレミアムにアップグレード</a>
+            {% else %}
+              <a href="{{ url_for('register') }}" class="btn btn-primary">無料登録してアップグレード</a>
+              <div style="margin-top:.75rem;">
+                <a href="{{ url_for('login') }}" class="text-sm text-gray">既にアカウントをお持ちの方はこちら</a>
+              </div>
+            {% endif %}
+          </div>
+        </div>
+        {% endif %}
+      </div>
+
+      <!-- Sidebar -->
+      <div>
+        {% if not session.get('plan') == 'premium' %}
+        <div class="sidebar-card" style="background:linear-gradient(135deg,rgba(249,115,22,.1),transparent);border-color:rgba(249,115,22,.25);">
+          <h4>⭐ プレミアムプラン</h4>
+          <p class="text-sm text-gray" style="margin-bottom:1rem;">全記事・動画が読み放題。月額¥1,500。</p>
+          <a href="{{ url_for('subscribe') }}" class="btn btn-primary btn-sm" style="width:100%;justify-content:center;">
+            アップグレード
+          </a>
+        </div>
+        {% endif %}
+
+        {% if related %}
+        <div class="sidebar-card">
+          <h4>関連記事</h4>
+          {% for rel in related %}
+          <div class="related-item">
+            <div class="related-item-icon">
+              {% if rel.is_free %}📄{% else %}🔒{% endif %}
+            </div>
+            <div>
+              <a href="{{ url_for('article_detail', slug=rel.slug) }}" class="related-item-title">
+                {{ rel.title }}
+              </a>
+              {% if not rel.is_free %}
+                <div style="margin-top:.25rem;"><span class="badge badge-premium" style="font-size:.65rem;">PREMIUM</span></div>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <div class="sidebar-card">
+          <h4>カテゴリー</h4>
+          {% if article.category %}
+            <a href="{{ url_for('articles', category=article.category.slug) }}" class="btn btn-ghost btn-sm">
+              {{ article.category.name }} の記事をすべて見る
+            </a>
+          {% endif %}
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+{% endblock %}

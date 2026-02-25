@@ -1,0 +1,19 @@
+{% extends 'base.html' %}
+{% block title %}登録完了 | イグライトポテンシャルベース{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width:560px;text-align:center;">
+    <div style="font-size:4rem;margin-bottom:1rem;">🎉</div>
+    <h1 style="font-size:2rem;font-weight:800;margin-bottom:.75rem;">プレミアム登録完了！</h1>
+    <p class="text-gray" style="margin-bottom:2rem;line-height:1.7;">
+      ご登録ありがとうございます。<br>
+      これですべてのコンテンツにアクセスできるようになりました。
+    </p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ url_for('articles') }}" class="btn btn-primary btn-lg">記事を読む</a>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-lg">ダッシュボードへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

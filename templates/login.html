@@ -1,0 +1,39 @@
+{% extends 'base.html' %}
+{% block title %}ログイン | イグライトポテンシャルベース{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width:440px;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="font-size:2.5rem;margin-bottom:.75rem;">⚾</div>
+      <h1 style="font-size:1.75rem;font-weight:800;">ログイン</h1>
+      <p class="text-gray text-sm mt-1">イグライトポテンシャルベースへようこそ</p>
+    </div>
+
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:2rem;">
+      <form method="POST" action="{{ url_for('login') }}">
+        <div class="form-group">
+          <label class="form-label" for="email">メールアドレス</label>
+          <input class="form-control" type="email" id="email" name="email"
+                 placeholder="coach@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">パスワード</label>
+          <input class="form-control" type="password" id="password" name="password"
+                 placeholder="••••••••" required autocomplete="current-password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem;">
+          ログイン
+        </button>
+      </form>
+    </div>
+
+    <div style="text-align:center;margin-top:1.5rem;">
+      <p class="text-gray text-sm">
+        アカウントをお持ちでない方は
+        <a href="{{ url_for('register') }}">無料登録</a>
+      </p>
+    </div>
+  </div>
+</section>
+{% endblock %}
