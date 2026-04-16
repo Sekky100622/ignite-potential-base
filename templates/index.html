@@ -50,51 +50,79 @@
     margin-bottom: 2rem;
   }
   .hero-btns { display: flex; gap: 1rem; flex-wrap: wrap; }
-  .hero-badge {
-    position: absolute;
-    right: 5%;
-    top: 50%;
-    transform: translateY(-50%);
-    background: rgba(249,115,22,.1);
-    border: 1px solid rgba(249,115,22,.25);
+
+  /* Service cards */
+  .service-card {
+    background: var(--navy-light);
+    border: 1px solid rgba(255,255,255,.08);
     border-radius: 16px;
     padding: 2rem;
-    text-align: center;
-    width: 200px;
-  }
-  .hero-badge-icon { font-size: 3rem; }
-  .hero-badge-text { font-size: .85rem; color: var(--gray-200); margin-top: .5rem; font-weight: 600; }
-  @media (max-width: 768px) { .hero-badge { display: none; } }
-
-  /* Features */
-  .features { background: var(--navy-mid); }
-  .section-title { font-size: 1.75rem; font-weight: 800; margin-bottom: .5rem; }
-  .section-sub { color: var(--gray-400); margin-bottom: 2.5rem; }
-  .feature-card {
-    background: var(--navy);
-    border: 1px solid rgba(255,255,255,.07);
-    border-radius: 12px;
-    padding: 1.5rem;
     transition: border-color .2s, transform .2s;
   }
-  .feature-card:hover {
-    border-color: rgba(249,115,22,.4);
-    transform: translateY(-3px);
+  .service-card:hover { border-color: rgba(249,115,22,.4); transform: translateY(-3px); }
+  .service-icon { font-size: 2.5rem; margin-bottom: 1rem; }
+  .service-title { font-size: 1.2rem; font-weight: 800; margin-bottom: .5rem; }
+  .service-desc { color: var(--gray-400); font-size: .9rem; line-height: 1.7; margin-bottom: 1.5rem; }
+  .service-tag {
+    display: inline-block;
+    background: rgba(249,115,22,.15);
+    color: var(--orange);
+    border: 1px solid rgba(249,115,22,.3);
+    border-radius: 4px;
+    font-size: .75rem;
+    font-weight: 700;
+    padding: .2rem .6rem;
+    margin-bottom: .75rem;
   }
-  .feature-icon { font-size: 2.25rem; margin-bottom: .75rem; }
-  .feature-title { font-weight: 700; font-size: 1rem; margin-bottom: .4rem; }
-  .feature-desc { color: var(--gray-400); font-size: .875rem; line-height: 1.6; }
+
+  /* Session */
+  .session-card {
+    background: linear-gradient(135deg, var(--navy-light) 0%, rgba(249,115,22,.06) 100%);
+    border: 2px solid rgba(249,115,22,.4);
+    border-radius: 20px;
+    padding: 2.5rem;
+  }
+  .session-area {
+    display: flex;
+    gap: .5rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.5rem;
+  }
+  .area-tag {
+    background: rgba(255,255,255,.08);
+    border: 1px solid rgba(255,255,255,.12);
+    border-radius: 6px;
+    padding: .3rem .75rem;
+    font-size: .85rem;
+    font-weight: 600;
+  }
+  .session-features {
+    list-style: none;
+    display: flex;
+    flex-direction: column;
+    gap: .6rem;
+    margin-bottom: 2rem;
+  }
+  .session-features li {
+    display: flex;
+    align-items: flex-start;
+    gap: .75rem;
+    font-size: .925rem;
+    color: var(--gray-200);
+  }
+  .session-features li::before {
+    content: '✓';
+    color: var(--orange);
+    font-weight: 700;
+    flex-shrink: 0;
+  }
 
   /* Membership */
   .membership-card {
     background: linear-gradient(135deg, var(--navy-light) 0%, rgba(249,115,22,.08) 100%);
     border: 2px solid var(--orange);
     border-radius: 20px;
-    padding: 3rem;
-    max-width: 520px;
-    margin: 0 auto;
-    text-align: center;
-    position: relative;
+    padding: 2.5rem;
   }
   .membership-badge {
     background: var(--orange);
@@ -107,25 +135,25 @@
     margin-bottom: 1.5rem;
   }
   .membership-price {
-    font-size: 3.5rem;
+    font-size: 3rem;
     font-weight: 900;
     color: var(--orange);
     line-height: 1;
+    margin-bottom: 1.5rem;
   }
-  .membership-price span { font-size: 1.1rem; font-weight: 400; color: var(--gray-400); }
+  .membership-price span { font-size: 1rem; font-weight: 400; color: var(--gray-400); }
   .membership-features {
     list-style: none;
-    margin: 2rem 0;
     display: flex;
     flex-direction: column;
-    gap: .75rem;
-    text-align: left;
+    gap: .6rem;
+    margin-bottom: 2rem;
   }
   .membership-features li {
     display: flex;
     align-items: flex-start;
     gap: .75rem;
-    font-size: .95rem;
+    font-size: .925rem;
     color: var(--gray-200);
   }
   .membership-features li::before {
@@ -133,45 +161,29 @@
     color: var(--orange);
     font-weight: 700;
     flex-shrink: 0;
-    margin-top: .1rem;
   }
 
-  /* How it works */
-  .step {
-    display: flex;
-    align-items: flex-start;
-    gap: 1.5rem;
-    padding: 1.5rem;
-    background: var(--navy-light);
-    border: 1px solid rgba(255,255,255,.07);
-    border-radius: 12px;
-  }
-  .step-num {
-    width: 40px;
-    height: 40px;
-    background: var(--orange);
-    color: var(--white);
-    border-radius: 50%;
-    display: flex;
-    align-items: center;
-    justify-content: center;
-    font-weight: 800;
-    font-size: 1rem;
-    flex-shrink: 0;
-  }
-  .step-title { font-weight: 700; margin-bottom: .25rem; }
-  .step-desc { color: var(--gray-400); font-size: .875rem; line-height: 1.6; }
+  /* Section */
+  .section-title { font-size: 1.75rem; font-weight: 800; margin-bottom: .5rem; }
+  .section-sub { color: var(--gray-400); margin-bottom: 2.5rem; }
+  .features { background: var(--navy-mid); }
 
   /* CTA */
   .cta-section {
     background: linear-gradient(135deg, rgba(249,115,22,.1) 0%, transparent 100%);
     border-top: 1px solid rgba(249,115,22,.15);
-    border-bottom: 1px solid rgba(249,115,22,.15);
     text-align: center;
     padding: 5rem 0;
   }
-  .cta-section h2 { font-size: 2.25rem; font-weight: 800; margin-bottom: .75rem; }
+  .cta-section h2 { font-size: 2rem; font-weight: 800; margin-bottom: .75rem; }
   .cta-section p { color: var(--gray-400); margin-bottom: 2.5rem; font-size: 1.05rem; }
+
+  .btn-line {
+    background: #06C755;
+    color: var(--white);
+    border: none;
+  }
+  .btn-line:hover { background: #05a848; color: var(--white); }
 </style>
 {% endblock %}
 
@@ -179,81 +191,97 @@
 <!-- Hero -->
 <section class="hero">
   <div class="container hero-content">
-    <div class="hero-eyebrow">⚾ プロコーチによる科学的野球指導</div>
+    <div class="hero-eyebrow">⚾ 野球コーチ・積山大輝</div>
     <h1>野球パフォーマンスを、<br><span class="accent">科学で変える。</span></h1>
     <p class="hero-sub">
-      技術・トレーニング・メンタル・栄養——<br>
-      すべての要素を体系的に学び、次のステージへ。<br>
-      現役コーチが監修した実践的コンテンツをNoteで提供します。
+      技術・トレーニング・メンタル——<br>
+      体系的に学べるNoteメンバーシップと、<br>
+      直接指導の対面・オンラインセッションを提供します。
     </p>
     <div class="hero-btns">
       <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg">Noteメンバーシップへ →</a>
-    </div>
-  </div>
-  <div class="hero-badge">
-    <div class="hero-badge-icon">⚾</div>
-    <div class="hero-badge-text">プロ監修<br>コンテンツ</div>
-  </div>
-</section>
-
-<!-- Features -->
-<section class="section features">
-  <div class="container">
-    <div class="text-center">
-      <h2 class="section-title">6つの専門カテゴリー</h2>
-      <p class="section-sub">野球に必要なすべての要素を網羅</p>
-    </div>
-    <div class="grid grid-3">
-      <div class="feature-card">
-        <div class="feature-icon">🏏</div>
-        <div class="feature-title">技術</div>
-        <div class="feature-desc">打撃・守備・投球の正しい動作メカニクスを映像と図解で解説。</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">💪</div>
-        <div class="feature-title">トレーニング</div>
-        <div class="feature-desc">野球特化の筋力・スピード・体幹トレーニングプログラム。</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🧠</div>
-        <div class="feature-title">メンタル</div>
-        <div class="feature-desc">試合でのプレッシャー管理、集中力向上、モチベーション維持の方法。</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🥗</div>
-        <div class="feature-title">栄養</div>
-        <div class="feature-desc">パフォーマンスを最大化する食事戦略とサプリメント活用法。</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">🏃</div>
-        <div class="feature-title">コンディション</div>
-        <div class="feature-desc">怪我の予防、リカバリー、シーズンを通じたコンディション管理。</div>
-      </div>
-      <div class="feature-card">
-        <div class="feature-icon">📋</div>
-        <div class="feature-title">指導理論</div>
-        <div class="feature-desc">コーチングの科学的アプローチと選手の成長を促す指導方法。</div>
-      </div>
+      <a href="https://lin.ee/6166cuY" target="_blank" rel="noopener" class="btn btn-line btn-lg">LINEで相談する</a>
     </div>
   </div>
 </section>
 
-<!-- Membership -->
+<!-- 2つのサービス -->
 <section class="section" style="background:var(--navy-mid);">
   <div class="container">
     <div class="text-center">
+      <h2 class="section-title">2つの学び方</h2>
+      <p class="section-sub">目的に合わせてお選びください</p>
+    </div>
+    <div class="grid grid-2">
+      <div class="service-card">
+        <div class="service-icon">📖</div>
+        <div class="service-tag">月額 ¥1,500</div>
+        <div class="service-title">Noteメンバーシップ</div>
+        <div class="service-desc">
+          バッティング・ピッチング・フィジカル・理論など、コーチが実際の指導で使う知識を体系的に解説。いつでもどこでも自分のペースで学べます。
+        </div>
+        <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary" style="width:100%;justify-content:center;">
+          メンバーシップを見る →
+        </a>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">⚾</div>
+        <div class="service-tag">個別対応</div>
+        <div class="service-title">対面・オンラインセッション</div>
+        <div class="service-desc">
+          あなたの課題・目標・ポジションに合わせたマンツーマン指導。滋賀・大阪で対面、全国どこからでもオンライン対応可能です。
+        </div>
+        <a href="https://lin.ee/6166cuY" target="_blank" rel="noopener" class="btn btn-line" style="width:100%;justify-content:center;">
+          LINEで無料相談する
+        </a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<!-- セッション詳細 -->
+<section class="section">
+  <div class="container" style="max-width:800px;">
+    <div class="text-center">
+      <h2 class="section-title">対面・オンラインセッション</h2>
+      <p class="section-sub">あなたの課題に直接向き合います</p>
+    </div>
+    <div class="session-card">
+      <div class="session-area">
+        <span class="area-tag">📍 滋賀（対面）</span>
+        <span class="area-tag">📍 大阪（対面）</span>
+        <span class="area-tag">💻 全国（オンライン）</span>
+      </div>
+      <ul class="session-features">
+        <li>課題・目標・ポジションをヒアリングしたうえで個別プログラムを作成</li>
+        <li>動作分析・フォームチェックに対応</li>
+        <li>試合に向けたメンタル・コンディション調整</li>
+        <li>チーム・学校単位でのグループ指導も相談可</li>
+        <li>まずはLINEで無料相談から</li>
+      </ul>
+      <a href="https://lin.ee/6166cuY" target="_blank" rel="noopener" class="btn btn-line btn-lg" style="width:100%;justify-content:center;">
+        LINEで無料相談する →
+      </a>
+    </div>
+  </div>
+</section>
+
+<!-- Noteメンバーシップ詳細 -->
+<section class="section" style="background:var(--navy-mid);">
+  <div class="container" style="max-width:800px;">
+    <div class="text-center">
       <h2 class="section-title">Noteメンバーシップ</h2>
-      <p class="section-sub">すべてのコンテンツにアクセス</p>
+      <p class="section-sub">体系的に学べる専門コンテンツ</p>
     </div>
     <div class="membership-card">
       <div class="membership-badge">メンバー限定</div>
       <div class="membership-price">¥1,500<span>/月</span></div>
       <ul class="membership-features">
-        <li>すべての記事が読み放題</li>
-        <li>限定動画コンテンツへのアクセス</li>
-        <li>6カテゴリーの専門コンテンツ</li>
+        <li>バッティング・ピッチング・フィジカル・理論など全カテゴリーが読み放題</li>
+        <li>実際の指導現場で使っているドリル・練習メニュー</li>
+        <li>プログラム設計の考え方・根拠</li>
         <li>新着コンテンツの優先通知</li>
-        <li>メンバー限定Q&A</li>
+        <li>いつでも解約可能</li>
       </ul>
       <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg" style="width:100%;justify-content:center;">
         Noteメンバーシップに参加する →
@@ -262,47 +290,19 @@
   </div>
 </section>
 
-<!-- How it works -->
-<section class="section">
-  <div class="container">
-    <div class="text-center">
-      <h2 class="section-title">始め方</h2>
-      <p class="section-sub">3ステップで今すぐ始められます</p>
-    </div>
-    <div class="grid grid-3">
-      <div class="step">
-        <div class="step-num">1</div>
-        <div>
-          <div class="step-title">Noteアカウントを作成</div>
-          <div class="step-desc">note.comに無料登録。すでにアカウントをお持ちの方はそのままご利用いただけます。</div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">2</div>
-        <div>
-          <div class="step-title">メンバーシップに参加</div>
-          <div class="step-desc">「Ignite Potential Base」のメンバーシップページから月額プランに参加します。</div>
-        </div>
-      </div>
-      <div class="step">
-        <div class="step-num">3</div>
-        <div>
-          <div class="step-title">コンテンツを楽しむ</div>
-          <div class="step-desc">記事・動画・Q&Aなど、すべての限定コンテンツにアクセスできます。</div>
-        </div>
-      </div>
-    </div>
-  </div>
-</section>
-
 <!-- CTA -->
 <section class="cta-section">
   <div class="container">
-    <h2>今すぐ野球を<span class="text-orange">科学する</span></h2>
-    <p>月額¥1,500。いつでも解約可能。</p>
-    <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg">
-      Noteメンバーシップへ →
-    </a>
+    <h2>まず、<span class="text-orange">一歩踏み出す。</span></h2>
+    <p>コンテンツで学ぶか、直接相談するか。どちらでも大丈夫です。</p>
+    <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg">
+        Noteメンバーシップへ →
+      </a>
+      <a href="https://lin.ee/6166cuY" target="_blank" rel="noopener" class="btn btn-line btn-lg">
+        LINEで無料相談
+      </a>
+    </div>
   </div>
 </section>
 {% endblock %}
