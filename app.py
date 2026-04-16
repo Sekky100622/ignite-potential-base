@@ -47,10 +47,12 @@ def sb_get(table, params=None, service=False):
 
 def sb_post(table, data, service=False):
     if not SUPABASE_URL:
+        print(f'[sb_post] SUPABASE_URL not set')
         return None
     try:
         r = req.post(f'{SUPABASE_URL}/rest/v1/{table}',
                      headers=supabase_headers(service), json=data, timeout=10)
+        print(f'[sb_post] {table} status={r.status_code} body={r.text[:300]}')
         if not r.ok:
             return None
         try:
@@ -60,7 +62,8 @@ def sb_post(table, data, service=False):
         except Exception:
             pass
         return True  # 成功だがデータなし
-    except Exception:
+    except Exception as e:
+        print(f'[sb_post] exception: {e}')
         return None
 
 
