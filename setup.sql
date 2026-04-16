@@ -1,4 +1,26 @@
 -- Run this in Supabase SQL Editor
+-- =============================================
+-- PART 2: Column additions & category updates
+-- =============================================
+ALTER TABLE ipb_articles ADD COLUMN IF NOT EXISTS video_url TEXT DEFAULT '';
+ALTER TABLE ipb_articles ADD COLUMN IF NOT EXISTS pdf_url TEXT DEFAULT '';
+ALTER TABLE ipb_articles ADD COLUMN IF NOT EXISTS pdf_name TEXT DEFAULT '';
+ALTER TABLE ipb_articles ADD COLUMN IF NOT EXISTS updated_at TIMESTAMPTZ DEFAULT NOW();
+
+-- カテゴリを指導コンテンツ向けに更新
+DELETE FROM ipb_categories;
+INSERT INTO ipb_categories (name, slug, sort_order) VALUES
+  ('考え方・理論',           'theory',   1),
+  ('バッティング',           'batting',  2),
+  ('ピッチング',             'pitching', 3),
+  ('フィジカル・トレーニング', 'training', 4),
+  ('ドリル・練習方法',        'drill',    5),
+  ('プログラム設計',          'program',  6)
+ON CONFLICT (slug) DO NOTHING;
+
+-- =============================================
+-- PART 1: Initial table creation (skip if already run)
+-- =============================================
 
 CREATE TABLE IF NOT EXISTS ipb_users (
   id UUID DEFAULT gen_random_uuid() PRIMARY KEY,

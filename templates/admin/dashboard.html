@@ -37,7 +37,7 @@
       </div>
       <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
         <a href="{{ url_for('admin_articles_new') }}" class="btn btn-primary">+ 記事を作成</a>
-        <a href="{{ url_for('admin_videos_new') }}" class="btn btn-outline">+ 動画を追加</a>
+        <a href="{{ url_for('admin_members_new') }}" class="btn btn-outline">+ メンバー招待</a>
       </div>
     </div>
   </div>
@@ -83,8 +83,7 @@
           <div style="flex:1;min-width:0;">
             <div style="font-size:.875rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ article.title }}</div>
             <div style="font-size:.75rem;color:var(--gray-400);">
-              {% if article.published %}公開{% else %}下書き{% endif %} ·
-              {% if article.is_free %}無料{% else %}有料{% endif %}
+              {% if article.published %}公開{% else %}下書き{% endif %}
             </div>
           </div>
           <a href="{{ url_for('admin_articles_edit', article_id=article.id) }}" class="btn btn-ghost btn-sm">編集</a>
@@ -113,19 +112,21 @@
             <div style="font-size:.75rem;color:var(--gray-400);">{{ member.email }}</div>
           </div>
           <span class="badge {% if member.plan == 'premium' %}badge-premium{% else %}badge-cat{% endif %}">
-            {{ member.plan }}
+            {{ 'プレミアム' if member.plan == 'premium' else 'フリー' }}
           </span>
         </div>
         {% else %}
           <p class="text-gray text-sm">メンバーはいません</p>
         {% endfor %}
+        <div style="margin-top:1rem;">
+          <a href="{{ url_for('admin_members_new') }}" class="btn btn-primary btn-sm">+ メンバー招待</a>
+        </div>
       </div>
     </div>
 
     <!-- Quick links -->
     <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.5rem;">
       <a href="{{ url_for('admin_articles') }}" class="btn btn-ghost">📄 記事管理</a>
-      <a href="{{ url_for('admin_videos_new') }}" class="btn btn-ghost">🎬 動画追加</a>
       <a href="{{ url_for('admin_members') }}" class="btn btn-ghost">👥 メンバー管理</a>
     </div>
   </div>

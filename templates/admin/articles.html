@@ -58,7 +58,7 @@
               </td>
               <td>
                 <div style="display:flex;gap:.5rem;flex-wrap:wrap;">
-                  <a href="{{ url_for('article_detail', slug=article.slug) }}" class="btn btn-ghost btn-sm" target="_blank">表示</a>
+                  <a href="{{ url_for('learn_detail', slug=article.slug) }}" class="btn btn-ghost btn-sm" target="_blank">表示</a>
                   <a href="{{ url_for('admin_articles_edit', article_id=article.id) }}" class="btn btn-outline btn-sm">編集</a>
                   <form action="{{ url_for('admin_articles_delete', article_id=article.id) }}" method="POST"
                         onsubmit="return confirm('この記事を削除しますか？');" style="display:inline;">

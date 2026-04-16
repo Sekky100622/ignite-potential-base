@@ -11,7 +11,7 @@
     border-radius: 12px;
     padding: 2rem;
   }
-  .article-content h1,h2,h3,h4 { color: var(--white); margin: 1.5rem 0 .75rem; }
+  .article-content h1, .article-content h2, .article-content h3, .article-content h4 { color: var(--white); margin: 1.5rem 0 .75rem; }
   .article-content h2 { font-size: 1.4rem; border-bottom: 1px solid rgba(249,115,22,.3); padding-bottom: .5rem; }
   .article-content h3 { font-size: 1.1rem; color: var(--orange-light); }
   .article-content p { color: var(--gray-200); line-height: 1.8; margin-bottom: 1rem; }
@@ -42,6 +42,36 @@
   }
   .article-content table { width: 100%; margin-bottom: 1rem; }
   .article-content th { background: rgba(249,115,22,.1); }
+  .video-wrap {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 12px;
+    margin-bottom: 2rem;
+    background: #000;
+  }
+  .video-wrap iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+    border-radius: 12px;
+  }
+  .pdf-box {
+    background: rgba(239,68,68,.08);
+    border: 1px solid rgba(239,68,68,.25);
+    border-radius: 12px;
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    margin-bottom: 2rem;
+  }
+  .pdf-icon { font-size: 2rem; flex-shrink: 0; }
+  .pdf-info { flex: 1; min-width: 0; }
+  .pdf-name { font-weight: 600; font-size: .95rem; margin-bottom: .2rem; }
+  .pdf-sub { font-size: .8rem; color: var(--gray-400); }
   .sidebar-card {
     background: var(--navy-light);
     border: 1px solid rgba(255,255,255,.08);
@@ -69,10 +99,10 @@
   <div class="container">
     <!-- Breadcrumb -->
     <div style="color:var(--gray-400);font-size:.85rem;margin-bottom:1.5rem;">
-      <a href="{{ url_for('articles') }}" style="color:var(--gray-400);">記事一覧</a>
+      <a href="{{ url_for('learn') }}" style="color:var(--gray-400);">コンテンツ一覧</a>
       {% if article.category %}
         <span style="margin:0 .5rem;">›</span>
-        <a href="{{ url_for('articles', category=article.category.slug) }}" style="color:var(--gray-400);">{{ article.category.name }}</a>
+        <a href="{{ url_for('learn', category=article.category.slug) }}" style="color:var(--gray-400);">{{ article.category.name }}</a>
       {% endif %}
       <span style="margin:0 .5rem;">›</span>
       <span style="color:var(--white);">{{ article.title }}</span>
@@ -84,13 +114,14 @@
         <!-- Header -->
         <div style="margin-bottom:1.5rem;">
           <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;">
-            {% if article.is_free %}
-              <span class="badge badge-free">FREE</span>
-            {% else %}
-              <span class="badge badge-premium">PREMIUM</span>
-            {% endif %}
             {% if article.category %}
               <span class="badge badge-cat">{{ article.category.name }}</span>
+            {% endif %}
+            {% if article.video_embed_url %}
+              <span class="badge badge-video">🎬 動画あり</span>
+            {% endif %}
+            {% if article.pdf_url %}
+              <span class="badge badge-pdf">📄 PDF</span>
             {% endif %}
           </div>
           <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;line-height:1.3;margin-bottom:.75rem;">{{ article.title }}</h1>
@@ -99,81 +130,76 @@
           {% endif %}
         </div>
 
-        <!-- Thumbnail -->
-        {% if article.thumbnail_url %}
+        <!-- Video embed -->
+        {% if article.video_embed_url %}
+        <div class="video-wrap">
+          <iframe src="{{ article.video_embed_url }}"
+                  allow="accelerometer; autoplay; clipboard-write; encrypted-media; gyroscope; picture-in-picture"
+                  allowfullscreen></iframe>
+        </div>
+        {% endif %}
+
+        <!-- Thumbnail (only if no video) -->
+        {% if article.thumbnail_url and not article.video_embed_url %}
           <img src="{{ article.thumbnail_url }}" alt="{{ article.title }}"
                style="width:100%;height:300px;object-fit:cover;border-radius:12px;margin-bottom:2rem;">
+        {% endif %}
+
+        <!-- PDF download -->
+        {% if article.pdf_url %}
+        <div class="pdf-box">
+          <div class="pdf-icon">📥</div>
+          <div class="pdf-info">
+            <div class="pdf-name">{{ article.pdf_name or 'ダウンロード資料' }}</div>
+            <div class="pdf-sub">PDFファイル</div>
+          </div>
+          <a href="{{ article.pdf_url }}" target="_blank" rel="noopener" class="btn btn-outline btn-sm">
+            ダウンロード
+          </a>
+        </div>
         {% endif %}
 
         <!-- Content -->
         <div class="article-content">
           {{ article.content_html | safe }}
         </div>
-
-        <!-- Paywall -->
-        {% if not can_view %}
-        <div class="lock-overlay">
-          <div class="lock-box">
-            <div class="lock-icon">🔒</div>
-            <h3 style="font-size:1.25rem;margin-bottom:.5rem;">プレミアム記事</h3>
-            <p class="text-gray text-sm" style="margin-bottom:1.5rem;">
-              この記事の続きはプレミアムプラン限定です。<br>
-              月額¥1,500で全コンテンツが読み放題。
-            </p>
-            {% if session.get('user_id') %}
-              <a href="{{ url_for('subscribe') }}" class="btn btn-primary">プレミアムにアップグレード</a>
-            {% else %}
-              <a href="{{ url_for('register') }}" class="btn btn-primary">無料登録してアップグレード</a>
-              <div style="margin-top:.75rem;">
-                <a href="{{ url_for('login') }}" class="text-sm text-gray">既にアカウントをお持ちの方はこちら</a>
-              </div>
-            {% endif %}
-          </div>
-        </div>
-        {% endif %}
       </div>
 
       <!-- Sidebar -->
       <div>
-        {% if not session.get('plan') == 'premium' %}
-        <div class="sidebar-card" style="background:linear-gradient(135deg,rgba(249,115,22,.1),transparent);border-color:rgba(249,115,22,.25);">
-          <h4>⭐ プレミアムプラン</h4>
-          <p class="text-sm text-gray" style="margin-bottom:1rem;">全記事・動画が読み放題。月額¥1,500。</p>
-          <a href="{{ url_for('subscribe') }}" class="btn btn-primary btn-sm" style="width:100%;justify-content:center;">
-            アップグレード
-          </a>
-        </div>
-        {% endif %}
-
         {% if related %}
         <div class="sidebar-card">
-          <h4>関連記事</h4>
+          <h4>関連コンテンツ</h4>
           {% for rel in related %}
           <div class="related-item">
-            <div class="related-item-icon">
-              {% if rel.is_free %}📄{% else %}🔒{% endif %}
-            </div>
+            <div class="related-item-icon">📄</div>
             <div>
-              <a href="{{ url_for('article_detail', slug=rel.slug) }}" class="related-item-title">
+              <a href="{{ url_for('learn_detail', slug=rel.slug) }}" class="related-item-title">
                 {{ rel.title }}
               </a>
-              {% if not rel.is_free %}
-                <div style="margin-top:.25rem;"><span class="badge badge-premium" style="font-size:.65rem;">PREMIUM</span></div>
-              {% endif %}
             </div>
           </div>
           {% endfor %}
         </div>
         {% endif %}
 
+        {% if article.category %}
         <div class="sidebar-card">
           <h4>カテゴリー</h4>
-          {% if article.category %}
-            <a href="{{ url_for('articles', category=article.category.slug) }}" class="btn btn-ghost btn-sm">
-              {{ article.category.name }} の記事をすべて見る
-            </a>
-          {% endif %}
+          <a href="{{ url_for('learn', category=article.category.slug) }}" class="btn btn-ghost btn-sm">
+            {{ article.category.name }} の記事をすべて見る
+          </a>
         </div>
+        {% endif %}
+
+        {% if session.get('role') == 'admin' %}
+        <div class="sidebar-card">
+          <h4>管理</h4>
+          <a href="{{ url_for('admin_articles_edit', article_id=article.id) }}" class="btn btn-outline btn-sm" style="width:100%;justify-content:center;">
+            ✏️ この記事を編集
+          </a>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>

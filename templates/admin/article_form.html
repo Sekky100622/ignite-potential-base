@@ -165,7 +165,7 @@
           </div>
 
           <!-- Thumbnail -->
-          <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;">
+          <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;margin-bottom:1rem;">
             <h4 style="font-size:.85rem;color:var(--gray-400);text-transform:uppercase;margin-bottom:1rem;">サムネイル</h4>
             <div class="form-group">
               <input class="form-control" type="url" name="thumbnail_url" id="thumbnail_url"
@@ -174,6 +174,34 @@
             </div>
             <div id="thumbPreview" style="display:none;margin-top:.5rem;">
               <img id="thumbImg" style="width:100%;height:120px;object-fit:cover;border-radius:6px;">
+            </div>
+          </div>
+
+          <!-- Video -->
+          <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;margin-bottom:1rem;">
+            <h4 style="font-size:.85rem;color:var(--gray-400);text-transform:uppercase;margin-bottom:1rem;">🎬 動画URL</h4>
+            <div class="form-group" style="margin-bottom:0;">
+              <input class="form-control" type="url" name="video_url"
+                     placeholder="https://youtube.com/watch?v=..."
+                     value="{{ article.get('video_url', '') }}">
+            </div>
+            <div class="text-gray text-sm" style="margin-top:.4rem;">YouTubeのURLをそのまま貼り付けでOK</div>
+          </div>
+
+          <!-- PDF -->
+          <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;">
+            <h4 style="font-size:.85rem;color:var(--gray-400);text-transform:uppercase;margin-bottom:1rem;">📄 PDF</h4>
+            <div class="form-group">
+              <label class="form-label" style="font-size:.8rem;">PDF URL（CloudinaryまたはSupabase Storage）</label>
+              <input class="form-control" type="url" name="pdf_url"
+                     placeholder="https://..."
+                     value="{{ article.get('pdf_url', '') }}">
+            </div>
+            <div class="form-group" style="margin-bottom:0;">
+              <label class="form-label" style="font-size:.8rem;">PDF表示名</label>
+              <input class="form-control" type="text" name="pdf_name"
+                     placeholder="例: バッティング基礎ドリル集"
+                     value="{{ article.get('pdf_name', '') }}">
             </div>
           </div>
         </div>

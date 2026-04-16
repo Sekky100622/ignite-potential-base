@@ -67,6 +67,8 @@
       gap: .5rem;
       margin-left: auto;
     }
+
+    /* ── Buttons ── */
     .btn {
       display: inline-flex;
       align-items: center;
@@ -81,22 +83,14 @@
       text-decoration: none;
       white-space: nowrap;
     }
-    .btn-primary {
-      background: var(--orange);
-      color: var(--white);
-    }
+    .btn-primary { background: var(--orange); color: var(--white); }
     .btn-primary:hover { background: var(--orange-dark); color: var(--white); }
-    .btn-outline {
-      background: transparent;
-      color: var(--orange);
-      border: 1.5px solid var(--orange);
-    }
+    .btn-outline { background: transparent; color: var(--orange); border: 1.5px solid var(--orange); }
     .btn-outline:hover { background: var(--orange); color: var(--white); }
-    .btn-ghost {
-      background: rgba(255,255,255,.08);
-      color: var(--white);
-    }
+    .btn-ghost { background: rgba(255,255,255,.08); color: var(--white); }
     .btn-ghost:hover { background: rgba(255,255,255,.15); color: var(--white); }
+    .btn-danger { background: rgba(239,68,68,.15); color: #f87171; border: 1px solid rgba(239,68,68,.3); }
+    .btn-danger:hover { background: rgba(239,68,68,.3); color: #f87171; }
     .btn-sm { padding: .3rem .75rem; font-size: .8rem; }
     .btn-lg { padding: .75rem 2rem; font-size: 1rem; }
 
@@ -136,6 +130,16 @@
     main { flex: 1; }
     .container { max-width: 1200px; margin: 0 auto; padding: 0 1.5rem; }
     .section { padding: 4rem 0; }
+    .section-sm { padding: 2.5rem 0; }
+
+    /* ── Page header ── */
+    .page-header {
+      background: var(--navy-mid);
+      border-bottom: 1px solid rgba(255,255,255,.07);
+      padding: 2rem 0;
+    }
+    .page-header h1 { font-size: clamp(1.4rem,3vw,2rem); font-weight: 800; margin-bottom: .3rem; }
+    .page-header p { color: var(--gray-400); font-size: .95rem; }
 
     /* ── Cards ── */
     .card {
@@ -151,6 +155,15 @@
       border-color: rgba(249,115,22,.3);
     }
     .card-body { padding: 1.25rem; }
+    .card-img { width: 100%; height: 180px; object-fit: cover; }
+    .card-img-placeholder {
+      height: 120px;
+      background: rgba(255,255,255,.04);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      font-size: 2.5rem;
+    }
 
     /* ── Grid ── */
     .grid { display: grid; gap: 1.5rem; }
@@ -158,6 +171,87 @@
     .grid-2 { grid-template-columns: repeat(2, 1fr); }
     @media (max-width: 900px) { .grid-3 { grid-template-columns: repeat(2, 1fr); } }
     @media (max-width: 600px) { .grid-3, .grid-2 { grid-template-columns: 1fr; } }
+
+    /* ── Badges ── */
+    .badge {
+      display: inline-flex;
+      align-items: center;
+      padding: .2rem .6rem;
+      border-radius: 4px;
+      font-size: .7rem;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: .04em;
+    }
+    .badge-free    { background: rgba(34,197,94,.15); color: var(--green); }
+    .badge-premium { background: rgba(249,115,22,.15); color: var(--orange); }
+    .badge-cat     { background: rgba(255,255,255,.1); color: var(--gray-200); }
+    .badge-admin   { background: rgba(249,115,22,.2); color: var(--orange); }
+    .badge-video   { background: rgba(99,102,241,.2); color: #a5b4fc; }
+    .badge-pdf     { background: rgba(239,68,68,.15); color: #f87171; }
+
+    /* ── Form controls ── */
+    .form-group { margin-bottom: 1.25rem; }
+    .form-label { display: block; font-size: .875rem; font-weight: 600; margin-bottom: .4rem; color: var(--gray-200); }
+    .form-control {
+      width: 100%;
+      background: rgba(255,255,255,.06);
+      border: 1.5px solid rgba(255,255,255,.12);
+      border-radius: 8px;
+      padding: .6rem .9rem;
+      color: var(--white);
+      font-size: .9rem;
+      outline: none;
+      transition: border-color .2s;
+    }
+    .form-control:focus { border-color: var(--orange); }
+    .form-control::placeholder { color: var(--gray-600); }
+    select.form-control { cursor: pointer; }
+    select.form-control option { background: var(--navy-light); }
+    textarea.form-control { resize: vertical; }
+    .form-check { display: flex; align-items: center; gap: .5rem; cursor: pointer; font-size: .9rem; }
+    .form-check input[type="checkbox"] { width: 16px; height: 16px; cursor: pointer; accent-color: var(--orange); }
+
+    /* ── Table ── */
+    .table-wrap { overflow-x: auto; }
+    table { width: 100%; border-collapse: collapse; }
+    th {
+      background: rgba(255,255,255,.04);
+      padding: .75rem 1rem;
+      text-align: left;
+      font-size: .8rem;
+      color: var(--gray-400);
+      text-transform: uppercase;
+      letter-spacing: .05em;
+      border-bottom: 1px solid rgba(255,255,255,.08);
+      white-space: nowrap;
+    }
+    td { padding: .75rem 1rem; border-bottom: 1px solid rgba(255,255,255,.05); font-size: .875rem; vertical-align: middle; }
+    tr:last-child td { border-bottom: none; }
+    tr:hover td { background: rgba(255,255,255,.02); }
+
+    /* ── Flash messages ── */
+    .flash-container {
+      position: fixed;
+      top: 72px;
+      right: 1rem;
+      z-index: 2000;
+      display: flex;
+      flex-direction: column;
+      gap: .5rem;
+    }
+    .flash {
+      padding: .75rem 1.25rem;
+      border-radius: 8px;
+      font-size: .875rem;
+      font-weight: 500;
+      min-width: 240px;
+      animation: flashIn .3s;
+      transition: opacity .4s;
+    }
+    .flash-success { background: rgba(34,197,94,.15); border: 1px solid rgba(34,197,94,.3); color: #4ade80; }
+    .flash-error   { background: rgba(239,68,68,.15); border: 1px solid rgba(239,68,68,.3); color: #f87171; }
+    @keyframes flashIn { from { opacity:0; transform:translateX(20px); } to { opacity:1; transform:none; } }
 
     /* ── Footer ── */
     footer {
@@ -201,7 +295,11 @@
     .text-gray   { color: var(--gray-400); }
     .text-center { text-align: center; }
     .text-sm     { font-size: .875rem; }
+    .mt-1 { margin-top: .5rem; }
+    .mt-2 { margin-top: 1rem; }
+    .mt-3 { margin-top: 1.5rem; }
     .mt-4 { margin-top: 2rem; }
+    .mt-5 { margin-top: 3rem; }
     .mb-2 { margin-bottom: 1rem; }
   </style>
   {% block extra_head %}{% endblock %}
@@ -214,7 +312,16 @@
         ⚾ <span>IPB</span> Ignite Potential Base
       </a>
       <div class="navbar-actions">
-        <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Noteメンバーシップへ →</a>
+        {% if session.get('user_id') %}
+          <a href="{{ url_for('learn') }}" class="btn btn-ghost btn-sm">コンテンツ</a>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">ダッシュボード</a>
+          {% if session.get('role') == 'admin' %}
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">管理画面</a>
+          {% endif %}
+          <a href="{{ url_for('logout') }}" class="btn btn-outline btn-sm">ログアウト</a>
+        {% else %}
+          <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm">ログイン</a>
+        {% endif %}
       </div>
       <button class="hamburger" onclick="toggleMenu()" aria-label="メニュー">
         <span></span><span></span><span></span>
@@ -223,9 +330,29 @@
   </nav>
   <div class="mobile-menu" id="mobileMenu">
     <div class="mobile-actions">
-      <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary">Noteメンバーシップへ →</a>
+      {% if session.get('user_id') %}
+        <a href="{{ url_for('learn') }}" class="btn btn-ghost">コンテンツ</a>
+        <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">ダッシュボード</a>
+        {% if session.get('role') == 'admin' %}
+          <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost">管理画面</a>
+        {% endif %}
+        <a href="{{ url_for('logout') }}" class="btn btn-outline">ログアウト</a>
+      {% else %}
+        <a href="{{ url_for('login') }}" class="btn btn-primary">ログイン</a>
+      {% endif %}
     </div>
   </div>
+
+  <!-- Flash messages -->
+  {% with messages = get_flashed_messages(with_categories=true) %}
+  {% if messages %}
+  <div class="flash-container" id="flashContainer">
+    {% for category, message in messages %}
+    <div class="flash flash-{{ category }}">{{ message }}</div>
+    {% endfor %}
+  </div>
+  {% endif %}
+  {% endwith %}
 
   <!-- Main -->
   <main>{% block content %}{% endblock %}</main>
@@ -238,7 +365,12 @@
         <div class="footer-tagline">野球パフォーマンスを、科学で変える。</div>
       </div>
       <div class="footer-links">
-        <a href="{{ note_url }}" target="_blank" rel="noopener">Noteメンバーシップ</a>
+        {% if session.get('user_id') %}
+          <a href="{{ url_for('learn') }}">コンテンツ一覧</a>
+          <a href="{{ url_for('dashboard') }}">ダッシュボード</a>
+        {% else %}
+          <a href="{{ note_url }}" target="_blank" rel="noopener">Noteメンバーシップ</a>
+        {% endif %}
       </div>
     </div>
     <div class="footer-copy">
@@ -249,6 +381,14 @@
   <script>
     function toggleMenu() {
       document.getElementById('mobileMenu').classList.toggle('open');
+    }
+    // Auto-dismiss flash messages
+    const fc = document.getElementById('flashContainer');
+    if (fc) {
+      setTimeout(() => {
+        fc.querySelectorAll('.flash').forEach(el => { el.style.opacity = '0'; });
+        setTimeout(() => fc.remove(), 500);
+      }, 4000);
     }
   </script>
   {% block scripts %}{% endblock %}

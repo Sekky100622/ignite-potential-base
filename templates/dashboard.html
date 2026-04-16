@@ -15,54 +15,26 @@
 
       <!-- Left column -->
       <div>
-        <!-- Plan card -->
-        <div style="background:var(--navy-light);border:1px solid {% if user.plan == 'premium' %}rgba(249,115,22,.4){% else %}rgba(255,255,255,.08){% endif %};border-radius:16px;padding:1.75rem;margin-bottom:1.5rem;">
-          <div style="display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:1rem;">
-            <div>
-              <div style="font-size:.8rem;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.3rem;">現在のプラン</div>
-              {% if user.plan == 'premium' %}
-                <div style="font-size:1.5rem;font-weight:800;color:var(--orange);">⭐ プレミアム</div>
-                <div class="text-gray text-sm mt-1">すべてのコンテンツにアクセス可能</div>
-              {% else %}
-                <div style="font-size:1.5rem;font-weight:800;">フリープラン</div>
-                <div class="text-gray text-sm mt-1">無料コンテンツが利用可能</div>
-              {% endif %}
-            </div>
-            {% if user.plan != 'premium' %}
-              <a href="{{ url_for('subscribe') }}" class="btn btn-primary">
-                ⭐ プレミアムにアップグレード
-              </a>
-            {% else %}
-              <span class="badge badge-premium" style="font-size:.875rem;padding:.4rem 1rem;">有効</span>
-            {% endif %}
-          </div>
-        </div>
-
-        <!-- Recent articles -->
+        <!-- Recent content -->
         <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.75rem;margin-bottom:1.5rem;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-            <h3 style="font-size:1rem;font-weight:700;">最新記事</h3>
-            <a href="{{ url_for('articles') }}" class="btn btn-ghost btn-sm">すべて見る</a>
+            <h3 style="font-size:1rem;font-weight:700;">最新コンテンツ</h3>
+            <a href="{{ url_for('learn') }}" class="btn btn-ghost btn-sm">すべて見る</a>
           </div>
           {% if recent_articles %}
             {% for article in recent_articles %}
             <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.05);">
-              <span style="font-size:1.25rem;">{% if article.is_free %}📄{% else %}🔒{% endif %}</span>
+              <span style="font-size:1.25rem;">📄</span>
               <div style="flex:1;min-width:0;">
-                <a href="{{ url_for('article_detail', slug=article.slug) }}"
+                <a href="{{ url_for('learn_detail', slug=article.slug) }}"
                    style="color:var(--white);font-size:.9rem;font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
                   {{ article.title }}
                 </a>
               </div>
-              {% if article.is_free %}
-                <span class="badge badge-free">FREE</span>
-              {% else %}
-                <span class="badge badge-premium">PREMIUM</span>
-              {% endif %}
             </div>
             {% endfor %}
           {% else %}
-            <p class="text-gray text-sm">記事はまだありません。</p>
+            <p class="text-gray text-sm">コンテンツはまだありません。</p>
           {% endif %}
         </div>
 
@@ -70,8 +42,7 @@
         <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.75rem;">
           <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">クイックリンク</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
-            <a href="{{ url_for('articles') }}" class="btn btn-ghost" style="justify-content:center;">📄 記事一覧</a>
-            <a href="{{ url_for('videos') }}" class="btn btn-ghost" style="justify-content:center;">🎬 動画一覧</a>
+            <a href="{{ url_for('learn') }}" class="btn btn-ghost" style="justify-content:center;">📚 コンテンツ一覧</a>
             {% if session.get('role') == 'admin' %}
               <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost" style="justify-content:center;">⚙️ 管理画面</a>
             {% endif %}
@@ -106,23 +77,14 @@
             </div>
           </div>
         </div>
-
-        {% if user.plan != 'premium' %}
-        <div style="background:linear-gradient(135deg,rgba(249,115,22,.12),transparent);border:1px solid rgba(249,115,22,.3);border-radius:16px;padding:1.5rem;text-align:center;">
-          <div style="font-size:2rem;margin-bottom:.5rem;">⭐</div>
-          <h4 style="margin-bottom:.4rem;">プレミアムで<br>もっと学ぶ</h4>
-          <p class="text-gray text-sm" style="margin-bottom:1rem;">月額¥1,500で<br>全コンテンツ解放</p>
-          <a href="{{ url_for('subscribe') }}" class="btn btn-primary btn-sm" style="width:100%;justify-content:center;">
-            アップグレード
-          </a>
-        </div>
-        {% endif %}
       </div>
     </div>
-
-    @media (max-width: 768px) {
-      .dashboard-grid { grid-template-columns: 1fr !important; }
-    }
   </div>
 </section>
+
+<style>
+  @media (max-width: 768px) {
+    .container > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+  }
+</style>
 {% endblock %}

@@ -1,0 +1,55 @@
+{% extends 'base.html' %}
+{% block title %}メンバー招待 | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>👤 メンバーを招待</h1>
+    <p>新しいメンバーアカウントを作成します</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container" style="max-width:520px;">
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:2rem;">
+      <form method="POST" action="{{ url_for('admin_members_new') }}">
+        <div class="form-group">
+          <label class="form-label" for="name">名前 *</label>
+          <input class="form-control" type="text" id="name" name="name"
+                 placeholder="山田 太郎" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="email">メールアドレス *</label>
+          <input class="form-control" type="email" id="email" name="email"
+                 placeholder="member@example.com" required>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="password">初期パスワード *</label>
+          <input class="form-control" type="password" id="password" name="password"
+                 placeholder="8文字以上を推奨" required minlength="6">
+          <div class="text-gray text-sm" style="margin-top:.3rem;">本人に別途お伝えください</div>
+        </div>
+
+        <div class="form-group">
+          <label class="form-label" for="plan">プラン *</label>
+          <select class="form-control" name="plan" id="plan">
+            <option value="premium" selected>⭐ プレミアム（推奨）</option>
+            <option value="free">フリー</option>
+          </select>
+        </div>
+
+        <div style="display:flex;flex-direction:column;gap:.75rem;margin-top:1.5rem;">
+          <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+            メンバーを追加
+          </button>
+          <a href="{{ url_for('admin_members') }}" class="btn btn-ghost" style="width:100%;justify-content:center;">
+            キャンセル
+          </a>
+        </div>
+      </form>
+    </div>
+  </div>
+</section>
+{% endblock %}

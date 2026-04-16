@@ -4,8 +4,13 @@
 {% block content %}
 <div class="page-header">
   <div class="container">
-    <h1>👥 メンバー管理</h1>
-    <p>全 {{ members|length }} 名のメンバー</p>
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1>👥 メンバー管理</h1>
+        <p>全 {{ members|length }} 名のメンバー</p>
+      </div>
+      <a href="{{ url_for('admin_members_new') }}" class="btn btn-primary">+ メンバーを招待</a>
+    </div>
   </div>
 </div>
 
@@ -21,6 +26,7 @@
               <th>権限</th>
               <th>プラン</th>
               <th>登録日</th>
+              <th>操作</th>
             </tr>
           </thead>
           <tbody>
@@ -54,10 +60,20 @@
               <td style="color:var(--gray-400);font-size:.85rem;">
                 {{ member.created_at[:10] if member.created_at else '-' }}
               </td>
+              <td>
+                {% if member.id != session.get('user_id') %}
+                <form action="{{ url_for('admin_members_delete', member_id=member.id) }}" method="POST"
+                      onsubmit="return confirm('{{ member.name }} を削除しますか？');" style="display:inline;">
+                  <button type="submit" class="btn btn-danger btn-sm">削除</button>
+                </form>
+                {% else %}
+                  <span class="text-gray text-sm">自分</span>
+                {% endif %}
+              </td>
             </tr>
             {% else %}
             <tr>
-              <td colspan="5" style="text-align:center;padding:3rem;color:var(--gray-400);">
+              <td colspan="6" style="text-align:center;padding:3rem;color:var(--gray-400);">
                 メンバーはまだいません
               </td>
             </tr>
