@@ -353,13 +353,9 @@
             滋賀県在住。小学生からプロを目指して野球に打ち込んだが、肩の怪我で断念。その原体験から「正しい努力を伝える専門家」として活動を開始。バッティング・ピッチングのメカニクスからフィジカルトレーニングまで、科学的根拠に基づいた指導を展開している。
           </div>
           <div class="profile-stats">
-            <div class="stat-item">
-              <div class="stat-num">小〜大</div>
+            <div class="stat-item" style="grid-column:span 2;">
+              <div class="stat-num" style="font-size:1rem;">小学生以上の野球選手</div>
               <div class="stat-label">指導対象</div>
-            </div>
-            <div class="stat-item">
-              <div class="stat-num">全国</div>
-              <div class="stat-label">オンライン対応</div>
             </div>
             <div class="stat-item">
               <div class="stat-num">滋賀</div>
@@ -369,6 +365,17 @@
               <div class="stat-num">大阪</div>
               <div class="stat-label">対面拠点②</div>
             </div>
+            <div class="stat-item">
+              <div class="stat-num">福岡</div>
+              <div class="stat-label">対面拠点③（2ヶ月に1回）</div>
+            </div>
+            <div class="stat-item">
+              <div class="stat-num">全国</div>
+              <div class="stat-label">オンライン対応</div>
+            </div>
+          </div>
+          <div style="margin-top:1rem;padding:.75rem 1rem;background:rgba(6,199,85,.1);border:1px solid rgba(6,199,85,.25);border-radius:8px;font-size:.8rem;color:#4ade80;">
+            📣 福岡など各拠点の日程は公式LINEで先行告知
           </div>
         </div>
       </div>
@@ -402,8 +409,8 @@
         <div class="service-desc">
           あなたの課題・目標・ポジションに合わせたマンツーマン指導。滋賀・大阪で対面、全国どこからでもオンライン対応可能です。
         </div>
-        <a href="https://lin.ee/WjYZqJz" target="_blank" rel="noopener" class="btn btn-line" style="width:100%;justify-content:center;">
-          LINEで無料相談する
+        <a href="#session" class="btn btn-ghost" style="width:100%;justify-content:center;">
+          詳しく見る →
         </a>
       </div>
     </div>
@@ -433,7 +440,7 @@
       {% endfor %}
     </div>
     <div style="text-align:center;margin-top:2rem;">
-      <a href="{{ url_for('login') }}" class="btn btn-outline">会員登録してすべてのコンテンツを見る →</a>
+      <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary">Noteメンバーシップ登録ですべて読む →</a>
     </div>
     {% else %}
     <div style="text-align:center;padding:3rem;color:var(--gray-400);">
@@ -447,28 +454,116 @@
 </section>
 
 <!-- セッション詳細 -->
-<section class="section" style="background:var(--navy-mid);">
-  <div class="container" style="max-width:800px;">
+<section id="session" class="section" style="background:var(--navy-mid);">
+  <div class="container" style="max-width:860px;">
     <div class="text-center">
       <h2 class="section-title">対面・オンラインセッション</h2>
-      <p class="section-sub">あなたの課題に直接向き合います</p>
+      <p class="section-sub">本気で変わりたい選手へ。まずはヒアリングから始めます。</p>
     </div>
+
+    <!-- ヒアリング重視の説明 -->
+    <div style="background:linear-gradient(135deg,rgba(249,115,22,.08) 0%,rgba(249,115,22,.03) 100%);border:1.5px solid rgba(249,115,22,.35);border-radius:16px;padding:1.75rem 2rem;margin-bottom:2rem;">
+      <div style="font-size:1rem;font-weight:800;margin-bottom:.75rem;color:var(--white);">なぜ、ヒアリングを最初に行うのか</div>
+      <p style="color:var(--gray-400);font-size:.925rem;line-height:1.85;margin:0;">
+        課題の表面だけを見て「こうすれば打てる」と答えを押し付けることは、私のコーチングではしません。<br>
+        選手一人ひとりの目標・現状・身体的特徴・思考パターンを丁寧にヒアリングして初めて、その人に本当に必要なアプローチが見えてきます。<br>
+        <strong style="color:var(--white);">だから、ヒアリングなしにセッションの提案はしません。</strong>
+      </p>
+    </div>
+
+    <!-- セッションの流れ -->
+    <div style="margin-bottom:2rem;">
+      <div style="font-size:.8rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1.25rem;">セッションの流れ</div>
+      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;">
+        <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;text-align:center;">
+          <div style="font-size:1.5rem;margin-bottom:.5rem;">💬</div>
+          <div style="font-size:.8rem;font-weight:700;color:var(--orange);margin-bottom:.35rem;">STEP 1</div>
+          <div style="font-size:.875rem;font-weight:700;margin-bottom:.4rem;">LINEで連絡</div>
+          <div style="font-size:.75rem;color:var(--gray-400);">現状・目標をざっくり教えてください</div>
+        </div>
+        <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;text-align:center;">
+          <div style="font-size:1.5rem;margin-bottom:.5rem;">🎯</div>
+          <div style="font-size:.8rem;font-weight:700;color:var(--orange);margin-bottom:.35rem;">STEP 2</div>
+          <div style="font-size:.875rem;font-weight:700;margin-bottom:.4rem;">ヒアリング</div>
+          <div style="font-size:.75rem;color:var(--gray-400);">目標・課題・身体・思考を深掘りします</div>
+        </div>
+        <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;text-align:center;">
+          <div style="font-size:1.5rem;margin-bottom:.5rem;">📋</div>
+          <div style="font-size:.8rem;font-weight:700;color:var(--orange);margin-bottom:.35rem;">STEP 3</div>
+          <div style="font-size:.875rem;font-weight:700;margin-bottom:.4rem;">個別提案</div>
+          <div style="font-size:.75rem;color:var(--gray-400);">あなたに最適なプランを提案</div>
+        </div>
+        <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;text-align:center;">
+          <div style="font-size:1.5rem;margin-bottom:.5rem;">⚾</div>
+          <div style="font-size:.8rem;font-weight:700;color:var(--orange);margin-bottom:.35rem;">STEP 4</div>
+          <div style="font-size:.875rem;font-weight:700;margin-bottom:.4rem;">セッション開始</div>
+          <div style="font-size:.75rem;color:var(--gray-400);">1ヶ月間の質問・動画添削つき</div>
+        </div>
+      </div>
+    </div>
+
     <div class="session-card">
       <div class="session-area">
         <span class="area-tag">📍 滋賀（対面）</span>
         <span class="area-tag">📍 大阪（対面）</span>
+        <span class="area-tag">📍 福岡（2ヶ月に1回）</span>
         <span class="area-tag">💻 全国（オンライン）</span>
       </div>
+      <div style="margin-bottom:1.25rem;padding:.6rem 1rem;background:rgba(6,199,85,.1);border:1px solid rgba(6,199,85,.25);border-radius:8px;font-size:.85rem;color:#4ade80;">
+        📣 福岡など各地の開催日程は<a href="https://lin.ee/WjYZqJz" target="_blank" rel="noopener" style="color:#4ade80;text-decoration:underline;">公式LINE</a>で先行告知します
+      </div>
       <ul class="session-features">
-        <li>課題・目標・ポジションをヒアリングしたうえで個別プログラムを作成</li>
-        <li>動作分析・フォームチェックに対応</li>
-        <li>試合に向けたメンタル・コンディション調整</li>
-        <li>チーム・学校単位でのグループ指導も相談可</li>
-        <li>まずはLINEで無料相談から</li>
+        <li>目標・課題・現状の丁寧なヒアリング</li>
+        <li>解決策・練習方法・考え方をわかりやすく伝える</li>
+        <li>個別メニューの作成</li>
+        <li>セッション後1ヶ月間、質問・動画添削に対応</li>
       </ul>
-      <a href="https://lin.ee/WjYZqJz" target="_blank" rel="noopener" class="btn btn-line btn-lg" style="width:100%;justify-content:center;">
-        LINEで無料相談する →
+      <a href="https://lin.ee/WjYZqJz" target="_blank" rel="noopener" class="btn btn-line btn-lg" style="width:100%;justify-content:center;font-size:1rem;">
+        LINEでヒアリングを申し込む →
       </a>
+      <p style="text-align:center;color:var(--gray-400);font-size:.8rem;margin-top:.75rem;">
+        ヒアリング後、あなたに合ったプランをご提案します。提案を受けてから検討していただいて構いません。
+      </p>
+    </div>
+  </div>
+</section>
+
+<!-- チーム・グループ・セミナー依頼 -->
+<section class="section">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="section-title">チーム・グループ・セミナー依頼</h2>
+      <p class="section-sub">学校・クラブ・企業チームへの出張指導・講演も承ります</p>
+    </div>
+    <div class="grid grid-3">
+      <div class="service-card">
+        <div class="service-icon">🏟️</div>
+        <div class="service-title">チーム指導</div>
+        <div class="service-desc">
+          データ分析を活用しながら、バッティング・ピッチングのメカニクスをチーム全体に指導。学校・クラブチーム・社会人チームに対応。
+        </div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">👥</div>
+        <div class="service-title">グループ指導</div>
+        <div class="service-desc">
+          少人数グループでの集中指導。個別対応を保ちながら、仲間と一緒に学べる環境を提供します。対面・オンライン両対応。
+        </div>
+      </div>
+      <div class="service-card">
+        <div class="service-icon">🎤</div>
+        <div class="service-title">セミナー・講演</div>
+        <div class="service-desc">
+          野球パフォーマンス向上・トレーニング・メンタルなど、テーマに合わせた講演・セミナーを開催。保護者向け・指導者向けも対応。
+        </div>
+      </div>
+    </div>
+    <div style="margin-top:1.5rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <span style="font-size:1.25rem;">💬</span>
+      <p style="color:var(--gray-400);font-size:.9rem;flex:1;margin:0;">
+        依頼内容・日程・場所・人数などをLINEでお気軽にご相談ください。まずはヒアリングから始めます。
+      </p>
+      <a href="https://lin.ee/WjYZqJz" target="_blank" rel="noopener" class="btn btn-line btn-sm">LINEで問い合わせ</a>
     </div>
   </div>
 </section>
@@ -535,16 +630,14 @@
 <!-- CTA -->
 <section class="cta-section">
   <div class="container">
-    <h2>まず、<span class="text-orange">一歩踏み出す。</span></h2>
-    <p>コンテンツで学ぶか、直接相談するか。どちらでも大丈夫です。</p>
+    <h2>本気で変わりたいなら、<br><span class="text-orange">まずヒアリングから。</span></h2>
+    <p>答えを押し付けない。あなたの現状を聞いてから、最適なアプローチを一緒に考えます。</p>
     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
-      <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg">
-        Noteメンバーシップへ →
-      </a>
-      <a href="https://lin.ee/WjYZqJz" target="_blank" rel="noopener" class="btn btn-line btn-lg">
-        LINEで無料相談
+      <a href="https://lin.ee/WjYZqJz" target="_blank" rel="noopener" class="btn btn-line btn-lg" style="font-size:1rem;padding:.85rem 2.25rem;">
+        LINEでヒアリングを申し込む →
       </a>
     </div>
+    <p style="color:var(--gray-400);font-size:.85rem;margin-top:1rem;">提案を受けてから検討していただいて構いません</p>
   </div>
 </section>
 {% endblock %}
