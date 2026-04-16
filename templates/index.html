@@ -242,6 +242,73 @@
     flex-shrink: 0;
   }
 
+  /* Testimonials */
+  .testimonial-card {
+    background: var(--navy-light);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 16px;
+    padding: 1.75rem;
+    position: relative;
+  }
+  .testimonial-card::before {
+    content: '"';
+    position: absolute;
+    top: -.2rem;
+    left: 1.25rem;
+    font-size: 4rem;
+    color: var(--orange);
+    opacity: .4;
+    font-family: Georgia, serif;
+    line-height: 1;
+  }
+  .testimonial-text {
+    color: var(--gray-200);
+    font-size: .925rem;
+    line-height: 1.85;
+    padding-top: 1.5rem;
+  }
+
+  /* FAQ */
+  .faq-item {
+    border-bottom: 1px solid rgba(255,255,255,.07);
+  }
+  .faq-item:last-child { border-bottom: none; }
+  .faq-q {
+    width: 100%;
+    background: none;
+    border: none;
+    cursor: pointer;
+    font-weight: 700;
+    font-size: .975rem;
+    color: var(--white);
+    display: flex;
+    align-items: center;
+    gap: .75rem;
+    padding: 1.25rem 0;
+    text-align: left;
+  }
+  .faq-q::before {
+    content: 'Q.';
+    color: var(--orange);
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .faq-chevron {
+    margin-left: auto;
+    flex-shrink: 0;
+    color: var(--gray-400);
+    transition: transform .25s;
+  }
+  .faq-item.open .faq-chevron { transform: rotate(180deg); }
+  .faq-a {
+    color: var(--gray-400);
+    font-size: .9rem;
+    line-height: 1.85;
+    padding: 0 0 1.25rem 1.75rem;
+    display: none;
+  }
+  .faq-item.open .faq-a { display: block; }
+
   /* SNS links */
   .sns-btn {
     display: inline-flex;
@@ -453,6 +520,38 @@
   </div>
 </section>
 
+<!-- 受講者の声 -->
+<section class="section" style="background:var(--navy-mid);">
+  <div class="container">
+    <div class="text-center">
+      <h2 class="section-title">受講者の声</h2>
+      <p class="section-sub">実際に指導を受けた選手たちから</p>
+    </div>
+    <div class="grid grid-2">
+      <div class="testimonial-card">
+        <div class="testimonial-text">
+          正直短期間で変わるとは思っていませんでした。積山さんにご指導いただき、フォームが劇的に改善され、試合での成果にも着実に繋がり本当にありがとうございました。
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-text">
+          正しい努力の仕方を教えていただいたことで日々の取り組みが明確になる、練習や試合で結果が出る、新たな課題・取り組みが生まれる、と良いサイクルが生まれて充実した日々を送らせていただくことができました。
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-text">
+          ついに、エース番号をもらうことができ、指導者から「何したらこんなに良くなったん？」と驚かれています。
+        </div>
+      </div>
+      <div class="testimonial-card">
+        <div class="testimonial-text">
+          試合前、打席前、普段の練習で取り組むべきことが明確化して、試合での結果が安定して出るようになりました。
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- セッション詳細 -->
 <section id="session" class="section" style="background:var(--navy-mid);">
   <div class="container" style="max-width:860px;">
@@ -593,6 +692,50 @@
   </div>
 </section>
 
+<!-- FAQ -->
+<section class="section">
+  <div class="container" style="max-width:800px;">
+    <div class="text-center">
+      <h2 class="section-title">よくある質問</h2>
+      <p class="section-sub">お申し込み前にご確認ください</p>
+    </div>
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.5rem 2rem;">
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)"><span>どんなレベルの選手でも受けられますか？</span><svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="faq-a">レベルは問いません。小学生でも大人でも、「本気で変わりたい」という覚悟があれば歓迎します。ただ、「来たら上手くなる」は幻想です。1回で変われるほど甘くはない。継続して取り組む意志がある方にこそ、全力で向き合います。魔法はありません。あるのは、正しい努力の積み重ねだけです。</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)"><span>セッションはどこで受けられますか？</span><svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="faq-a">【対面】滋賀は草津市の室内練習場、大阪は豊中市で行うことが多いです。場所の詳細は相談のうえ決定します。【オンライン】ZoomでのビデオセッションとLINEでの動画添削で対応します。Zoom環境があればどこからでも受講可能です。</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)"><span>何回受ければいいですか？頻度は？</span><svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="faq-a">単発でも受けられますが、継続をおすすめします。頻度の目安は月1回で十分です。セッションで1ヶ月の目標を設定し、その期間は自分で取り組む。そのサイクルが選手を自走させます。バッティング・ピッチング両方を希望される方は月2回が良いケースもあります。</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)"><span>事前に準備するものはありますか？</span><svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="faq-a">特別な準備は必要ありません。セッション前にヒアリングを行いますので、その際に詳しくお聞きします。道具はボール・バット・グローブなど基本的なものがあれば十分です。</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)"><span>子どもを受けさせたいのですが、保護者は同席できますか？</span><svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="faq-a">未成年の方は保護者からのお申し込みをお願いしています。保護者の同席は可能ですし、むしろ推奨しています。お子さんの成長を一緒に確認していただけます。</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)"><span>申し込みからセッションまでどのくらいかかりますか？</span><svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="faq-a">空き枠があればすぐにご案内できます。まずは公式LINEからご連絡ください。</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)"><span>オンラインでも効果はありますか？</span><svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="faq-a">対面とほぼ変わりません。課題・目標の徹底的なヒアリングとコミュニケーションを重視しているため、オンラインでも同じ質で提供できます。実際にオンラインで継続している選手も結果を出しています。</div>
+      </div>
+      <div class="faq-item">
+        <button class="faq-q" onclick="toggleFaq(this)"><span>向いていない人はいますか？</span><svg class="faq-chevron" width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polyline points="6 9 12 15 18 9"/></svg></button>
+        <div class="faq-a">「うまくいかないのは環境や道具のせい」と考えがちな方、「セッションに来るだけで上手くなる」と思っている方には向いていません。変化を生み出すのは最終的には選手自身の行動です。覚悟を持って来てくれる方を歓迎します。</div>
+      </div>
+    </div>
+  </div>
+</section>
+
 <!-- SNS・各種リンク -->
 <section class="section" style="background:var(--navy-mid);">
   <div class="container" style="max-width:700px;text-align:center;">
@@ -640,4 +783,12 @@
     <p style="color:var(--gray-400);font-size:.85rem;margin-top:1rem;">提案を受けてから検討していただいて構いません</p>
   </div>
 </section>
+{% endblock %}
+
+{% block scripts %}
+<script>
+function toggleFaq(btn) {
+  btn.closest('.faq-item').classList.toggle('open');
+}
+</script>
 {% endblock %}
