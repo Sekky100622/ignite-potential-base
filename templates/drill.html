@@ -40,6 +40,14 @@
       </div>
       {% endif %}
 
+      <!-- 方法 -->
+      {% if drill.method %}
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;">
+        <div style="font-size:.75rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.06em;margin-bottom:.75rem;">方法</div>
+        <p style="color:var(--gray-200);line-height:1.8;white-space:pre-wrap;">{{ drill.method }}</p>
+      </div>
+      {% endif %}
+
       <!-- ポイント -->
       {% if drill.points %}
       <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;">
@@ -50,8 +58,11 @@
 
     </div>
 
-    <div style="margin-top:2rem;">
+    <div style="display:flex;gap:.75rem;margin-top:2rem;align-items:center;">
       <a href="{{ url_for('library') }}" class="btn btn-ghost btn-sm">← ライブラリに戻る</a>
+      {% if session.get('role') == 'admin' %}
+      <a href="{{ url_for('admin_library_edit', drill_id=drill.id) }}" class="btn btn-outline btn-sm">編集</a>
+      {% endif %}
     </div>
   </div>
 </section>

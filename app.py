@@ -448,6 +448,7 @@ def admin_library_new():
             'name':      request.form.get('name', '').strip(),
             'purpose':   request.form.get('purpose', '').strip(),
             'video_url': request.form.get('video_url', '').strip(),
+            'method':    request.form.get('method', '').strip(),
             'points':    request.form.get('points', '').strip(),
             'is_free':   'is_free' in request.form,
         }, service=True)
@@ -470,6 +471,7 @@ def admin_library_edit(drill_id):
             'name':      request.form.get('name', '').strip(),
             'purpose':   request.form.get('purpose', '').strip(),
             'video_url': request.form.get('video_url', '').strip(),
+            'method':    request.form.get('method', '').strip(),
             'points':    request.form.get('points', '').strip(),
             'is_free':   'is_free' in request.form,
         }, service=True)
