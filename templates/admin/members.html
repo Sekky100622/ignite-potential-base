@@ -16,6 +16,27 @@
 
 <section class="section-sm">
   <div class="container">
+
+    {# 招待リンク発行パネル #}
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;margin-bottom:1.5rem;">
+      <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">🔗 招待リンクを発行</h3>
+      <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
+        <select id="invite-plan" style="background:var(--navy);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;padding:.5rem .75rem;font-size:.9rem;">
+          <option value="premium">プレミアム</option>
+          <option value="free">フリー</option>
+        </select>
+        <button onclick="generateInvite()" class="btn btn-primary btn-sm">リンクを発行</button>
+      </div>
+      <div id="invite-result" style="display:none;margin-top:1rem;">
+        <label style="font-size:.85rem;color:var(--gray-400);display:block;margin-bottom:.4rem;">招待URL（LINEで送付してください）</label>
+        <div style="display:flex;gap:.5rem;">
+          <input id="invite-url" type="text" readonly
+                 style="flex:1;background:var(--navy);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;padding:.5rem .75rem;font-size:.85rem;">
+          <button onclick="copyInvite()" class="btn btn-ghost btn-sm">コピー</button>
+        </div>
+      </div>
+    </div>
+
     <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;">
       <div class="table-wrap">
         <table>
@@ -88,4 +109,30 @@
     </div>
   </div>
 </section>
+
+{% block scripts %}
+<script>
+async function generateInvite() {
+  const plan = document.getElementById('invite-plan').value;
+  const res = await fetch('{{ url_for("admin_invites_create") }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({plan}),
+  });
+  const data = await res.json();
+  if (data.url) {
+    document.getElementById('invite-url').value = data.url;
+    document.getElementById('invite-result').style.display = 'block';
+  } else {
+    alert('リンクの発行に失敗しました');
+  }
+}
+
+function copyInvite() {
+  const input = document.getElementById('invite-url');
+  input.select();
+  navigator.clipboard.writeText(input.value).then(() => alert('コピーしました'));
+}
+</script>
+{% endblock %}
 {% endblock %}

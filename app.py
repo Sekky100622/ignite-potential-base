@@ -1,13 +1,15 @@
 import os
 import re
+import secrets
 import hashlib
 import requests as req
-from datetime import datetime
+from datetime import datetime, timezone
 from functools import wraps
-from flask import Flask, render_template, request, session, redirect, url_for, flash
+from flask import Flask, render_template, request, session, redirect, url_for, flash, jsonify
 from dotenv import load_dotenv
 import bcrypt
 import markdown as md
+from dateutil import parser as dtparser
 
 load_dotenv()
 
@@ -113,7 +115,14 @@ def inject_globals():
 
 @app.route('/')
 def index():
-    return render_template('index.html')
+    free_articles = sb_get('ipb_articles', {
+        'is_free': 'eq.true',
+        'published': 'eq.true',
+        'order': 'created_at.desc',
+        'limit': 3,
+        'select': 'id,title,slug,excerpt,created_at',
+    }) or []
+    return render_template('index.html', free_articles=free_articles)
 
 
 @app.route('/login', methods=['GET', 'POST'])
@@ -215,7 +224,6 @@ def learn():
 
 
 @app.route('/learn/<slug>')
-@login_required
 def learn_detail(slug):
     articles = sb_get('ipb_articles', {
         'slug': f'eq.{slug}',
@@ -265,6 +273,9 @@ def learn_detail(slug):
             'select': 'id,title,slug,is_free',
         }) or []
 
+    can_view = article.get('is_free') or bool(session.get('user_id'))
+    if not can_view:
+        return redirect(url_for('login'))
     return render_template('article.html', article=article, related=related, can_view=True)
 
 
@@ -406,6 +417,64 @@ def admin_members_delete(member_id):
     sb_delete('ipb_users', {'id': f'eq.{member_id}'}, service=True)
     flash('メンバーを削除しました', 'success')
     return redirect(url_for('admin_members'))
+
+
+# ── Invite routes ─────────────────────────────────────────────────────────────
+
+@app.route('/admin/invites', methods=['POST'])
+@admin_required
+def admin_invites_create():
+    data = request.get_json() or {}
+    plan = data.get('plan', 'premium')
+    token = secrets.token_urlsafe(24)
+    result = sb_post('ipb_invites', {
+        'token': token,
+        'plan': plan,
+        'created_by': session['user_id'],
+    }, service=True)
+    if result:
+        invite_url = url_for('invite_register', token=token, _external=True)
+        return jsonify({'url': invite_url})
+    return jsonify({'error': '作成に失敗しました'}), 500
+
+
+@app.route('/invite/<token>', methods=['GET', 'POST'])
+def invite_register(token):
+    invites = sb_get('ipb_invites', {'token': f'eq.{token}', 'used': 'eq.false', 'select': '*'}, service=True)
+    if not invites:
+        return render_template('invite.html', error='この招待リンクは無効または使用済みです', token=None, invite=None)
+
+    invite = invites[0]
+    expires_at = dtparser.parse(invite['expires_at'])
+    if datetime.now(timezone.utc) > expires_at:
+        return render_template('invite.html', error='この招待リンクは期限切れです（有効期限: 7日）', token=None, invite=None)
+
+    if request.method == 'POST':
+        name = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+
+        if not name or not email or len(password) < 6:
+            return render_template('invite.html', error='すべての項目を入力してください（パスワードは6文字以上）', token=token, invite=invite)
+
+        pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+        user = sb_post('ipb_users', {
+            'name': name,
+            'email': email,
+            'password_hash': pw_hash,
+            'role': 'member',
+            'plan': invite['plan'],
+        }, service=True)
+
+        if not user:
+            return render_template('invite.html', error='登録に失敗しました（メールアドレスが重複している可能性があります）', token=token, invite=invite)
+
+        sb_patch('ipb_invites', {'token': f'eq.{token}'}, {'used': True}, service=True)
+        _set_session(user)
+        flash('登録が完了しました！', 'success')
+        return redirect(url_for('dashboard'))
+
+    return render_template('invite.html', token=token, invite=invite, error=None)
 
 
 if __name__ == '__main__':

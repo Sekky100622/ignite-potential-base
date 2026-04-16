@@ -1,0 +1,54 @@
+{% extends 'base.html' %}
+{% block title %}招待登録 | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width:440px;">
+    <div style="text-align:center;margin-bottom:2rem;">
+      <div style="font-size:2.5rem;margin-bottom:.75rem;">⚾</div>
+      <h1 style="font-size:1.75rem;font-weight:800;">メンバー登録</h1>
+      <p class="text-gray text-sm mt-1">Ignite Potential Base へようこそ</p>
+    </div>
+
+    {% if error %}
+    <div style="background:rgba(239,68,68,.15);border:1px solid rgba(239,68,68,.4);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;color:#fca5a5;font-size:.9rem;">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    {% if token %}
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:2rem;">
+      {% if invite %}
+      <div style="margin-bottom:1.25rem;padding:.6rem 1rem;background:rgba(249,115,22,.12);border-radius:8px;font-size:.85rem;color:var(--orange);">
+        プラン: {% if invite.plan == 'premium' %}⭐ プレミアム{% else %}フリー{% endif %}
+      </div>
+      {% endif %}
+      <form method="POST" action="{{ url_for('invite_register', token=token) }}">
+        <div class="form-group">
+          <label class="form-label" for="name">お名前</label>
+          <input class="form-control" type="text" id="name" name="name"
+                 placeholder="山田 太郎" required autocomplete="name">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="email">メールアドレス</label>
+          <input class="form-control" type="email" id="email" name="email"
+                 placeholder="taro@example.com" required autocomplete="email">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="password">パスワード（6文字以上）</label>
+          <input class="form-control" type="password" id="password" name="password"
+                 placeholder="••••••••" required minlength="6" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem;">
+          登録する
+        </button>
+      </form>
+    </div>
+    {% else %}
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:2rem;text-align:center;color:var(--gray-400);">
+      <p>招待リンクが無効です。コーチに再度リンクを発行してもらってください。</p>
+    </div>
+    {% endif %}
+  </div>
+</section>
+{% endblock %}
