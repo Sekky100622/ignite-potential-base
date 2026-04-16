@@ -51,8 +51,15 @@ def sb_post(table, data, service=False):
     try:
         r = req.post(f'{SUPABASE_URL}/rest/v1/{table}',
                      headers=supabase_headers(service), json=data, timeout=10)
-        result = r.json()
-        return result[0] if (r.ok and isinstance(result, list) and result) else None
+        if not r.ok:
+            return None
+        try:
+            result = r.json()
+            if isinstance(result, list) and result:
+                return result[0]
+        except Exception:
+            pass
+        return True  # 成功だがデータなし
     except Exception:
         return None
 
