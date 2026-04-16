@@ -1,0 +1,76 @@
+{% extends 'base.html' %}
+{% block title %}ドリルライブラリ管理 | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1>⚡ ドリルライブラリ管理</h1>
+        <p>全 {{ drills|length }} 件</p>
+      </div>
+      <a href="{{ url_for('admin_library_new') }}" class="btn btn-primary">+ ドリルを追加</a>
+    </div>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>種目名</th>
+              <th>目的（抜粋）</th>
+              <th>動画</th>
+              <th>公開</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for drill in drills %}
+            <tr>
+              <td style="font-weight:600;">{{ drill.name }}</td>
+              <td style="color:var(--gray-400);font-size:.825rem;">
+                {{ drill.purpose[:40] if drill.purpose else '-' }}{% if drill.purpose and drill.purpose|length > 40 %}…{% endif %}
+              </td>
+              <td>
+                {% if drill.video_url %}
+                <span style="color:var(--green);font-size:.8rem;">✓ あり</span>
+                {% else %}
+                <span style="color:var(--gray-400);font-size:.8rem;">なし</span>
+                {% endif %}
+              </td>
+              <td>
+                {% if drill.is_free %}
+                <span class="badge badge-free">無料</span>
+                {% else %}
+                <span class="badge badge-premium">会員限定</span>
+                {% endif %}
+              </td>
+              <td style="display:flex;gap:.5rem;">
+                <a href="{{ url_for('admin_library_edit', drill_id=drill.id) }}" class="btn btn-ghost btn-sm">編集</a>
+                <form action="{{ url_for('admin_library_delete', drill_id=drill.id) }}" method="POST"
+                      onsubmit="return confirm('「{{ drill.name }}」を削除しますか？');">
+                  <button type="submit" class="btn btn-danger btn-sm">削除</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" style="text-align:center;padding:3rem;color:var(--gray-400);">
+                ドリルがまだありません
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+    <div style="margin-top:1rem;">
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

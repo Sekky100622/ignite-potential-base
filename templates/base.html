@@ -312,6 +312,7 @@
         ⚾ <span>IPB</span> Ignite Potential Base
       </a>
       <div class="navbar-actions">
+        <a href="{{ url_for('library') }}" class="btn btn-ghost btn-sm">ライブラリ</a>
         {% if session.get('user_id') %}
           <a href="{{ url_for('learn') }}" class="btn btn-ghost btn-sm">コンテンツ</a>
           <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">ダッシュボード</a>
@@ -330,6 +331,7 @@
   </nav>
   <div class="mobile-menu" id="mobileMenu">
     <div class="mobile-actions">
+      <a href="{{ url_for('library') }}" class="btn btn-ghost">ライブラリ</a>
       {% if session.get('user_id') %}
         <a href="{{ url_for('learn') }}" class="btn btn-ghost">コンテンツ</a>
         <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">ダッシュボード</a>

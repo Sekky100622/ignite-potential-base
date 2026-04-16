@@ -1,0 +1,82 @@
+{% extends 'base.html' %}
+{% block title %}ドリル・エクササイズライブラリ | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>⚡ ドリル・エクササイズライブラリ</h1>
+    <p>種目名・目的・ポイントでキーワード検索できます</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+
+    <!-- 検索 -->
+    <form method="GET" action="{{ url_for('library') }}" style="margin-bottom:2rem;">
+      <div style="display:flex;gap:.75rem;max-width:500px;">
+        <input class="form-control" type="text" name="q" value="{{ q }}"
+               placeholder="例：股関節、バッティング、体幹..." style="flex:1;">
+        <button type="submit" class="btn btn-primary">検索</button>
+        {% if q %}
+        <a href="{{ url_for('library') }}" class="btn btn-ghost">クリア</a>
+        {% endif %}
+      </div>
+    </form>
+
+    {% if q %}
+    <p style="color:var(--gray-400);font-size:.875rem;margin-bottom:1.5rem;">
+      「{{ q }}」の検索結果：{{ drills|length }} 件
+    </p>
+    {% endif %}
+
+    {% if not session.get('user_id') %}
+    <div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:.875rem;color:var(--orange);">
+      ⚾ 会員登録するとすべてのドリル・エクササイズを閲覧できます。
+      <a href="{{ url_for('login') }}" style="color:var(--white);font-weight:700;margin-left:.5rem;">ログイン →</a>
+    </div>
+    {% endif %}
+
+    {% if drills %}
+    <div class="grid grid-3">
+      {% for drill in drills %}
+      <a href="{{ url_for('drill_detail', drill_id=drill.id) }}"
+         style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;display:block;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s;"
+         onmouseover="this.style.borderColor='rgba(249,115,22,.4)';this.style.transform='translateY(-3px)'"
+         onmouseout="this.style.borderColor='rgba(255,255,255,.08)';this.style.transform='none'">
+        <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem;">
+          <div style="font-size:1.75rem;">
+            {% if drill.video_url %}🎬{% else %}📋{% endif %}
+          </div>
+          {% if drill.is_free %}
+          <span class="badge badge-free">無料</span>
+          {% else %}
+          <span class="badge badge-premium">会員限定</span>
+          {% endif %}
+        </div>
+        <div style="font-weight:700;font-size:.975rem;margin-bottom:.5rem;line-height:1.4;">{{ drill.name }}</div>
+        {% if drill.purpose %}
+        <div style="color:var(--gray-400);font-size:.825rem;line-height:1.6;">
+          {{ drill.purpose[:60] }}{% if drill.purpose|length > 60 %}…{% endif %}
+        </div>
+        {% endif %}
+        <div style="margin-top:1rem;color:var(--orange);font-size:.8rem;font-weight:600;">詳しく見る →</div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:4rem;color:var(--gray-400);">
+      {% if q %}
+      <p>「{{ q }}」に一致するドリルが見つかりませんでした。</p>
+      {% else %}
+      <p>ドリルを準備中です。もうしばらくお待ちください。</p>
+      {% endif %}
+    </div>
+    {% endif %}
+
+    <div style="margin-top:1.5rem;">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

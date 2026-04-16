@@ -279,6 +279,56 @@ def learn_detail(slug):
     return render_template('article.html', article=article, related=related, can_view=True)
 
 
+# ── Library routes ────────────────────────────────────────────────────────────
+
+@app.route('/library')
+def library():
+    q = request.args.get('q', '').strip()
+    params = {'order': 'created_at.desc', 'select': '*'}
+    drills = sb_get('ipb_drills', params) or []
+
+    if q:
+        ql = q.lower()
+        drills = [d for d in drills if ql in (d.get('name') or '').lower()
+                  or ql in (d.get('purpose') or '').lower()
+                  or ql in (d.get('points') or '').lower()]
+
+    # 非会員は無料ドリルのみ
+    if not session.get('user_id'):
+        drills = [d for d in drills if d.get('is_free')]
+
+    return render_template('library.html', drills=drills, q=q)
+
+
+@app.route('/library/<drill_id>')
+def drill_detail(drill_id):
+    drills = sb_get('ipb_drills', {'id': f'eq.{drill_id}', 'select': '*'})
+    if not drills:
+        return redirect(url_for('library'))
+    drill = drills[0]
+    if not drill.get('is_free') and not session.get('user_id'):
+        return redirect(url_for('login'))
+
+    # 動画URLをYouTube埋め込みに変換
+    video_url = drill.get('video_url', '') or ''
+    embed_url = ''
+    if 'youtube.com/watch' in video_url:
+        m = re.search(r'v=([^&]+)', video_url)
+        if m:
+            embed_url = f'https://www.youtube.com/embed/{m.group(1)}'
+    elif 'youtu.be/' in video_url:
+        vid = video_url.split('youtu.be/')[-1].split('?')[0]
+        embed_url = f'https://www.youtube.com/embed/{vid}'
+    elif 'youtube.com/shorts/' in video_url:
+        vid = video_url.split('shorts/')[-1].split('?')[0]
+        embed_url = f'https://www.youtube.com/embed/{vid}'
+    elif video_url:
+        embed_url = video_url
+    drill['video_embed_url'] = embed_url
+
+    return render_template('drill.html', drill=drill)
+
+
 # ── Admin routes ──────────────────────────────────────────────────────────────
 
 @app.route('/admin')
@@ -374,6 +424,59 @@ def _article_form_data(form):
         'pdf_url':       form.get('pdf_url', '').strip(),
         'pdf_name':      form.get('pdf_name', '').strip(),
     }
+
+
+@app.route('/admin/library')
+@admin_required
+def admin_library():
+    drills = sb_get('ipb_drills', {'order': 'created_at.desc', 'select': '*'}) or []
+    return render_template('admin/library.html', drills=drills)
+
+
+@app.route('/admin/library/new', methods=['GET', 'POST'])
+@admin_required
+def admin_library_new():
+    if request.method == 'POST':
+        result = sb_post('ipb_drills', {
+            'name':      request.form.get('name', '').strip(),
+            'purpose':   request.form.get('purpose', '').strip(),
+            'video_url': request.form.get('video_url', '').strip(),
+            'points':    request.form.get('points', '').strip(),
+            'is_free':   'is_free' in request.form,
+        }, service=True)
+        if result:
+            flash('ドリルを追加しました', 'success')
+            return redirect(url_for('admin_library'))
+        flash('追加に失敗しました', 'error')
+    return render_template('admin/drill_form.html', drill={}, edit=False)
+
+
+@app.route('/admin/library/<drill_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_library_edit(drill_id):
+    drills = sb_get('ipb_drills', {'id': f'eq.{drill_id}', 'select': '*'})
+    if not drills:
+        return redirect(url_for('admin_library'))
+    drill = drills[0]
+    if request.method == 'POST':
+        sb_patch('ipb_drills', {'id': f'eq.{drill_id}'}, {
+            'name':      request.form.get('name', '').strip(),
+            'purpose':   request.form.get('purpose', '').strip(),
+            'video_url': request.form.get('video_url', '').strip(),
+            'points':    request.form.get('points', '').strip(),
+            'is_free':   'is_free' in request.form,
+        }, service=True)
+        flash('更新しました', 'success')
+        return redirect(url_for('admin_library'))
+    return render_template('admin/drill_form.html', drill=drill, edit=True)
+
+
+@app.route('/admin/library/<drill_id>/delete', methods=['POST'])
+@admin_required
+def admin_library_delete(drill_id):
+    sb_delete('ipb_drills', {'id': f'eq.{drill_id}'}, service=True)
+    flash('削除しました', 'success')
+    return redirect(url_for('admin_library'))
 
 
 @app.route('/admin/members')
