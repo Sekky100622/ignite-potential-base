@@ -206,17 +206,24 @@ def sb_rpc(func_name, data, service=False):
 
 # ── Drill helpers (Supabase REST API) ─────────────────────────────────────────
 
-def pg_drills(**filters):
+def pg_drills(drill_id=None, is_free=None, category=None, q=None):
     """Get drills via direct SQL."""
-    sql = 'SELECT id,name,purpose,video_url,method,points,is_free,created_at,category FROM ipb_drills'
+    sql = ('SELECT id,name,purpose,video_url,method,points,is_free,created_at,category,difficulty '
+           'FROM ipb_drills')
     conditions = []
     params = []
-    if 'is_free' in filters:
+    if drill_id is not None:
+        conditions.append('id=%s')
+        params.append(drill_id)
+    if is_free is not None:
         conditions.append('is_free=%s')
-        params.append(filters['is_free'])
-    if 'category' in filters:
+        params.append(is_free)
+    if category:
         conditions.append('category=%s')
-        params.append(filters['category'])
+        params.append(category)
+    if q:
+        conditions.append('(name ILIKE %s OR purpose ILIKE %s OR points ILIKE %s)')
+        params.extend([f'%{q}%', f'%{q}%', f'%{q}%'])
     if conditions:
         sql += ' WHERE ' + ' AND '.join(conditions)
     sql += ' ORDER BY sort_order ASC, created_at DESC'
@@ -908,7 +915,7 @@ def library():
 
 @app.route('/library/<drill_id>')
 def drill_detail(drill_id):
-    drills = pg_drills(**{'id': f'eq.{drill_id}'})
+    drills = pg_drills(drill_id=drill_id)
     if not drills:
         return redirect(url_for('library'))
     drill = drills[0]
@@ -939,7 +946,8 @@ def drill_detail(drill_id):
     # 同カテゴリの関連ドリル
     related_drills = []
     if drill.get('category'):
-        related_drills = pg_drills(**{'category': f'eq.{drill["category"]}', 'id': f'neq.{drill_id}', 'limit': '3'})
+        all_related = pg_drills(category=drill['category'])
+        related_drills = [d for d in all_related if str(d['id']) != str(drill_id)][:3]
 
     return render_template('drill.html', drill=drill, related_drills=related_drills)
 
@@ -1174,7 +1182,7 @@ def admin_library_new():
 @app.route('/admin/library/<drill_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def admin_library_edit(drill_id):
-    rows = pg_drills(**{'id': f'eq.{drill_id}'})
+    rows = pg_drills(drill_id=drill_id)
     if not rows:
         return redirect(url_for('admin_library'))
     drill = rows[0]
