@@ -282,6 +282,8 @@ def ensure_tables():
     db_execute('ALTER TABLE ipb_articles ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0')
     db_execute('ALTER TABLE ipb_articles ADD COLUMN IF NOT EXISTS tags TEXT')
     db_execute('ALTER TABLE ipb_drills ADD COLUMN IF NOT EXISTS difficulty TEXT')
+    db_execute('ALTER TABLE ipb_drills ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 9999')
+    db_execute('ALTER TABLE ipb_comments ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT TRUE')
 
 ensure_tables()
 
@@ -689,7 +691,7 @@ def learn_detail(slug):
         SELECT c.id, c.content, c.created_at, u.name AS user_name, c.user_id
         FROM ipb_comments c
         JOIN ipb_users u ON c.user_id = u.id
-        WHERE c.article_id = %s
+        WHERE c.article_id = %s AND c.approved = TRUE
         ORDER BY c.created_at ASC
     ''', (article_id,))
 
@@ -1045,7 +1047,10 @@ def admin_notices_delete(notice_id):
 @app.route('/admin/library')
 @admin_required
 def admin_library():
-    drills = pg_drills()
+    drills = db_fetchall(
+        'SELECT id,name,purpose,video_url,method,points,is_free,created_at,category,difficulty,sort_order '
+        'FROM ipb_drills ORDER BY COALESCE(sort_order,9999), created_at DESC'
+    ) or []
     return render_template('admin/library.html', drills=drills, categories=DRILL_CATEGORIES)
 
 
@@ -1123,6 +1128,54 @@ def admin_library_delete(drill_id):
     sb_delete('ipb_drills', {'id': f'eq.{drill_id}'}, service=True)
     flash('削除しました', 'success')
     return redirect(url_for('admin_library'))
+
+
+@app.route('/admin/library/sort', methods=['POST'])
+@admin_required
+def admin_library_sort():
+    data = request.get_json()
+    order = data.get('order', [])
+    for i, drill_id in enumerate(order):
+        db_execute('UPDATE ipb_drills SET sort_order=%s WHERE id=%s', (i, drill_id))
+    return jsonify({'ok': True})
+
+
+@app.route('/admin/comments')
+@admin_required
+def admin_comments():
+    comments = db_fetchall('''
+        SELECT c.id, c.content, c.created_at, c.approved,
+               u.name AS user_name, u.email AS user_email,
+               a.title AS article_title, a.slug AS article_slug
+        FROM ipb_comments c
+        JOIN ipb_users u ON c.user_id = u.id
+        JOIN ipb_articles a ON c.article_id = a.id
+        ORDER BY c.created_at DESC
+    ''') or []
+    return render_template('admin/comments.html', comments=comments)
+
+
+@app.route('/admin/comments/bulk', methods=['POST'])
+@admin_required
+def admin_comments_bulk():
+    action = request.form.get('action')
+    ids = request.form.getlist('comment_ids')
+    if not ids:
+        flash('コメントを選択してください', 'error')
+        return redirect(url_for('admin_comments'))
+    if action == 'delete':
+        for cid in ids:
+            db_execute('DELETE FROM ipb_comments WHERE id=%s', (cid,))
+        flash(f'{len(ids)}件を削除しました', 'success')
+    elif action == 'reject':
+        for cid in ids:
+            db_execute('UPDATE ipb_comments SET approved=FALSE WHERE id=%s', (cid,))
+        flash(f'{len(ids)}件を非承認にしました', 'success')
+    elif action == 'approve':
+        for cid in ids:
+            db_execute('UPDATE ipb_comments SET approved=TRUE WHERE id=%s', (cid,))
+        flash(f'{len(ids)}件を承認しました', 'success')
+    return redirect(url_for('admin_comments'))
 
 
 @app.route('/admin/members')
@@ -1457,6 +1510,32 @@ def sitemap():
         lines.append(f'<url><loc>{loc}</loc>{lastmod}</url>')
     lines.append('</urlset>')
     return '\n'.join(lines), 200, {'Content-Type': 'application/xml'}
+
+
+@app.route('/api/notices/latest')
+def api_notices_latest():
+    row = db_fetchone('SELECT id FROM ipb_notices WHERE published=TRUE ORDER BY created_at DESC LIMIT 1')
+    return jsonify({'id': str(row['id']) if row else None})
+
+
+@app.route('/bookmarks')
+@login_required
+def bookmarks():
+    user_id = session['user_id']
+    bm_list = db_fetchall('''
+        SELECT a.id, a.title, a.slug, a.excerpt, a.thumbnail_url, b.created_at AS bookmarked_at
+        FROM ipb_bookmarks b
+        JOIN ipb_articles a ON b.article_id = a.id
+        WHERE b.user_id = %s ORDER BY b.created_at DESC
+    ''', (user_id,)) or []
+    return render_template('bookmarks.html', bookmarks=bm_list)
+
+
+@app.route('/history')
+@login_required
+def history():
+    recently_viewed = session.get('recently_viewed', [])
+    return render_template('history.html', recently_viewed=recently_viewed)
 
 
 @app.route('/robots.txt')

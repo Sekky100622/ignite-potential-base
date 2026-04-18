@@ -1,0 +1,108 @@
+{% extends 'base.html' %}
+{% block title %}コメント管理 | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1>💬 コメント管理</h1>
+        <p>全{{ comments|length }}件</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+    <form action="{{ url_for('admin_comments_bulk') }}" method="POST" id="bulk-form">
+      <!-- 一括操作バー -->
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap;">
+          <label style="font-size:.85rem;color:var(--gray-400);">
+            <input type="checkbox" id="check-all" onchange="toggleAll(this)" style="margin-right:.4rem;">全選択
+          </label>
+          <span id="selected-count" style="font-size:.85rem;color:var(--gray-400);">0件選択中</span>
+          <div style="margin-left:auto;display:flex;gap:.5rem;flex-wrap:wrap;">
+            <button type="submit" name="action" value="approve" class="btn btn-ghost btn-sm" style="color:#4ade80;border-color:rgba(34,197,94,.3);">✓ 承認</button>
+            <button type="submit" name="action" value="reject" class="btn btn-ghost btn-sm" style="color:var(--gray-400);">✕ 非承認</button>
+            <button type="submit" name="action" value="delete" class="btn btn-danger btn-sm"
+                    onclick="return confirm('選択したコメントを削除しますか？')">🗑 削除</button>
+          </div>
+        </div>
+
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th>ユーザー</th>
+                <th>記事</th>
+                <th>コメント内容</th>
+                <th>状態</th>
+                <th>日時</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for c in comments %}
+              <tr style="{% if not c.approved %}opacity:.6;{% endif %}">
+                <td>
+                  <input type="checkbox" name="comment_ids" value="{{ c.id }}" class="comment-check" onchange="updateCount()">
+                </td>
+                <td>
+                  <div style="font-size:.875rem;font-weight:500;">{{ c.user_name }}</div>
+                  <div style="font-size:.75rem;color:var(--gray-400);">{{ c.user_email }}</div>
+                </td>
+                <td>
+                  <a href="{{ url_for('learn_detail', slug=c.article_slug) }}" style="font-size:.8rem;color:var(--gray-400);">
+                    {{ c.article_title[:25] }}{% if c.article_title|length > 25 %}…{% endif %}
+                  </a>
+                </td>
+                <td style="max-width:300px;">
+                  <div style="font-size:.875rem;color:var(--gray-200);line-height:1.5;">
+                    {{ c.content[:80] }}{% if c.content|length > 80 %}…{% endif %}
+                  </div>
+                </td>
+                <td>
+                  {% if c.approved %}
+                    <span style="font-size:.75rem;color:#4ade80;font-weight:600;">✓ 承認済み</span>
+                  {% else %}
+                    <span style="font-size:.75rem;color:var(--gray-400);">非承認</span>
+                  {% endif %}
+                </td>
+                <td style="color:var(--gray-400);font-size:.8rem;white-space:nowrap;">
+                  {{ c.created_at.strftime('%Y/%m/%d %H:%M') if c.created_at else '-' }}
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="6" style="text-align:center;padding:3rem;color:var(--gray-400);">
+                  コメントはまだありません
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
+      </div>
+    </form>
+
+    <div style="margin-top:1rem;">
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
+    </div>
+  </div>
+</section>
+
+{% block scripts %}
+<script>
+function toggleAll(cb) {
+  document.querySelectorAll('.comment-check').forEach(c => c.checked = cb.checked);
+  updateCount();
+}
+function updateCount() {
+  const n = document.querySelectorAll('.comment-check:checked').length;
+  document.getElementById('selected-count').textContent = n + '件選択中';
+}
+</script>
+{% endblock %}
+{% endblock %}

@@ -1,0 +1,44 @@
+{% extends 'base.html' %}
+{% block title %}閲覧履歴 | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>🕐 閲覧履歴</h1>
+    <p>最近見た記事（最大5件・セッション内）</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container" style="max-width:700px;">
+    {% if recently_viewed %}
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;">
+      {% for a in recently_viewed %}
+      <a href="{{ url_for('learn_detail', slug=a.slug) }}"
+         style="display:flex;align-items:center;gap:1rem;padding:1rem 1.25rem;border-bottom:1px solid rgba(255,255,255,.05);text-decoration:none;color:inherit;transition:background .2s;"
+         onmouseover="this.style.background='rgba(255,255,255,.03)'"
+         onmouseout="this.style.background='none'">
+        <span style="font-size:1.5rem;flex-shrink:0;">📄</span>
+        <div style="flex:1;min-width:0;">
+          <div style="font-size:.95rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.title }}</div>
+        </div>
+        <span style="color:var(--orange);font-size:.8rem;flex-shrink:0;">読む →</span>
+      </a>
+      {% endfor %}
+    </div>
+    <p style="color:var(--gray-400);font-size:.8rem;margin-top:.75rem;">※ 履歴はブラウザのセッション内のみ保持されます。ログアウトするとリセットされます。</p>
+    {% else %}
+    <div style="text-align:center;padding:4rem 0;">
+      <div style="font-size:3rem;margin-bottom:1rem;">🕐</div>
+      <h3 style="color:var(--gray-400);">閲覧履歴はありません</h3>
+      <p style="color:var(--gray-400);font-size:.875rem;margin-top:.5rem;">記事を読むと自動的に記録されます。</p>
+      <a href="{{ url_for('learn') }}" class="btn btn-primary mt-3">記事一覧へ</a>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:1.5rem;">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

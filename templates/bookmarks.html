@@ -1,0 +1,56 @@
+{% extends 'base.html' %}
+{% block title %}保存した記事 | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>🔖 保存した記事</h1>
+    <p>全{{ bookmarks|length }}件のブックマーク</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+    {% if bookmarks %}
+    <div class="grid grid-3">
+      {% for article in bookmarks %}
+      <div class="card">
+        {% if article.thumbnail_url %}
+          <img class="card-img" src="{{ article.thumbnail_url }}" alt="{{ article.title }}" loading="lazy">
+        {% else %}
+          <div class="card-img-placeholder">🔖</div>
+        {% endif %}
+        <div class="card-body">
+          <h3 style="font-size:1rem;margin-bottom:.5rem;line-height:1.4;">
+            <a href="{{ url_for('learn_detail', slug=article.slug) }}" style="color:var(--white);">
+              {{ article.title }}
+            </a>
+          </h3>
+          {% if article.excerpt %}
+            <p class="text-gray text-sm" style="line-height:1.6;">{{ article.excerpt[:80] }}{% if article.excerpt|length > 80 %}…{% endif %}</p>
+          {% endif %}
+          <div style="margin-top:1rem;display:flex;align-items:center;justify-content:space-between;">
+            <a href="{{ url_for('learn_detail', slug=article.slug) }}" class="btn btn-outline btn-sm">読む →</a>
+            <span style="font-size:.75rem;color:var(--gray-400);">
+              {{ article.bookmarked_at.strftime('%m/%d') if article.bookmarked_at else '' }}
+            </span>
+          </div>
+        </div>
+      </div>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:4rem 0;">
+      <div style="font-size:3rem;margin-bottom:1rem;">🔖</div>
+      <h3 style="color:var(--gray-400);">保存した記事はありません</h3>
+      <p style="color:var(--gray-400);font-size:.875rem;margin-top:.5rem;">記事を読んで「保存」ボタンを押してみましょう。</p>
+      <a href="{{ url_for('learn') }}" class="btn btn-primary mt-3">記事一覧へ</a>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:2rem;">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

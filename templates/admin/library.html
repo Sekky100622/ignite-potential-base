@@ -97,6 +97,26 @@
       </div>
     </div>
 
+    <!-- ドラッグ&ドロップ並び替え -->
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;margin-top:1.5rem;">
+      <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1rem;">
+        <h3 style="font-size:.95rem;font-weight:700;">↕ 表示順の並び替え</h3>
+        <button onclick="saveOrder()" class="btn btn-primary btn-sm" id="save-order-btn">順番を保存</button>
+      </div>
+      <p style="font-size:.8rem;color:var(--gray-400);margin-bottom:.75rem;">ドラッグして並び替えてから「順番を保存」を押してください。</p>
+      <ul id="sort-list" style="list-style:none;margin:0;padding:0;">
+        {% for drill in drills %}
+        <li data-id="{{ drill.id }}"
+            draggable="true"
+            style="display:flex;align-items:center;gap:.75rem;padding:.6rem .75rem;margin-bottom:.3rem;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.07);border-radius:8px;cursor:grab;user-select:none;">
+          <span style="color:var(--gray-400);font-size:1rem;">⠿</span>
+          <span style="font-size:.875rem;flex:1;">{{ drill.name }}</span>
+          {% if drill.category %}<span style="font-size:.75rem;color:var(--orange);">{{ drill.category }}</span>{% endif %}
+        </li>
+        {% endfor %}
+      </ul>
+    </div>
+
     <div style="margin-top:1rem;">
       <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
     </div>
@@ -104,6 +124,48 @@
 </section>
 
 <script>
+// ── Drag & Drop sort ──
+(function() {
+  const list = document.getElementById('sort-list');
+  if (!list) return;
+  let dragging = null;
+  list.addEventListener('dragstart', e => {
+    dragging = e.target.closest('li');
+    dragging.style.opacity = '.4';
+  });
+  list.addEventListener('dragend', e => {
+    dragging.style.opacity = '1';
+    dragging = null;
+  });
+  list.addEventListener('dragover', e => {
+    e.preventDefault();
+    const target = e.target.closest('li');
+    if (!target || target === dragging) return;
+    const rect = target.getBoundingClientRect();
+    const after = e.clientY > rect.top + rect.height / 2;
+    list.insertBefore(dragging, after ? target.nextSibling : target);
+  });
+})();
+
+function saveOrder() {
+  const ids = Array.from(document.querySelectorAll('#sort-list li')).map(li => li.dataset.id);
+  const btn = document.getElementById('save-order-btn');
+  btn.textContent = '保存中...';
+  btn.disabled = true;
+  fetch('{{ url_for("admin_library_sort") }}', {
+    method: 'POST',
+    headers: {'Content-Type': 'application/json'},
+    body: JSON.stringify({order: ids}),
+  })
+  .then(r => r.json())
+  .then(d => {
+    btn.textContent = d.ok ? '✓ 保存しました' : '失敗しました';
+    btn.disabled = false;
+    setTimeout(() => { btn.textContent = '順番を保存'; }, 2000);
+  })
+  .catch(() => { btn.textContent = 'エラー'; btn.disabled = false; });
+}
+
 function getChecked() {
   return Array.from(document.querySelectorAll('.drill-check:checked'));
 }

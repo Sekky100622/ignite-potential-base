@@ -9,6 +9,30 @@
 {% endif %}
 
 {% block extra_head %}
+<script type="application/ld+json">
+{
+  "@context": "https://schema.org",
+  "@type": "Article",
+  "headline": "{{ article.title | e }}",
+  "description": "{{ (article.excerpt or article.title) | e }}",
+  "url": "{{ request.url }}",
+  "datePublished": "{{ article.created_at[:10] if article.created_at else '' }}",
+  "dateModified": "{{ article.updated_at[:10] if article.get('updated_at') else (article.created_at[:10] if article.created_at else '') }}",
+  "author": {
+    "@type": "Person",
+    "name": "積山大輝"
+  },
+  "publisher": {
+    "@type": "Organization",
+    "name": "Ignite Potential Base",
+    "logo": {
+      "@type": "ImageObject",
+      "url": "{{ request.host_url }}static/logo.png"
+    }
+  }{% if article.thumbnail_url %},
+  "image": "{{ article.thumbnail_url }}"{% endif %}
+}
+</script>
 <style>
   #progress-bar {
     position: fixed;
@@ -175,7 +199,7 @@
 
         <!-- Thumbnail (only if no video) -->
         {% if article.thumbnail_url and not article.video_embed_url %}
-          <img src="{{ article.thumbnail_url }}" alt="{{ article.title }}"
+          <img src="{{ article.thumbnail_url }}" alt="{{ article.title }}" loading="lazy"
                style="width:100%;height:300px;object-fit:cover;border-radius:12px;margin-bottom:2rem;">
         {% endif %}
 

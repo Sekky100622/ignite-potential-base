@@ -85,9 +85,11 @@
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
             <a href="{{ url_for('library') }}" class="btn btn-ghost" style="justify-content:center;">⚡ ドリルライブラリ</a>
             <a href="{{ url_for('learn') }}" class="btn btn-ghost" style="justify-content:center;">📚 記事一覧</a>
+            <a href="{{ url_for('bookmarks') }}" class="btn btn-ghost" style="justify-content:center;">🔖 保存した記事</a>
+            <a href="{{ url_for('history') }}" class="btn btn-ghost" style="justify-content:center;">🕐 閲覧履歴</a>
             {% if session.get('role') == 'admin' %}
             <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost" style="justify-content:center;">⚙️ 管理画面</a>
-            <a href="{{ url_for('admin_notices') }}" class="btn btn-ghost" style="justify-content:center;">📢 お知らせ</a>
+            <a href="{{ url_for('admin_comments') }}" class="btn btn-ghost" style="justify-content:center;">💬 コメント管理</a>
             {% endif %}
           </div>
         </div>

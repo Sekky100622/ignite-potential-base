@@ -343,11 +343,14 @@
         ⚾ <span>IPB</span> Ignite Potential Base
       </a>
       <div class="navbar-actions">
-        <a href="{{ url_for('library') if session.get('user_id') else url_for('register') }}" class="btn btn-ghost btn-sm">ライブラリ</a>
+        <a href="{{ url_for('library') }}" class="btn btn-ghost btn-sm">ライブラリ</a>
         <a href="{{ url_for('search') }}" class="btn btn-ghost btn-sm" title="検索">🔍</a>
         {% if session.get('user_id') %}
           <a href="{{ url_for('learn') }}" class="btn btn-ghost btn-sm">記事</a>
-          <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">ダッシュボード</a>
+          <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm" style="position:relative;">
+            ダッシュボード
+            <span id="notice-badge" style="display:none;position:absolute;top:-4px;right:-4px;width:8px;height:8px;background:var(--orange);border-radius:50%;"></span>
+          </a>
           {% if session.get('role') == 'admin' %}
             <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">管理画面</a>
           {% endif %}
@@ -357,6 +360,7 @@
           <a href="{{ url_for('register') }}" class="btn btn-ghost btn-sm">無料登録</a>
           <a href="{{ url_for('login') }}" class="btn btn-primary btn-sm">ログイン</a>
         {% endif %}
+        <button onclick="cycleFontSize()" class="btn btn-ghost btn-sm" id="font-btn" title="文字サイズ" style="width:32px;height:32px;padding:0;font-size:1rem;flex-shrink:0;">A</button>
       </div>
       <button class="hamburger" onclick="toggleMenu()" aria-label="メニュー">
         <span></span><span></span><span></span>
@@ -429,6 +433,46 @@
         setTimeout(() => fc.remove(), 500);
       }, 4000);
     }
+
+    // ── Font size toggle ──
+    const FONT_SIZES = ['16px', '18px', '14px'];
+    const FONT_LABELS = ['A', 'A+', 'A-'];
+    function cycleFontSize() {
+      let cur = localStorage.getItem('ipb-font-size') || '16px';
+      let idx = FONT_SIZES.indexOf(cur);
+      idx = (idx + 1) % FONT_SIZES.length;
+      const next = FONT_SIZES[idx];
+      document.documentElement.style.fontSize = next;
+      localStorage.setItem('ipb-font-size', next);
+      const btn = document.getElementById('font-btn');
+      if (btn) btn.textContent = FONT_LABELS[idx];
+    }
+    (function initFontSize() {
+      const saved = localStorage.getItem('ipb-font-size');
+      if (saved) {
+        document.documentElement.style.fontSize = saved;
+        const idx = FONT_SIZES.indexOf(saved);
+        const btn = document.getElementById('font-btn');
+        if (btn && idx >= 0) btn.textContent = FONT_LABELS[idx];
+      }
+    })();
+
+    // ── Notice unread badge ──
+    (function checkNoticeBadge() {
+      const badge = document.getElementById('notice-badge');
+      if (!badge) return;
+      try {
+        const seen = JSON.parse(localStorage.getItem('ipb-seen-notices') || '[]');
+        // fetch latest notice timestamp
+        fetch('/api/notices/latest')
+          .then(r => r.json())
+          .then(d => {
+            if (d.id && !seen.includes(d.id)) {
+              badge.style.display = 'block';
+            }
+          }).catch(() => {});
+      } catch(e) {}
+    })();
   </script>
   {% block scripts %}{% endblock %}
   {% block extra_scripts %}{% endblock %}
