@@ -355,6 +355,28 @@
     border: none;
   }
   .btn-line:hover { background: #05a848; color: var(--white); }
+
+  /* Step flow grid */
+  .step-grid {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: .75rem;
+  }
+  @media (max-width: 600px) {
+    .hero { padding: 3.5rem 0 3rem; }
+    .section-title { font-size: 1.4rem; }
+    .cta-section { padding: 3rem 0; }
+    .cta-section h2 { font-size: 1.4rem; }
+    .session-card { padding: 1.25rem; }
+    .membership-card { padding: 1.5rem; }
+    .membership-price { font-size: 2.25rem; }
+    .profile-card { padding: 1.25rem; }
+    .step-grid { grid-template-columns: repeat(2, 1fr); }
+    .service-card { padding: 1.5rem; }
+    .sns-btn { padding: .55rem 1rem; font-size: .825rem; }
+    .story-quote { font-size: .95rem; }
+    .session-card .area-tag { font-size: .78rem; }
+  }
 </style>
 {% endblock %}
 
@@ -573,7 +595,7 @@
     <!-- セッションの流れ -->
     <div style="margin-bottom:2rem;">
       <div style="font-size:.8rem;font-weight:700;color:var(--orange);text-transform:uppercase;letter-spacing:.08em;margin-bottom:1.25rem;">セッションの流れ</div>
-      <div style="display:grid;grid-template-columns:repeat(4,1fr);gap:.75rem;">
+      <div class="step-grid">
         <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;text-align:center;">
           <div style="font-size:1.5rem;margin-bottom:.5rem;">💬</div>
           <div style="font-size:.8rem;font-weight:700;color:var(--orange);margin-bottom:.35rem;">STEP 1</div>

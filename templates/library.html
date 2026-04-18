@@ -14,7 +14,7 @@
 
     <!-- 検索 -->
     <form method="GET" action="{{ url_for('library') }}" style="margin-bottom:2rem;">
-      <div style="display:flex;gap:.75rem;max-width:500px;">
+      <div style="display:flex;gap:.75rem;max-width:500px;flex-wrap:wrap;">
         <input class="form-control" type="text" name="q" value="{{ q }}"
                placeholder="例：股関節、バッティング、体幹..." style="flex:1;">
         <button type="submit" class="btn btn-primary">検索</button>
