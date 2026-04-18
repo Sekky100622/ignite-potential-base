@@ -11,8 +11,8 @@ from dotenv import load_dotenv
 import bcrypt
 import markdown as md
 from dateutil import parser as dtparser
-import psycopg2
-import psycopg2.extras
+import psycopg
+from psycopg.rows import dict_row
 
 load_dotenv()
 
@@ -44,18 +44,14 @@ def db_execute(sql, params=None):
     if not DATABASE_URL:
         print('[db_execute] DATABASE_URL not set', flush=True)
         return False
-    conn = psycopg2.connect(DATABASE_URL)
     try:
-        with conn.cursor() as cur:
-            cur.execute(sql, params)
-        conn.commit()
+        with psycopg.connect(DATABASE_URL) as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
         return True
     except Exception as e:
         print(f'[db_execute] error: {e}', flush=True)
-        conn.rollback()
         return False
-    finally:
-        conn.close()
 
 
 def db_fetchone(sql, params=None):
@@ -63,17 +59,14 @@ def db_fetchone(sql, params=None):
     if not DATABASE_URL:
         print('[db_fetchone] DATABASE_URL not set', flush=True)
         return None
-    conn = psycopg2.connect(DATABASE_URL)
     try:
-        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-            cur.execute(sql, params)
-            row = cur.fetchone()
-            return dict(row) if row else None
+        with psycopg.connect(DATABASE_URL, row_factory=dict_row) as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                return cur.fetchone()
     except Exception as e:
         print(f'[db_fetchone] error: {e}', flush=True)
         return None
-    finally:
-        conn.close()
 
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
