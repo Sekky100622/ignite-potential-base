@@ -686,10 +686,11 @@ def admin_members_plan(member_id):
         flash('不正なプランです', 'error')
         return redirect(url_for('admin_members'))
     try:
-        r = req.post(
-            f'{SUPABASE_URL}/rest/v1/rpc/ipb_set_user_plan',
+        r = req.patch(
+            f'{SUPABASE_URL}/rest/v1/ipb_users',
             headers={'apikey': SUPABASE_SERVICE_KEY, 'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}', 'Content-Type': 'application/json'},
-            json={'p_user_id': member_id, 'p_plan': new_plan},
+            params={'id': f'eq.{member_id}'},
+            json={'plan': new_plan},
             timeout=10,
         )
         print(f'[plan_change] member={member_id} plan={new_plan} status={r.status_code} body={r.text[:200]}', flush=True)
