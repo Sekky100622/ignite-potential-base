@@ -347,7 +347,7 @@ def dashboard():
     }) or []
 
     all_drills = pg_drills()
-    is_premium = user['plan'] == 'premium' or bool(user.get('is_team'))
+    is_premium = user['plan'] in ('premium', 'team') or bool(user.get('is_team'))
     if is_premium:
         available_drills = all_drills
     else:
@@ -443,7 +443,7 @@ def learn_detail(slug):
             'select': 'id,title,slug,is_free',
         }) or []
 
-    can_view = article.get('is_free') or session.get('plan') == 'premium' or session.get('is_team')
+    can_view = article.get('is_free') or session.get('plan') in ('premium', 'team') or session.get('is_team')
     if not can_view:
         return redirect(url_for('register'))
     return render_template('article.html', article=article, related=related, can_view=True)
@@ -469,7 +469,7 @@ def library():
     if cat:
         drills = [d for d in drills if d.get('category') == cat]
 
-    is_premium = session.get('plan') == 'premium' or session.get('is_team')
+    is_premium = session.get('plan') in ('premium', 'team') or session.get('is_team')
 
     if not is_premium:
         drills = [d for d in drills if d.get('is_free')]
@@ -488,7 +488,7 @@ def drill_detail(drill_id):
     if not session.get('user_id'):
         return redirect(url_for('register'))
     is_premium_drill = not drill.get('is_free')
-    is_premium_user = session.get('plan') == 'premium' or session.get('is_team')
+    is_premium_user = session.get('plan') in ('premium', 'team') or session.get('is_team')
     if is_premium_drill and not is_premium_user:
         return render_template('drill_upsell.html', drill=drill)
 
@@ -736,22 +736,11 @@ def admin_members_plan(member_id):
         flash('不正なプランです', 'error')
         return redirect(url_for('admin_members'))
 
-    # 直接SQLでUPDATE（PostgRESTのスキーマキャッシュを完全回避）
-    if new_plan == 'team':
-        ok = db_execute(
-            "UPDATE ipb_users SET plan = 'premium', is_team = TRUE WHERE id = %s",
-            (member_id,)
-        )
-    elif new_plan == 'premium':
-        ok = db_execute(
-            "UPDATE ipb_users SET plan = 'premium', is_team = FALSE WHERE id = %s",
-            (member_id,)
-        )
-    else:
-        ok = db_execute(
-            "UPDATE ipb_users SET plan = 'free', is_team = FALSE WHERE id = %s",
-            (member_id,)
-        )
+    # 直接SQLでUPDATE（PostgRESTを完全回避、plan='team'をそのまま保存）
+    ok = db_execute(
+        "UPDATE ipb_users SET plan = %s WHERE id = %s",
+        (new_plan, member_id)
+    )
 
     print(f'[plan_change] member={member_id} plan={new_plan} ok={ok}', flush=True)
     if ok:
@@ -833,17 +822,15 @@ def invite_register(token):
 
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         invite_plan = invite['plan']
-        plan_val = 'premium' if invite_plan == 'team' else invite_plan
-        is_team_val = (invite_plan == 'team')
 
-        # 直接SQLでINSERT（is_team・team_nameがPostgRESTキャッシュにない場合の回避）
+        # 直接SQLでINSERT（plan='team'をそのまま保存）
         user = db_fetchone(
             """
-            INSERT INTO ipb_users (name, email, password_hash, role, plan, is_team, team_name)
-            VALUES (%s, %s, %s, 'member', %s, %s, %s)
+            INSERT INTO ipb_users (name, email, password_hash, role, plan, team_name)
+            VALUES (%s, %s, %s, 'member', %s, %s)
             RETURNING *
             """,
-            (name, email, pw_hash, plan_val, is_team_val, team_name or None)
+            (name, email, pw_hash, invite_plan, team_name or None)
         )
 
         if not user:

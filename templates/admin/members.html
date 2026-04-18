@@ -75,7 +75,7 @@
                 {% endif %}
               </td>
               <td>
-                {% if member.is_team %}
+                {% if member.plan == 'team' %}
                   <span class="badge badge-premium">🤝 チーム</span>
                 {% elif member.plan == 'premium' %}
                   <span class="badge badge-premium">⭐ プレミアム</span>
