@@ -295,7 +295,7 @@ def dashboard():
     }) or []
 
     all_drills = pg_drills()
-    is_premium = user['plan'] == 'premium'
+    is_premium = user['plan'] in ('premium', 'team')
     if is_premium:
         available_drills = all_drills
     else:
@@ -391,7 +391,7 @@ def learn_detail(slug):
             'select': 'id,title,slug,is_free',
         }) or []
 
-    can_view = article.get('is_free') or session.get('plan') == 'premium'
+    can_view = article.get('is_free') or session.get('plan') in ('premium', 'team')
     if not can_view:
         return redirect(url_for('register'))
     return render_template('article.html', article=article, related=related, can_view=True)
@@ -417,7 +417,7 @@ def library():
     if cat:
         drills = [d for d in drills if d.get('category') == cat]
 
-    is_premium = session.get('plan') == 'premium'
+    is_premium = session.get('plan') in ('premium', 'team')
 
     if not is_premium:
         drills = [d for d in drills if d.get('is_free')]
@@ -436,7 +436,7 @@ def drill_detail(drill_id):
     if not session.get('user_id'):
         return redirect(url_for('register'))
     is_premium_drill = not drill.get('is_free')
-    is_premium_user = session.get('plan') == 'premium'
+    is_premium_user = session.get('plan') in ('premium', 'team')
     if is_premium_drill and not is_premium_user:
         return render_template('drill_upsell.html', drill=drill)
 

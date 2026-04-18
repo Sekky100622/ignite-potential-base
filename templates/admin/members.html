@@ -23,6 +23,7 @@
       <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
         <select id="invite-plan" style="background:var(--navy);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;padding:.5rem .75rem;font-size:.9rem;">
           <option value="premium">プレミアム</option>
+          <option value="team">チームプラン</option>
           <option value="free">フリー</option>
         </select>
         <button onclick="generateInvite()" class="btn btn-primary btn-sm">リンクを発行</button>
@@ -74,6 +75,8 @@
               <td>
                 {% if member.plan == 'premium' %}
                   <span class="badge badge-premium">⭐ プレミアム</span>
+                {% elif member.plan == 'team' %}
+                  <span class="badge badge-premium">🤝 チーム</span>
                 {% else %}
                   <span class="badge badge-cat">フリー</span>
                 {% endif %}
