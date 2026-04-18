@@ -182,15 +182,18 @@ def pg_drills(**filters):
 
 
 def pg_drill_save(data, drill_id=None):
-    """Insert or update a drill via Supabase REST API."""
+    """Insert or update a drill via direct SQL (bypasses PostgREST schema cache)."""
+    _FIELDS = ['name', 'purpose', 'video_url', 'method', 'points', 'is_free', 'category', 'difficulty']
+    present = [f for f in _FIELDS if f in data]
     if drill_id:
-        ok = sb_patch('ipb_drills', {'id': f'eq.{drill_id}'}, data, service=True)
-        if not ok:
-            return None
-        rows = pg_drills(**{'id': f'eq.{drill_id}'})
-        return rows[0] if rows else None
+        set_clauses = ', '.join(f'{f}=%s' for f in present)
+        values = [data[f] for f in present] + [drill_id]
+        return db_execute(f'UPDATE ipb_drills SET {set_clauses} WHERE id=%s', values)
     else:
-        return sb_post('ipb_drills', data, service=True)
+        cols = ', '.join(present)
+        placeholders = ', '.join(['%s'] * len(present))
+        values = [data[f] for f in present]
+        return db_execute(f'INSERT INTO ipb_drills ({cols}) VALUES ({placeholders})', values)
 
 
 def sb_patch(table, params, data, service=False):
