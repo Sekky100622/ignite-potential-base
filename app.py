@@ -736,14 +736,15 @@ def admin_members_plan(member_id):
         flash('不正なプランです', 'error')
         return redirect(url_for('admin_members'))
 
-    # service_role（RLSバイパス）でPATCH
-    ok = sb_patch('ipb_users', {'id': f'eq.{member_id}'}, {'plan': new_plan}, service=True)
+    # RPC関数経由でUPDATE（PostgRESTキャッシュ・RLSを完全バイパス）
+    result = sb_rpc('admin_set_plan', {'uid': member_id, 'new_plan': new_plan}, service=True)
+    ok = result is not None
 
     print(f'[plan_change] member={member_id} plan={new_plan} ok={ok}', flush=True)
     if ok:
         flash('プランを変更しました', 'success')
     else:
-        flash('プランの変更に失敗しました（DATABASE_URLを確認してください）', 'error')
+        flash('プランの変更に失敗しました', 'error')
     return redirect(url_for('admin_members'))
 
 
