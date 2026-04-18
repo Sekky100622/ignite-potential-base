@@ -8,6 +8,8 @@ from datetime import datetime, timezone
 from functools import wraps
 from urllib.parse import urlparse, quote_plus
 from flask import Flask, render_template, request, session, redirect, url_for, flash, jsonify
+from google.oauth2 import id_token as google_id_token
+from google.auth.transport import requests as google_requests
 from dotenv import load_dotenv
 import bcrypt
 import markdown as md
@@ -22,6 +24,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 NOTE_URL = os.getenv('NOTE_URL', '#')
 OG_IMAGE_URL = os.getenv('OG_IMAGE_URL', '')
+GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
 
 DRILL_CATEGORIES = [
     'リセット',
@@ -247,6 +250,7 @@ def ensure_tables():
             created_at TIMESTAMPTZ DEFAULT NOW()
         )
     ''')
+    db_execute('ALTER TABLE ipb_users ADD COLUMN IF NOT EXISTS google_id TEXT')
 
 ensure_tables()
 
@@ -259,6 +263,7 @@ def inject_globals():
         'note_url': NOTE_URL,
         'og_image_url': OG_IMAGE_URL,
         'current_year': datetime.now().year,
+        'google_client_id': GOOGLE_CLIENT_ID,
     }
 
 
@@ -344,6 +349,52 @@ def login():
         flash('メールアドレスまたはパスワードが正しくありません', 'error')
 
     return render_template('login.html')
+
+
+@app.route('/auth/google', methods=['POST'])
+def auth_google():
+    credential = request.form.get('credential', '')
+    if not credential or not GOOGLE_CLIENT_ID:
+        flash('Googleログインに失敗しました', 'error')
+        return redirect(url_for('login'))
+    try:
+        idinfo = google_id_token.verify_oauth2_token(
+            credential, google_requests.Request(), GOOGLE_CLIENT_ID
+        )
+    except Exception as e:
+        print(f'[auth_google] token verify failed: {e}', flush=True)
+        flash('Googleログインに失敗しました。再度お試しください。', 'error')
+        return redirect(url_for('login'))
+
+    email = (idinfo.get('email') or '').lower()
+    name = idinfo.get('name') or email.split('@')[0]
+    google_id = idinfo.get('sub', '')
+
+    if not email:
+        flash('メールアドレスを取得できませんでした', 'error')
+        return redirect(url_for('login'))
+
+    # 既存ユーザー確認
+    users = sb_get('ipb_users', {'email': f'eq.{email}', 'select': '*'}, service=True)
+    if users:
+        user = users[0]
+        if not user.get('google_id') and google_id:
+            sb_patch('ipb_users', {'id': f'eq.{user["id"]}'}, {'google_id': google_id}, service=True)
+        _set_session(user)
+        return redirect(url_for('dashboard'))
+
+    # 新規登録
+    new_user = sb_post('ipb_users', {
+        'name': name, 'email': email, 'google_id': google_id,
+        'password_hash': '', 'role': 'member', 'plan': 'free',
+    }, service=True)
+    if new_user and isinstance(new_user, dict):
+        _set_session(new_user)
+        flash('Googleアカウントで登録が完了しました！', 'success')
+        return redirect(url_for('library'))
+
+    flash('登録に失敗しました。時間をおいて再度お試しください。', 'error')
+    return redirect(url_for('register'))
 
 
 def _set_session(user):

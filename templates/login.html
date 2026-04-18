@@ -11,6 +11,32 @@
     </div>
 
     <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:2rem;">
+
+      {% if google_client_id %}
+      <!-- Google Sign-In -->
+      <div id="g_id_onload"
+           data-client_id="{{ google_client_id }}"
+           data-callback="handleGoogleCredential"
+           data-auto_prompt="false">
+      </div>
+      <div style="display:flex;justify-content:center;margin-bottom:1.25rem;">
+        <div class="g_id_signin"
+             data-type="standard"
+             data-shape="rectangular"
+             data-theme="filled_black"
+             data-text="signin_with"
+             data-size="large"
+             data-logo_alignment="left"
+             data-width="360">
+        </div>
+      </div>
+      <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:1.25rem;">
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.1);"></div>
+        <span style="color:var(--gray-400);font-size:.8rem;">または</span>
+        <div style="flex:1;height:1px;background:rgba(255,255,255,.1);"></div>
+      </div>
+      {% endif %}
+
       <form method="POST" action="{{ url_for('login') }}">
         <div class="form-group">
           <label class="form-label" for="email">メールアドレス</label>
@@ -35,4 +61,22 @@
     </div>
   </div>
 </section>
+
+{% if google_client_id %}
+<script src="https://accounts.google.com/gsi/client" async defer></script>
+<script>
+function handleGoogleCredential(response) {
+  const form = document.createElement('form');
+  form.method = 'POST';
+  form.action = '{{ url_for("auth_google") }}';
+  const input = document.createElement('input');
+  input.type = 'hidden';
+  input.name = 'credential';
+  input.value = response.credential;
+  form.appendChild(input);
+  document.body.appendChild(form);
+  form.submit();
+}
+</script>
+{% endif %}
 {% endblock %}

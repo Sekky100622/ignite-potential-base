@@ -6,3 +6,4 @@ bcrypt==4.1.2
 markdown==3.5.2
 python-dateutil==2.9.0
 psycopg[binary]==3.2.13
+google-auth==2.29.0
