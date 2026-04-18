@@ -34,11 +34,8 @@
         {% else %}
           <div class="card-img-placeholder">
             {% if article.category and article.category.slug == 'skill' %}🏏
-            {% elif article.category and article.category.slug == 'training' %}💪
-            {% elif article.category and article.category.slug == 'mental' %}🧠
-            {% elif article.category and article.category.slug == 'nutrition' %}🥗
-            {% elif article.category and article.category.slug == 'condition' %}🏃
-            {% elif article.category and article.category.slug == 'coaching' %}📋
+            {% elif article.category and article.category.slug == 'physical' %}💪
+            {% elif article.category and article.category.slug == 'mind' %}🧠
             {% else %}📄{% endif %}
           </div>
         {% endif %}

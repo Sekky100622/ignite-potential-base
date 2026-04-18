@@ -34,12 +34,9 @@
         {% else %}
           <div class="card-img-placeholder">
             {% if article.category %}
-              {% if article.category.slug == 'batting' %}🏏
-              {% elif article.category.slug == 'pitching' %}⚾
-              {% elif article.category.slug == 'training' %}💪
-              {% elif article.category.slug == 'theory' %}🧠
-              {% elif article.category.slug == 'drill' %}🎯
-              {% elif article.category.slug == 'program' %}📋
+              {% if article.category.slug == 'skill' %}🏏
+              {% elif article.category.slug == 'physical' %}💪
+              {% elif article.category.slug == 'mind' %}🧠
               {% else %}📄{% endif %}
             {% else %}📄{% endif %}
           </div>
