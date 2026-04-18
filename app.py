@@ -383,35 +383,35 @@ def dashboard():
 def learn():
     cat_slug = request.args.get('category', '')
     q = request.args.get('q', '').strip()
-    categories = db_fetchall(
-        'SELECT id, name, slug, sort_order FROM ipb_categories ORDER BY sort_order ASC'
-    )
-    cat_map = {str(c['id']): c for c in categories}
 
-    sql_base = '''SELECT id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at
-                  FROM ipb_articles WHERE published=true'''
-    params = []
+    categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
+    cat_map = {c['id']: c for c in categories}
 
+    params = {
+        'published': 'is.true',
+        'order': 'created_at.desc',
+        'select': 'id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at',
+    }
     if cat_slug:
         matching = [c for c in categories if c['slug'] == cat_slug]
         if matching:
-            sql_base += ' AND category_id=%s'
-            params.append(matching[0]['id'])
+            params['category_id'] = f'eq.{matching[0]["id"]}'
         else:
-            articles = []
             return render_template('learn.html', articles=[], categories=categories,
                                    active_category=cat_slug, q=q)
 
-    if q:
-        sql_base += ' AND (title ILIKE %s OR excerpt ILIKE %s OR content ILIKE %s)'
-        like = f'%{q}%'
-        params += [like, like, like]
+    articles = sb_get('ipb_articles', params) or []
 
-    sql_base += ' ORDER BY created_at DESC'
-    articles = db_fetchall(sql_base, params or None)
+    # キーワード検索（Python側でフィルタ）
+    if q:
+        ql = q.lower()
+        articles = [a for a in articles if
+                    ql in (a.get('title') or '').lower() or
+                    ql in (a.get('excerpt') or '').lower() or
+                    ql in (a.get('content') or '').lower()]
 
     for a in articles:
-        a['category'] = cat_map.get(str(a.get('category_id')))
+        a['category'] = cat_map.get(a.get('category_id'))
 
     return render_template('learn.html', articles=articles, categories=categories,
                            active_category=cat_slug, q=q)
@@ -419,17 +419,15 @@ def learn():
 
 @app.route('/learn/<slug>')
 def learn_detail(slug):
-    article = db_fetchone(
-        'SELECT * FROM ipb_articles WHERE slug=%s AND published=true', (slug,)
-    )
-    if not article:
+    articles = sb_get('ipb_articles', {'slug': f'eq.{slug}', 'published': 'is.true', 'select': '*'})
+    if not articles:
         return redirect(url_for('learn'))
+    article = articles[0]
 
     # attach category
     if article.get('category_id'):
-        article['category'] = db_fetchone(
-            'SELECT * FROM ipb_categories WHERE id=%s', (article['category_id'],)
-        )
+        cats = sb_get('ipb_categories', {'id': f'eq.{article["category_id"]}', 'select': '*'})
+        article['category'] = cats[0] if cats else None
     else:
         article['category'] = None
 
@@ -456,11 +454,13 @@ def learn_detail(slug):
     # related articles (same category)
     related = []
     if article.get('category_id'):
-        related = db_fetchall(
-            '''SELECT id,title,slug,is_free FROM ipb_articles
-               WHERE category_id=%s AND published=true AND id!=%s LIMIT 4''',
-            (article['category_id'], article['id'])
-        )
+        related = sb_get('ipb_articles', {
+            'category_id': f'eq.{article["category_id"]}',
+            'published': 'is.true',
+            'id': f'neq.{article["id"]}',
+            'limit': 4,
+            'select': 'id,title,slug,is_free',
+        }) or []
 
     can_view = article.get('is_free') or session.get('plan') in ('premium', 'team') or session.get('is_team')
     if not can_view:
@@ -565,18 +565,18 @@ def admin_dashboard():
 @app.route('/admin/articles')
 @admin_required
 def admin_articles():
-    articles = db_fetchall('SELECT * FROM ipb_articles ORDER BY created_at DESC')
-    categories = db_fetchall('SELECT * FROM ipb_categories ORDER BY sort_order')
-    cat_map = {str(c['id']): c for c in categories}
+    articles = sb_get('ipb_articles', {'order': 'created_at.desc', 'select': '*'}) or []
+    categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
+    cat_map = {c['id']: c for c in categories}
     for a in articles:
-        a['category'] = cat_map.get(str(a.get('category_id')))
+        a['category'] = cat_map.get(a.get('category_id'))
     return render_template('admin/articles.html', articles=articles)
 
 
 @app.route('/admin/articles/new', methods=['GET', 'POST'])
 @admin_required
 def admin_articles_new():
-    categories = db_fetchall('SELECT * FROM ipb_categories ORDER BY sort_order')
+    categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
     if request.method == 'POST':
         d = _article_form_data(request.form)
         ok = db_execute(
@@ -598,10 +598,11 @@ def admin_articles_new():
 @app.route('/admin/articles/<article_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def admin_articles_edit(article_id):
-    article = db_fetchone('SELECT * FROM ipb_articles WHERE id=%s', (article_id,))
-    if not article:
+    arts = sb_get('ipb_articles', {'id': f'eq.{article_id}', 'select': '*'}) or []
+    if not arts:
         return redirect(url_for('admin_articles'))
-    categories = db_fetchall('SELECT * FROM ipb_categories ORDER BY sort_order')
+    article = arts[0]
+    categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
 
     if request.method == 'POST':
         d = _article_form_data(request.form)
