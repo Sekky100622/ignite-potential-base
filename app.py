@@ -107,7 +107,10 @@ def sb_rpc(func_name, data, service=False):
 
 # ── Direct PostgreSQL helpers (for columns PostgREST cache doesn't know yet) ──
 
+_last_pg_error = None
+
 def _pg_conn():
+    global _last_pg_error
     if not HAS_PSYCOPG2 or not DATABASE_URL:
         return None
     try:
@@ -116,7 +119,7 @@ def _pg_conn():
         ssl_ctx = _ssl.create_default_context()
         ssl_ctx.check_hostname = False
         ssl_ctx.verify_mode = _ssl.CERT_NONE
-        return _pg8000.connect(
+        conn = _pg8000.connect(
             host=p.hostname,
             port=p.port or 5432,
             database=db,
@@ -124,7 +127,10 @@ def _pg_conn():
             password=p.password,
             ssl_context=ssl_ctx,
         )
+        _last_pg_error = None
+        return conn
     except Exception as e:
+        _last_pg_error = str(e)
         print(f'[pg] connect error: {e}')
         return None
 
@@ -654,6 +660,7 @@ def admin_dbcheck():
             conn.close()
     else:
         info['connected'] = False
+        info['connect_error'] = _last_pg_error
     return jsonify(info)
 
 
