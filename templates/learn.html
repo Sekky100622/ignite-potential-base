@@ -11,6 +11,22 @@
 
 <section class="section-sm">
   <div class="container">
+    <!-- Search bar -->
+    <form method="GET" action="{{ url_for('learn') }}" style="margin-bottom:1.25rem;">
+      {% if active_category %}
+      <input type="hidden" name="category" value="{{ active_category }}">
+      {% endif %}
+      <div style="display:flex;gap:.5rem;">
+        <input type="text" name="q" value="{{ q or '' }}"
+               placeholder="記事を検索..."
+               style="flex:1;background:var(--navy-light);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;padding:.55rem 1rem;font-size:.9rem;">
+        <button type="submit" class="btn btn-primary btn-sm">検索</button>
+        {% if q %}
+        <a href="{{ url_for('learn', category=active_category) }}" class="btn btn-ghost btn-sm">✕ クリア</a>
+        {% endif %}
+      </div>
+    </form>
+
     <!-- Category filter -->
     <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem;">
       <a href="{{ url_for('learn') }}"
@@ -24,6 +40,12 @@
       </a>
       {% endfor %}
     </div>
+
+    {% if q %}
+    <p style="color:var(--gray-400);font-size:.9rem;margin-bottom:1rem;">
+      「{{ q }}」の検索結果：{{ articles|length }}件
+    </p>
+    {% endif %}
 
     {% if articles %}
     <div class="grid grid-3">

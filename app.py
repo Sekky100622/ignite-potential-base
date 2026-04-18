@@ -6,6 +6,7 @@ import hashlib
 import requests as req
 from datetime import datetime, timezone
 from functools import wraps
+from urllib.parse import urlparse, quote_plus
 from flask import Flask, render_template, request, session, redirect, url_for, flash, jsonify
 from dotenv import load_dotenv
 import bcrypt
@@ -36,16 +37,26 @@ SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL')
 
+# パスワードの特殊文字（!など）をURLエンコード
+def _encode_db_url(url):
+    if not url:
+        return url
+    p = urlparse(url)
+    if p.password:
+        return url.replace(f':{p.password}@', f':{quote_plus(p.password)}@', 1)
+    return url
 
-# ── Direct PostgreSQL helpers (PostgRESTキャッシュを完全回避) ─────────────────
+_DB_URL = _encode_db_url(DATABASE_URL)
+
+
+# ── Direct PostgreSQL helpers ─────────────────────────────────────────────────
 
 def db_execute(sql, params=None):
-    """直接SQLを実行（PostgRESTを経由しない）"""
-    if not DATABASE_URL:
+    if not _DB_URL:
         print('[db_execute] DATABASE_URL not set', flush=True)
         return False
     try:
-        with psycopg.connect(DATABASE_URL) as conn:
+        with psycopg.connect(_DB_URL) as conn:
             with conn.cursor() as cur:
                 cur.execute(sql, params)
         return True
@@ -55,12 +66,11 @@ def db_execute(sql, params=None):
 
 
 def db_fetchone(sql, params=None):
-    """直接SQLで1行取得（PostgRESTを経由しない）"""
-    if not DATABASE_URL:
+    if not _DB_URL:
         print('[db_fetchone] DATABASE_URL not set', flush=True)
         return None
     try:
-        with psycopg.connect(DATABASE_URL, row_factory=dict_row) as conn:
+        with psycopg.connect(_DB_URL, row_factory=dict_row) as conn:
             with conn.cursor() as cur:
                 cur.execute(sql, params)
                 return cur.fetchone()
@@ -70,12 +80,11 @@ def db_fetchone(sql, params=None):
 
 
 def db_fetchall(sql, params=None):
-    """直接SQLで全行取得（PostgRESTを経由しない）"""
-    if not DATABASE_URL:
+    if not _DB_URL:
         print('[db_fetchall] DATABASE_URL not set', flush=True)
         return []
     try:
-        with psycopg.connect(DATABASE_URL, row_factory=dict_row) as conn:
+        with psycopg.connect(_DB_URL, row_factory=dict_row) as conn:
             with conn.cursor() as cur:
                 cur.execute(sql, params)
                 return [dict(r) for r in cur.fetchall()]
@@ -373,31 +382,39 @@ def dashboard():
 @login_required
 def learn():
     cat_slug = request.args.get('category', '')
+    q = request.args.get('q', '').strip()
     categories = db_fetchall(
         'SELECT id, name, slug, sort_order FROM ipb_categories ORDER BY sort_order ASC'
     )
     cat_map = {str(c['id']): c for c in categories}
 
+    sql_base = '''SELECT id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at
+                  FROM ipb_articles WHERE published=true'''
+    params = []
+
     if cat_slug:
         matching = [c for c in categories if c['slug'] == cat_slug]
         if matching:
-            articles = db_fetchall(
-                '''SELECT id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at
-                   FROM ipb_articles WHERE published=true AND category_id=%s ORDER BY created_at DESC''',
-                (matching[0]['id'],)
-            )
+            sql_base += ' AND category_id=%s'
+            params.append(matching[0]['id'])
         else:
             articles = []
-    else:
-        articles = db_fetchall(
-            '''SELECT id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at
-               FROM ipb_articles WHERE published=true ORDER BY created_at DESC'''
-        )
+            return render_template('learn.html', articles=[], categories=categories,
+                                   active_category=cat_slug, q=q)
+
+    if q:
+        sql_base += ' AND (title ILIKE %s OR excerpt ILIKE %s OR content ILIKE %s)'
+        like = f'%{q}%'
+        params += [like, like, like]
+
+    sql_base += ' ORDER BY created_at DESC'
+    articles = db_fetchall(sql_base, params or None)
 
     for a in articles:
         a['category'] = cat_map.get(str(a.get('category_id')))
 
-    return render_template('learn.html', articles=articles, categories=categories, active_category=cat_slug)
+    return render_template('learn.html', articles=articles, categories=categories,
+                           active_category=cat_slug, q=q)
 
 
 @app.route('/learn/<slug>')
@@ -548,23 +565,30 @@ def admin_dashboard():
 @app.route('/admin/articles')
 @admin_required
 def admin_articles():
-    articles = sb_get('ipb_articles', {'order': 'created_at.desc', 'select': '*'}) or []
-    categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
-    cat_map = {c['id']: c for c in categories}
+    articles = db_fetchall('SELECT * FROM ipb_articles ORDER BY created_at DESC')
+    categories = db_fetchall('SELECT * FROM ipb_categories ORDER BY sort_order')
+    cat_map = {str(c['id']): c for c in categories}
     for a in articles:
-        a['category'] = cat_map.get(a.get('category_id'))
+        a['category'] = cat_map.get(str(a.get('category_id')))
     return render_template('admin/articles.html', articles=articles)
 
 
 @app.route('/admin/articles/new', methods=['GET', 'POST'])
 @admin_required
 def admin_articles_new():
-    categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
+    categories = db_fetchall('SELECT * FROM ipb_categories ORDER BY sort_order')
     if request.method == 'POST':
-        data = _article_form_data(request.form)
-        data['author_id'] = session['user_id']
-        result = sb_post('ipb_articles', data)
-        if result:
+        d = _article_form_data(request.form)
+        ok = db_execute(
+            '''INSERT INTO ipb_articles
+               (title,slug,content,excerpt,category_id,is_free,published,thumbnail_url,video_url,pdf_url,author_id)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
+            (d['title'], d['slug'], d['content'], d['excerpt'],
+             d['category_id'] or None, d['is_free'], d['published'],
+             d['thumbnail_url'] or None, d['video_url'] or None, d['pdf_url'] or None,
+             session['user_id'])
+        )
+        if ok:
             flash('記事を作成しました', 'success')
             return redirect(url_for('admin_articles'))
         flash('作成に失敗しました', 'error')
@@ -574,16 +598,22 @@ def admin_articles_new():
 @app.route('/admin/articles/<article_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def admin_articles_edit(article_id):
-    articles = sb_get('ipb_articles', {'id': f'eq.{article_id}', 'select': '*'})
-    if not articles:
+    article = db_fetchone('SELECT * FROM ipb_articles WHERE id=%s', (article_id,))
+    if not article:
         return redirect(url_for('admin_articles'))
-    article = articles[0]
-    categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
+    categories = db_fetchall('SELECT * FROM ipb_categories ORDER BY sort_order')
 
     if request.method == 'POST':
-        data = _article_form_data(request.form)
-        data['updated_at'] = datetime.utcnow().isoformat()
-        sb_patch('ipb_articles', {'id': f'eq.{article_id}'}, data)
+        d = _article_form_data(request.form)
+        db_execute(
+            '''UPDATE ipb_articles SET title=%s,slug=%s,content=%s,excerpt=%s,category_id=%s,
+               is_free=%s,published=%s,thumbnail_url=%s,video_url=%s,pdf_url=%s
+               WHERE id=%s''',
+            (d['title'], d['slug'], d['content'], d['excerpt'],
+             d['category_id'] or None, d['is_free'], d['published'],
+             d['thumbnail_url'] or None, d['video_url'] or None, d['pdf_url'] or None,
+             article_id)
+        )
         flash('記事を更新しました', 'success')
         return redirect(url_for('admin_articles'))
 
@@ -593,7 +623,7 @@ def admin_articles_edit(article_id):
 @app.route('/admin/articles/<article_id>/delete', methods=['POST'])
 @admin_required
 def admin_articles_delete(article_id):
-    sb_delete('ipb_articles', {'id': f'eq.{article_id}'})
+    db_execute('DELETE FROM ipb_articles WHERE id=%s', (article_id,))
     flash('記事を削除しました', 'success')
     return redirect(url_for('admin_articles'))
 
