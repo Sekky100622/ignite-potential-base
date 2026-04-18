@@ -269,6 +269,7 @@ def _set_session(user):
     session['email'] = user['email']
     session['role'] = user['role']
     session['plan'] = user['plan']
+    session['is_team'] = bool(user.get('is_team'))
 
 
 @app.route('/logout')
@@ -297,7 +298,7 @@ def dashboard():
     }) or []
 
     all_drills = pg_drills()
-    is_premium = user['plan'] in ('premium', 'team')
+    is_premium = user['plan'] == 'premium' or bool(user.get('is_team'))
     if is_premium:
         available_drills = all_drills
     else:
@@ -393,7 +394,7 @@ def learn_detail(slug):
             'select': 'id,title,slug,is_free',
         }) or []
 
-    can_view = article.get('is_free') or session.get('plan') in ('premium', 'team')
+    can_view = article.get('is_free') or session.get('plan') == 'premium' or session.get('is_team')
     if not can_view:
         return redirect(url_for('register'))
     return render_template('article.html', article=article, related=related, can_view=True)
@@ -419,7 +420,7 @@ def library():
     if cat:
         drills = [d for d in drills if d.get('category') == cat]
 
-    is_premium = session.get('plan') in ('premium', 'team')
+    is_premium = session.get('plan') == 'premium' or session.get('is_team')
 
     if not is_premium:
         drills = [d for d in drills if d.get('is_free')]
@@ -438,7 +439,7 @@ def drill_detail(drill_id):
     if not session.get('user_id'):
         return redirect(url_for('register'))
     is_premium_drill = not drill.get('is_free')
-    is_premium_user = session.get('plan') in ('premium', 'team')
+    is_premium_user = session.get('plan') == 'premium' or session.get('is_team')
     if is_premium_drill and not is_premium_user:
         return render_template('drill_upsell.html', drill=drill)
 
@@ -685,12 +686,19 @@ def admin_members_plan(member_id):
     if new_plan not in ('premium', 'team', 'free'):
         flash('不正なプランです', 'error')
         return redirect(url_for('admin_members'))
+    # 'team'はis_teamフラグ+plan='premium'で管理（PostgRESTキャッシュ回避）
+    if new_plan == 'team':
+        patch_data = {'is_team': True, 'plan': 'premium'}
+    elif new_plan == 'premium':
+        patch_data = {'is_team': False, 'plan': 'premium'}
+    else:
+        patch_data = {'is_team': False, 'plan': 'free'}
     try:
         r = req.patch(
             f'{SUPABASE_URL}/rest/v1/ipb_users',
             headers={'apikey': SUPABASE_SERVICE_KEY, 'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}', 'Content-Type': 'application/json'},
             params={'id': f'eq.{member_id}'},
-            json={'plan': new_plan},
+            json=patch_data,
             timeout=10,
         )
         print(f'[plan_change] member={member_id} plan={new_plan} status={r.status_code} body={r.text[:200]}', flush=True)
@@ -776,12 +784,14 @@ def invite_register(token):
             return render_template('invite.html', error='チーム名を入力してください', token=token, invite=invite)
 
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+        invite_plan = invite['plan']
         user_data = {
             'name': name,
             'email': email,
             'password_hash': pw_hash,
             'role': 'member',
-            'plan': invite['plan'],
+            'plan': 'premium' if invite_plan == 'team' else invite_plan,
+            'is_team': invite_plan == 'team',
         }
         if team_name:
             user_data['team_name'] = team_name

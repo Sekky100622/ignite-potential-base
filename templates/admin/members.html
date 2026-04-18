@@ -75,10 +75,10 @@
                 {% endif %}
               </td>
               <td>
-                {% if member.plan == 'premium' %}
-                  <span class="badge badge-premium">⭐ プレミアム</span>
-                {% elif member.plan == 'team' %}
+                {% if member.is_team %}
                   <span class="badge badge-premium">🤝 チーム</span>
+                {% elif member.plan == 'premium' %}
+                  <span class="badge badge-premium">⭐ プレミアム</span>
                 {% else %}
                   <span class="badge badge-cat">フリー</span>
                 {% endif %}
