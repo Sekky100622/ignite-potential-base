@@ -373,42 +373,46 @@ def dashboard():
 @login_required
 def learn():
     cat_slug = request.args.get('category', '')
-    params = {
-        'published': 'eq.true',
-        'order': 'created_at.desc',
-        'select': 'id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at',
-    }
-    categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}, service=True) or []
-    cat_map = {c['id']: c for c in categories}
+    categories = db_fetchall(
+        'SELECT id, name, slug, sort_order FROM ipb_categories ORDER BY sort_order ASC'
+    )
+    cat_map = {str(c['id']): c for c in categories}
 
     if cat_slug:
         matching = [c for c in categories if c['slug'] == cat_slug]
         if matching:
-            params['category_id'] = f'eq.{matching[0]["id"]}'
+            articles = db_fetchall(
+                '''SELECT id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at
+                   FROM ipb_articles WHERE published=true AND category_id=%s ORDER BY created_at DESC''',
+                (matching[0]['id'],)
+            )
+        else:
+            articles = []
+    else:
+        articles = db_fetchall(
+            '''SELECT id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at
+               FROM ipb_articles WHERE published=true ORDER BY created_at DESC'''
+        )
 
-    articles = sb_get('ipb_articles', params, service=True) or []
     for a in articles:
-        a['category'] = cat_map.get(a.get('category_id'))
+        a['category'] = cat_map.get(str(a.get('category_id')))
 
     return render_template('learn.html', articles=articles, categories=categories, active_category=cat_slug)
 
 
 @app.route('/learn/<slug>')
 def learn_detail(slug):
-    articles = sb_get('ipb_articles', {
-        'slug': f'eq.{slug}',
-        'published': 'eq.true',
-        'select': '*',
-    }, service=True)
-    if not articles:
+    article = db_fetchone(
+        'SELECT * FROM ipb_articles WHERE slug=%s AND published=true', (slug,)
+    )
+    if not article:
         return redirect(url_for('learn'))
-
-    article = articles[0]
 
     # attach category
     if article.get('category_id'):
-        cats = sb_get('ipb_categories', {'id': f'eq.{article["category_id"]}', 'select': '*'}, service=True)
-        article['category'] = cats[0] if cats else None
+        article['category'] = db_fetchone(
+            'SELECT * FROM ipb_categories WHERE id=%s', (article['category_id'],)
+        )
     else:
         article['category'] = None
 
@@ -435,13 +439,11 @@ def learn_detail(slug):
     # related articles (same category)
     related = []
     if article.get('category_id'):
-        related = sb_get('ipb_articles', {
-            'category_id': f'eq.{article["category_id"]}',
-            'published': 'eq.true',
-            'id': f'neq.{article["id"]}',
-            'limit': 4,
-            'select': 'id,title,slug,is_free',
-        }, service=True) or []
+        related = db_fetchall(
+            '''SELECT id,title,slug,is_free FROM ipb_articles
+               WHERE category_id=%s AND published=true AND id!=%s LIMIT 4''',
+            (article['category_id'], article['id'])
+        )
 
     can_view = article.get('is_free') or session.get('plan') in ('premium', 'team') or session.get('is_team')
     if not can_view:
