@@ -1,5 +1,7 @@
 {% extends 'base.html' %}
 {% block title %}{{ drill.name }} | ライブラリ | Ignite Potential Base{% endblock %}
+{% block og_title %}{{ drill.name }} | Ignite Potential Base{% endblock %}
+{% block og_description %}{% if drill.purpose %}{{ drill.purpose[:120] }}{% else %}Ignite Potential Baseのドリル・エクササイズ。野球パフォーマンス向上のための専門的なトレーニング。{% endif %}{% endblock %}
 
 {% block content %}
 <div class="page-header">
@@ -7,6 +9,9 @@
     <div style="display:flex;align-items:center;gap:.75rem;margin-bottom:.5rem;">
       <a href="{{ url_for('library') }}" style="color:var(--gray-400);font-size:.875rem;">← ライブラリ</a>
     </div>
+    {% if drill.category %}
+    <div style="font-size:.8rem;color:var(--orange);font-weight:600;margin-bottom:.4rem;">{{ drill.category }}</div>
+    {% endif %}
     <div style="display:flex;align-items:center;gap:.75rem;">
       <h1 style="font-size:1.6rem;">{{ drill.name }}</h1>
       {% if drill.is_free %}
@@ -64,6 +69,33 @@
       <a href="{{ url_for('admin_library_edit', drill_id=drill.id) }}" class="btn btn-outline btn-sm">編集</a>
       {% endif %}
     </div>
+
+    <!-- 関連ドリル -->
+    {% if related_drills %}
+    <div style="margin-top:3rem;border-top:1px solid rgba(255,255,255,.07);padding-top:2rem;">
+      <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;color:var(--gray-200);">
+        同じカテゴリのドリル（{{ drill.category }}）
+      </h3>
+      <div style="display:grid;gap:1rem;">
+        {% for r in related_drills %}
+        <a href="{{ url_for('drill_detail', drill_id=r.id) }}"
+           style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:1rem 1.25rem;display:flex;align-items:center;gap:.75rem;text-decoration:none;color:inherit;transition:border-color .2s;"
+           onmouseover="this.style.borderColor='rgba(249,115,22,.4)'"
+           onmouseout="this.style.borderColor='rgba(255,255,255,.08)'">
+          <span style="font-size:1.25rem;">{% if r.video_url %}🎬{% else %}📋{% endif %}</span>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:600;font-size:.9rem;">{{ r.name }}</div>
+            {% if r.purpose %}
+            <div style="color:var(--gray-400);font-size:.8rem;margin-top:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ r.purpose[:60] }}</div>
+            {% endif %}
+          </div>
+          <span style="color:var(--orange);font-size:.8rem;white-space:nowrap;">詳しく見る →</span>
+        </a>
+        {% endfor %}
+      </div>
+    </div>
+    {% endif %}
+
   </div>
 </section>
 {% endblock %}

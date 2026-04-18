@@ -11,40 +11,82 @@
 
 <section class="section-sm">
   <div class="container">
+
+    <!-- Stats row -->
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
+      <a href="{{ url_for('library') }}" style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;text-decoration:none;color:inherit;transition:border-color .2s;" onmouseover="this.style.borderColor='rgba(249,115,22,.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)'">
+        <div style="font-size:2rem;font-weight:800;color:var(--orange);">{{ drill_count }}</div>
+        <div style="font-size:.8rem;color:var(--gray-400);margin-top:.25rem;">閲覧可能なドリル</div>
+      </a>
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;">
+        <div style="font-size:2rem;font-weight:800;color:{% if is_premium %}var(--orange){% else %}var(--white){% endif %};">
+          {% if is_premium %}プレミアム{% else %}フリー{% endif %}
+        </div>
+        <div style="font-size:.8rem;color:var(--gray-400);margin-top:.25rem;">プラン</div>
+      </div>
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;">
+        <div style="font-size:2rem;font-weight:800;color:var(--white);">{{ cat_counts|length }}</div>
+        <div style="font-size:.8rem;color:var(--gray-400);margin-top:.25rem;">カテゴリ</div>
+      </div>
+    </div>
+
     <div style="display:grid;grid-template-columns:1fr 300px;gap:2rem;">
 
       <!-- Left column -->
       <div>
-        <!-- Recent content -->
+
+        <!-- 最近追加されたドリル -->
         <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.75rem;margin-bottom:1.5rem;">
           <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem;">
-            <h3 style="font-size:1rem;font-weight:700;">最新コンテンツ</h3>
-            <a href="{{ url_for('learn') }}" class="btn btn-ghost btn-sm">すべて見る</a>
+            <h3 style="font-size:1rem;font-weight:700;">最近追加されたドリル</h3>
+            <a href="{{ url_for('library') }}" class="btn btn-ghost btn-sm">すべて見る</a>
           </div>
-          {% if recent_articles %}
-            {% for article in recent_articles %}
-            <div style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.05);">
-              <span style="font-size:1.25rem;">📄</span>
+          {% if recent_drills %}
+            {% for drill in recent_drills %}
+            <a href="{{ url_for('drill_detail', drill_id=drill.id) }}"
+               style="display:flex;align-items:center;gap:.75rem;padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.05);text-decoration:none;color:inherit;">
+              <span style="font-size:1.25rem;">{% if drill.video_url %}🎬{% else %}📋{% endif %}</span>
               <div style="flex:1;min-width:0;">
-                <a href="{{ url_for('learn_detail', slug=article.slug) }}"
-                   style="color:var(--white);font-size:.9rem;font-weight:500;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">
-                  {{ article.title }}
-                </a>
+                <div style="font-size:.9rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ drill.name }}</div>
+                {% if drill.category %}
+                <div style="font-size:.75rem;color:var(--orange);margin-top:.1rem;">{{ drill.category }}</div>
+                {% endif %}
               </div>
-            </div>
+              {% if drill.is_free %}
+              <span class="badge badge-free">無料</span>
+              {% else %}
+              <span class="badge badge-premium">会員限定</span>
+              {% endif %}
+            </a>
             {% endfor %}
           {% else %}
-            <p class="text-gray text-sm">コンテンツはまだありません。</p>
+            <p class="text-gray text-sm">ドリルはまだありません。</p>
           {% endif %}
         </div>
+
+        <!-- カテゴリ別 -->
+        {% if cat_counts %}
+        <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.75rem;margin-bottom:1.5rem;">
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">カテゴリ別ドリル数</h3>
+          <div style="display:flex;flex-wrap:wrap;gap:.5rem;">
+            {% for cat, cnt in cat_counts.items() %}
+            <a href="{{ url_for('library', cat=cat) }}"
+               style="padding:.4rem .9rem;border-radius:20px;font-size:.825rem;font-weight:600;text-decoration:none;background:rgba(249,115,22,.12);color:var(--orange);border:1px solid rgba(249,115,22,.25);">
+              {{ cat }} <span style="opacity:.7;">{{ cnt }}</span>
+            </a>
+            {% endfor %}
+          </div>
+        </div>
+        {% endif %}
 
         <!-- Quick links -->
         <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.75rem;">
           <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">クイックリンク</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
+            <a href="{{ url_for('library') }}" class="btn btn-ghost" style="justify-content:center;">⚡ ドリルライブラリ</a>
             <a href="{{ url_for('learn') }}" class="btn btn-ghost" style="justify-content:center;">📚 コンテンツ一覧</a>
             {% if session.get('role') == 'admin' %}
-              <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost" style="justify-content:center;">⚙️ 管理画面</a>
+            <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost" style="justify-content:center;">⚙️ 管理画面</a>
             {% endif %}
           </div>
         </div>
@@ -60,7 +102,7 @@
             <div style="font-weight:700;font-size:1.05rem;">{{ user.name }}</div>
             <div class="text-gray text-sm">{{ user.email }}</div>
             {% if user.role == 'admin' %}
-              <span class="badge badge-admin mt-1">管理者</span>
+            <span class="badge badge-admin mt-1">管理者</span>
             {% endif %}
           </div>
 
@@ -77,6 +119,15 @@
             </div>
           </div>
         </div>
+
+        {% if not is_premium %}
+        <div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.3);border-radius:16px;padding:1.5rem;text-align:center;">
+          <div style="font-size:1.5rem;margin-bottom:.5rem;">⭐</div>
+          <div style="font-weight:700;font-size:.95rem;margin-bottom:.5rem;">すべてのドリルを見る</div>
+          <p style="color:var(--gray-400);font-size:.825rem;line-height:1.6;margin-bottom:1rem;">プレミアム会員になると全ドリル・エクササイズが閲覧できます。</p>
+          <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-sm" style="width:100%;justify-content:center;">Noteメンバーシップ →</a>
+        </div>
+        {% endif %}
       </div>
     </div>
   </div>
@@ -84,7 +135,11 @@
 
 <style>
   @media (max-width: 768px) {
-    .container > div[style*="grid-template-columns"] { grid-template-columns: 1fr !important; }
+    .container > div[style*="grid-template-columns:1fr 300px"] { grid-template-columns: 1fr !important; }
+    .container > div[style*="grid-template-columns:repeat(3"] { grid-template-columns: 1fr 1fr !important; }
+  }
+  @media (max-width: 480px) {
+    .container > div[style*="grid-template-columns:repeat(3"] { grid-template-columns: 1fr !important; }
   }
 </style>
 {% endblock %}

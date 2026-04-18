@@ -23,6 +23,7 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 NOTE_URL = os.getenv('NOTE_URL', '#')
+OG_IMAGE_URL = os.getenv('OG_IMAGE_URL', '')
 
 DRILL_CATEGORIES = [
     'リセット',
@@ -223,6 +224,7 @@ def admin_required(f):
 def inject_globals():
     return {
         'note_url': NOTE_URL,
+        'og_image_url': OG_IMAGE_URL,
         'current_year': datetime.now().year,
     }
 
@@ -340,10 +342,31 @@ def dashboard():
     recent_articles = sb_get('ipb_articles', {
         'published': 'eq.true',
         'order': 'created_at.desc',
-        'limit': 5,
+        'limit': 3,
         'select': 'id,title,slug,is_free,created_at',
     }) or []
-    return render_template('dashboard.html', user=user, recent_articles=recent_articles)
+
+    all_drills = pg_drills()
+    is_premium = user['plan'] == 'premium'
+    if is_premium:
+        available_drills = all_drills
+    else:
+        available_drills = [d for d in all_drills if d.get('is_free')][:20]
+
+    # カテゴリ別件数
+    cat_counts = {}
+    for d in available_drills:
+        c = d.get('category') or '未分類'
+        cat_counts[c] = cat_counts.get(c, 0) + 1
+
+    recent_drills = all_drills[:4]
+
+    return render_template('dashboard.html', user=user,
+                           recent_articles=recent_articles,
+                           drill_count=len(available_drills),
+                           recent_drills=recent_drills,
+                           cat_counts=cat_counts,
+                           is_premium=is_premium)
 
 
 @app.route('/learn')
@@ -458,7 +481,7 @@ def library():
 
 @app.route('/library/<drill_id>')
 def drill_detail(drill_id):
-    drills = sb_get('ipb_drills', {'id': f'eq.{drill_id}', 'select': '*'})
+    drills = pg_drills('WHERE id = %s', (drill_id,))
     if not drills:
         return redirect(url_for('library'))
     drill = drills[0]
@@ -486,7 +509,12 @@ def drill_detail(drill_id):
         embed_url = video_url
     drill['video_embed_url'] = embed_url
 
-    return render_template('drill.html', drill=drill)
+    # 同カテゴリの関連ドリル
+    related_drills = []
+    if drill.get('category'):
+        related_drills = pg_drills('WHERE category = %s AND id != %s', (drill['category'], drill_id))[:3]
+
+    return render_template('drill.html', drill=drill, related_drills=related_drills)
 
 
 # ── Admin routes ──────────────────────────────────────────────────────────────
