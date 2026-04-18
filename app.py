@@ -700,7 +700,7 @@ def admin_library_delete(drill_id):
 @admin_required
 def admin_members():
     members = db_fetchall(
-        "SELECT id, name, email, role, plan, is_team, team_name, created_at FROM ipb_users ORDER BY created_at DESC"
+        "SELECT id, name, email, role, plan, is_team, team_name, to_char(created_at, 'YYYY-MM-DD') as created_at FROM ipb_users ORDER BY created_at DESC"
     )
     return render_template('admin/members.html', members=members)
 
