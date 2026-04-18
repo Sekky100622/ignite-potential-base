@@ -77,6 +77,24 @@ def sb_post(table, data, service=False):
         return None
 
 
+def sb_rpc(func_name, data, service=False):
+    if not SUPABASE_URL:
+        return None
+    try:
+        r = req.post(f'{SUPABASE_URL}/rest/v1/rpc/{func_name}',
+                     headers=supabase_headers(service), json=data, timeout=10)
+        if not r.ok:
+            print(f'[sb_rpc] {func_name} status={r.status_code} body={r.text[:300]}')
+            return None
+        try:
+            return r.json()
+        except Exception:
+            return True
+    except Exception as e:
+        print(f'[sb_rpc] exception: {e}')
+        return None
+
+
 def sb_patch(table, params, data, service=False):
     if not SUPABASE_URL:
         return False
@@ -339,8 +357,7 @@ def library():
 
     q = request.args.get('q', '').strip()
     cat = request.args.get('cat', '').strip()
-    params = {'order': 'created_at.desc', 'select': '*'}
-    drills = sb_get('ipb_drills', params) or []
+    drills = sb_rpc('get_drills_with_category', {}) or []
 
     if q:
         ql = q.lower()
@@ -515,6 +532,8 @@ def admin_library_new():
             data['category'] = cat
         result = sb_post('ipb_drills', data, service=True)
         if result:
+            if cat and isinstance(result, dict):
+                sb_rpc('set_drill_category', {'p_id': result['id'], 'p_category': cat}, service=True)
             flash('ドリルを追加しました', 'success')
             return redirect(url_for('admin_library'))
         flash('追加に失敗しました', 'error')
@@ -541,6 +560,8 @@ def admin_library_edit(drill_id):
         if cat:
             patch_data['category'] = cat
         sb_patch('ipb_drills', {'id': f'eq.{drill_id}'}, patch_data, service=True)
+        if cat:
+            sb_rpc('set_drill_category', {'p_id': drill_id, 'p_category': cat}, service=True)
         flash('更新しました', 'success')
         return redirect(url_for('admin_library'))
     return render_template('admin/drill_form.html', drill=drill, edit=True, categories=DRILL_CATEGORIES)
