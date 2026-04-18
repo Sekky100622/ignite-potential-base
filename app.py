@@ -250,6 +250,24 @@ def ensure_tables():
             created_at TIMESTAMPTZ DEFAULT NOW()
         )
     ''')
+    db_execute('''
+        CREATE TABLE IF NOT EXISTS ipb_bookmarks (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            user_id UUID NOT NULL,
+            article_id UUID NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE(user_id, article_id)
+        )
+    ''')
+    db_execute('''
+        CREATE TABLE IF NOT EXISTS ipb_notices (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            title TEXT NOT NULL,
+            content TEXT,
+            published BOOLEAN DEFAULT TRUE,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+    ''')
     db_execute('ALTER TABLE ipb_users ADD COLUMN IF NOT EXISTS google_id TEXT')
 
 ensure_tables()
@@ -306,8 +324,8 @@ def register():
                 }, service=True)
                 if user and isinstance(user, dict):
                     _set_session(user)
-                    flash('登録が完了しました！ライブラリをご覧ください。', 'success')
-                    return redirect(url_for('library'))
+                    flash('登録が完了しました！', 'success')
+                    return redirect(url_for('welcome'))
                 error = '登録に失敗しました。時間をおいて再度お試しください。'
     return render_template('register.html', error=error)
 
@@ -395,7 +413,7 @@ def auth_google():
                        (google_id, new_user['id']))
         _set_session(new_user)
         flash('Googleアカウントで登録が完了しました！', 'success')
-        return redirect(url_for('library'))
+        return redirect(url_for('welcome'))
 
     # sb_postが失敗＝メール重複の可能性 → 再度検索してログイン
     users2 = sb_get('ipb_users', {'email': f'eq.{email}', 'select': '*'}, service=True)
@@ -427,6 +445,17 @@ def logout():
 
 
 # ── Member routes ─────────────────────────────────────────────────────────────
+
+@app.route('/welcome')
+@login_required
+def welcome():
+    free_articles = sb_get('ipb_articles', {
+        'is_free': 'eq.true', 'published': 'eq.true',
+        'order': 'created_at.desc', 'limit': 3,
+        'select': 'id,title,slug,excerpt',
+    }) or []
+    return render_template('welcome.html', free_articles=free_articles)
+
 
 @app.route('/dashboard')
 @login_required
@@ -460,31 +489,47 @@ def dashboard():
 
     recent_drills = all_drills[:4]
 
+    # お知らせ
+    notices = db_fetchall('SELECT * FROM ipb_notices WHERE published=TRUE ORDER BY created_at DESC LIMIT 3') or []
+
+    # ブックマーク記事
+    user_id = session['user_id']
+    bookmarks = db_fetchall('''
+        SELECT a.id, a.title, a.slug, a.excerpt
+        FROM ipb_bookmarks b
+        JOIN ipb_articles a ON b.article_id = a.id
+        WHERE b.user_id = %s ORDER BY b.created_at DESC LIMIT 5
+    ''', (user_id,)) or []
+
     return render_template('dashboard.html', user=user,
                            recent_articles=recent_articles,
                            drill_count=len(available_drills),
                            recent_drills=recent_drills,
                            cat_counts=cat_counts,
-                           is_premium=is_premium)
+                           is_premium=is_premium,
+                           notices=notices,
+                           bookmarks=bookmarks)
 
 
 @app.route('/learn')
-@login_required
 def learn():
+    is_logged_in = bool(session.get('user_id'))
     cat_slug = request.args.get('category', '')
     q = request.args.get('q', '').strip()
-    sort = request.args.get('sort', 'newest')  # 'newest' or 'popular'
+    sort = request.args.get('sort', 'newest')
 
     categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
     cat_map = {c['id']: c for c in categories}
 
-    # 全記事取得（contentは除外してレスポンスを軽量化）→ Python側でフィルタ
     all_articles = sb_get('ipb_articles', {
         'order': 'created_at.desc',
         'select': 'id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at,published',
     }) or []
 
     articles = [a for a in all_articles if a.get('published')]
+    # 未ログインは無料記事のみ
+    if not is_logged_in:
+        articles = [a for a in articles if a.get('is_free')]
 
     if cat_slug:
         matching = [c for c in categories if c['slug'] == cat_slug]
@@ -500,7 +545,6 @@ def learn():
                     ql in (a.get('title') or '').lower() or
                     ql in (a.get('excerpt') or '').lower()]
 
-    # いいね数を付与
     all_likes = sb_get('ipb_likes', {'select': 'article_id'}) or []
     like_counts = {}
     for like in all_likes:
@@ -515,7 +559,7 @@ def learn():
         articles.sort(key=lambda a: a['like_count'], reverse=True)
 
     return render_template('learn.html', articles=articles, categories=categories,
-                           active_category=cat_slug, q=q, sort=sort)
+                           active_category=cat_slug, q=q, sort=sort, is_logged_in=is_logged_in)
 
 
 @app.route('/learn/<slug>')
@@ -574,6 +618,13 @@ def learn_detail(slug):
     like_count = len(likes)
     user_liked = any(str(l.get('user_id')) == str(user_id) for l in likes) if user_id else False
 
+    # ブックマーク
+    user_bookmarked = False
+    if user_id:
+        bm = db_fetchone('SELECT id FROM ipb_bookmarks WHERE user_id=%s AND article_id=%s',
+                         (user_id, article_id))
+        user_bookmarked = bm is not None
+
     # コメント（ユーザー名付き）
     comments = db_fetchall('''
         SELECT c.id, c.content, c.created_at, u.name AS user_name, c.user_id
@@ -585,6 +636,7 @@ def learn_detail(slug):
 
     return render_template('article.html', article=article, related=related, can_view=True,
                            like_count=like_count, user_liked=user_liked,
+                           user_bookmarked=user_bookmarked,
                            comments=comments or [], user_id=user_id)
 
 
@@ -638,6 +690,27 @@ def article_comment_delete(slug, comment_id):
     return redirect(url_for('learn_detail', slug=slug) + '#comments')
 
 
+@app.route('/learn/<slug>/bookmark', methods=['POST'])
+@login_required
+def article_bookmark(slug):
+    articles = sb_get('ipb_articles', {'slug': f'eq.{slug}', 'select': 'id,published'})
+    if not articles:
+        return jsonify({'error': 'not found'}), 404
+    article_id = articles[0]['id']
+    user_id = session.get('user_id')
+    existing = db_fetchone('SELECT id FROM ipb_bookmarks WHERE user_id=%s AND article_id=%s',
+                           (user_id, article_id))
+    if existing:
+        db_execute('DELETE FROM ipb_bookmarks WHERE user_id=%s AND article_id=%s',
+                   (user_id, article_id))
+        bookmarked = False
+    else:
+        db_execute('INSERT INTO ipb_bookmarks (user_id, article_id) VALUES (%s, %s)',
+                   (user_id, article_id))
+        bookmarked = True
+    return jsonify({'bookmarked': bookmarked})
+
+
 # ── Library routes ────────────────────────────────────────────────────────────
 
 @app.route('/library')
@@ -660,10 +733,7 @@ def library():
 
     is_premium = session.get('plan') in ('premium', 'team') or session.get('is_team')
 
-    if not is_premium:
-        drills = [d for d in drills if d.get('is_free')]
-        drills = drills[:20]
-
+    # 全ドリルを表示（プレミアム限定はロック表示）
     return render_template('library.html', drills=drills, q=q, cat=cat,
                            categories=DRILL_CATEGORIES, is_premium=is_premium, is_logged_in=True)
 
@@ -723,12 +793,44 @@ def admin_dashboard():
         'select': 'id,name,email,plan,created_at',
     }, service=True) or []
 
+    # いいね数集計 → 人気記事TOP5
+    all_likes = sb_get('ipb_likes', {'select': 'article_id'}) or []
+    like_counts = {}
+    for like in all_likes:
+        aid = str(like.get('article_id', ''))
+        like_counts[aid] = like_counts.get(aid, 0) + 1
+
+    pub_articles = sb_get('ipb_articles', {
+        'published': 'eq.true', 'select': 'id,title,slug',
+    }) or []
+    for a in pub_articles:
+        a['like_count'] = like_counts.get(str(a.get('id', '')), 0)
+    popular_articles = sorted(pub_articles, key=lambda a: a['like_count'], reverse=True)[:5]
+
+    # 最新コメント5件
+    recent_comments = db_fetchall('''
+        SELECT c.content, c.created_at, u.name AS user_name,
+               a.title AS article_title, a.slug AS article_slug
+        FROM ipb_comments c
+        JOIN ipb_users u ON c.user_id = u.id
+        JOIN ipb_articles a ON c.article_id = a.id
+        ORDER BY c.created_at DESC LIMIT 5
+    ''') or []
+
+    total_likes = len(all_likes)
+    cnt_row = db_fetchone('SELECT COUNT(*) AS cnt FROM ipb_comments')
+    total_comments = cnt_row['cnt'] if cnt_row else 0
+
     return render_template('admin/dashboard.html',
         article_count=len(all_articles),
         member_count=len(all_members),
         premium_count=len(premium_members),
         recent_articles=recent_articles,
         recent_members=recent_members,
+        popular_articles=popular_articles,
+        recent_comments=recent_comments,
+        total_likes=total_likes,
+        total_comments=total_comments,
     )
 
 
@@ -816,6 +918,32 @@ def _article_form_data(form):
         'pdf_name':      form.get('pdf_name', '').strip(),
     }
 
+
+
+@app.route('/admin/notices')
+@admin_required
+def admin_notices():
+    notices = db_fetchall('SELECT * FROM ipb_notices ORDER BY created_at DESC') or []
+    return render_template('admin/notices.html', notices=notices)
+
+
+@app.route('/admin/notices/new', methods=['POST'])
+@admin_required
+def admin_notices_new():
+    title = request.form.get('title', '').strip()
+    content = request.form.get('content', '').strip()
+    if title:
+        db_execute('INSERT INTO ipb_notices (title, content) VALUES (%s, %s)', (title, content))
+        flash('お知らせを投稿しました', 'success')
+    return redirect(url_for('admin_notices'))
+
+
+@app.route('/admin/notices/<notice_id>/delete', methods=['POST'])
+@admin_required
+def admin_notices_delete(notice_id):
+    db_execute('DELETE FROM ipb_notices WHERE id=%s', (notice_id,))
+    flash('削除しました', 'success')
+    return redirect(url_for('admin_notices'))
 
 
 @app.route('/admin/library')

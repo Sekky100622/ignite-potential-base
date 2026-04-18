@@ -11,6 +11,13 @@
 
 <section class="section-sm">
   <div class="container">
+    {% if not is_logged_in %}
+    <div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;display:flex;align-items:center;justify-content:space-between;flex-wrap:wrap;gap:.75rem;">
+      <span style="font-size:.875rem;color:var(--orange);">📚 無料登録するとすべての記事・ドリルライブラリが閲覧できます</span>
+      <a href="{{ url_for('register') }}" class="btn btn-primary btn-sm">無料登録 →</a>
+    </div>
+    {% endif %}
+
     <!-- Search bar -->
     <form method="GET" action="{{ url_for('learn') }}" style="margin-bottom:1.25rem;">
       {% if active_category %}

@@ -60,10 +60,14 @@
     {% if drills %}
     <div class="grid grid-3">
       {% for drill in drills %}
+      {% set locked = not is_premium and not drill.is_free %}
       <a href="{{ url_for('drill_detail', drill_id=drill.id) }}"
-         style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;display:block;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s;"
-         onmouseover="this.style.borderColor='rgba(249,115,22,.4)';this.style.transform='translateY(-3px)'"
-         onmouseout="this.style.borderColor='rgba(255,255,255,.08)';this.style.transform='none'">
+         style="background:var(--navy-light);border:1px solid {% if locked %}rgba(255,255,255,.04){% else %}rgba(255,255,255,.08){% endif %};border-radius:12px;padding:1.5rem;display:block;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s;{% if locked %}opacity:.6;{% endif %}position:relative;overflow:hidden;"
+         {% if not locked %}onmouseover="this.style.borderColor='rgba(249,115,22,.4)';this.style.transform='translateY(-3px)'"
+         onmouseout="this.style.borderColor='rgba(255,255,255,.08)';this.style.transform='none'"{% endif %}>
+        {% if locked %}
+        <div style="position:absolute;top:.6rem;right:.6rem;background:rgba(0,0,0,.5);border-radius:6px;padding:.2rem .5rem;font-size:.75rem;color:var(--gray-400);">🔒 会員限定</div>
+        {% endif %}
         <div style="display:flex;justify-content:space-between;align-items:flex-start;margin-bottom:.75rem;">
           <div style="font-size:1.75rem;">
             {% if drill.video_url %}🎬{% else %}📋{% endif %}
@@ -83,7 +87,9 @@
           {{ drill.purpose[:60] }}{% if drill.purpose|length > 60 %}…{% endif %}
         </div>
         {% endif %}
-        <div style="margin-top:1rem;color:var(--orange);font-size:.8rem;font-weight:600;">詳しく見る →</div>
+        <div style="margin-top:1rem;color:{% if locked %}var(--gray-400){% else %}var(--orange){% endif %};font-size:.8rem;font-weight:600;">
+          {% if locked %}メンバーシップで閲覧 →{% else %}詳しく見る →{% endif %}
+        </div>
       </a>
       {% endfor %}
     </div>

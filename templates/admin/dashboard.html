@@ -46,7 +46,7 @@
 <section class="section-sm">
   <div class="container">
     <!-- Stats -->
-    <div class="grid grid-3" style="margin-bottom:2rem;">
+    <div style="display:grid;grid-template-columns:repeat(5,1fr);gap:1rem;margin-bottom:2rem;">
       <div class="stat-card">
         <div class="stat-icon" style="background:rgba(249,115,22,.15);">📄</div>
         <div>
@@ -66,6 +66,20 @@
         <div>
           <div class="stat-num">{{ premium_count }}</div>
           <div class="stat-label">プレミアム会員</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(239,68,68,.15);">❤</div>
+        <div>
+          <div class="stat-num">{{ total_likes }}</div>
+          <div class="stat-label">総いいね数</div>
+        </div>
+      </div>
+      <div class="stat-card">
+        <div class="stat-icon" style="background:rgba(99,102,241,.15);">💬</div>
+        <div>
+          <div class="stat-num">{{ total_comments }}</div>
+          <div class="stat-label">総コメント数</div>
         </div>
       </div>
     </div>
@@ -124,11 +138,44 @@
       </div>
     </div>
 
+    <!-- Popular articles + Recent comments -->
+    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">🔥 人気記事TOP5</h3>
+        {% for article in popular_articles %}
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05);">
+          <span style="font-size:.8rem;color:var(--orange);font-weight:700;width:1.2rem;">{{ loop.index }}</span>
+          <div style="flex:1;min-width:0;">
+            <a href="{{ url_for('learn_detail', slug=article.slug) }}" style="font-size:.85rem;color:var(--white);text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ article.title }}</a>
+          </div>
+          <span style="font-size:.8rem;color:var(--gray-400);">❤ {{ article.like_count }}</span>
+        </div>
+        {% else %}
+        <p class="text-gray text-sm">まだいいねがありません</p>
+        {% endfor %}
+      </div>
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">💬 最新コメント</h3>
+        {% for c in recent_comments %}
+        <div style="padding:.6rem 0;border-bottom:1px solid rgba(255,255,255,.05);">
+          <div style="display:flex;justify-content:space-between;font-size:.75rem;color:var(--gray-400);margin-bottom:.25rem;">
+            <span style="font-weight:600;color:var(--orange);">{{ c.user_name }}</span>
+            <a href="{{ url_for('learn_detail', slug=c.article_slug) }}" style="color:var(--gray-400);text-decoration:none;">{{ c.article_title[:20] }}{% if c.article_title|length > 20 %}…{% endif %}</a>
+          </div>
+          <div style="font-size:.825rem;color:var(--gray-200);">{{ c.content[:60] }}{% if c.content|length > 60 %}…{% endif %}</div>
+        </div>
+        {% else %}
+        <p class="text-gray text-sm">まだコメントがありません</p>
+        {% endfor %}
+      </div>
+    </div>
+
     <!-- Quick links -->
     <div style="display:flex;gap:.75rem;flex-wrap:wrap;margin-top:1.5rem;">
       <a href="{{ url_for('admin_articles') }}" class="btn btn-ghost">📄 記事管理</a>
       <a href="{{ url_for('admin_members') }}" class="btn btn-ghost">👥 メンバー管理</a>
       <a href="{{ url_for('admin_library') }}" class="btn btn-ghost">⚡ ライブラリ管理</a>
+      <a href="{{ url_for('admin_notices') }}" class="btn btn-ghost">📢 お知らせ管理</a>
     </div>
   </div>
 </section>

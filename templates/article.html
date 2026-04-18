@@ -1,5 +1,12 @@
 {% extends 'base.html' %}
 {% block title %}{{ article.title }} | Ignite Potential Base{% endblock %}
+{% block og_title %}{{ article.title }}{% endblock %}
+{% block og_description %}{{ article.excerpt or article.title }}{% endblock %}
+{% block twitter_title %}{{ article.title }}{% endblock %}
+{% block twitter_description %}{{ article.excerpt or article.title }}{% endblock %}
+{% if article.thumbnail_url %}
+{% block extra_head_og %}<meta property="og:image" content="{{ article.thumbnail_url }}">{% endblock %}
+{% endif %}
 
 {% block extra_head %}
 <style>
@@ -164,14 +171,34 @@
           {{ article.content_html | safe }}
         </div>
 
-        <!-- Like button -->
-        <div style="text-align:center;margin:2rem 0 1rem;" id="like-section">
+        <!-- Like / Bookmark / Share -->
+        <div style="display:flex;align-items:center;justify-content:center;gap:.75rem;flex-wrap:wrap;margin:2rem 0 1rem;" id="like-section">
+          {% if user_id %}
           <button id="like-btn"
                   onclick="toggleLike('{{ article.slug }}')"
-                  style="background:{% if user_liked %}rgba(239,68,68,.15){% else %}rgba(255,255,255,.05){% endif %};border:1px solid {% if user_liked %}rgba(239,68,68,.4){% else %}rgba(255,255,255,.15){% endif %};border-radius:50px;padding:.6rem 1.5rem;color:{% if user_liked %}#f87171{% else %}var(--gray-400){% endif %};cursor:pointer;font-size:.95rem;transition:all .2s;">
+                  style="background:{% if user_liked %}rgba(239,68,68,.15){% else %}rgba(255,255,255,.05){% endif %};border:1px solid {% if user_liked %}rgba(239,68,68,.4){% else %}rgba(255,255,255,.15){% endif %};border-radius:50px;padding:.6rem 1.25rem;color:{% if user_liked %}#f87171{% else %}var(--gray-400){% endif %};cursor:pointer;font-size:.9rem;transition:all .2s;">
             ❤ <span id="like-count">{{ like_count }}</span>
             <span id="like-label">{% if user_liked %}いいね済み{% else %}いいね{% endif %}</span>
           </button>
+          <button id="bookmark-btn"
+                  onclick="toggleBookmark('{{ article.slug }}')"
+                  style="background:{% if user_bookmarked %}rgba(249,115,22,.15){% else %}rgba(255,255,255,.05){% endif %};border:1px solid {% if user_bookmarked %}rgba(249,115,22,.4){% else %}rgba(255,255,255,.15){% endif %};border-radius:50px;padding:.6rem 1.25rem;color:{% if user_bookmarked %}var(--orange){% else %}var(--gray-400){% endif %};cursor:pointer;font-size:.9rem;transition:all .2s;">
+            🔖 <span id="bookmark-label">{% if user_bookmarked %}保存済み{% else %}保存{% endif %}</span>
+          </button>
+          {% else %}
+          <span style="color:var(--gray-400);font-size:.85rem;">❤ {{ like_count }}</span>
+          {% endif %}
+          <a href="https://x.com/intent/tweet?text={{ article.title | urlencode }}&url={{ request.url | urlencode }}"
+             target="_blank" rel="noopener"
+             style="background:rgba(0,0,0,.3);border:1px solid rgba(255,255,255,.15);border-radius:50px;padding:.6rem 1.25rem;color:var(--gray-200);font-size:.85rem;text-decoration:none;display:inline-flex;align-items:center;gap:.4rem;">
+            <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M18.244 2.25h3.308l-7.227 8.26 8.502 11.24H16.17l-5.214-6.817L4.99 21.75H1.68l7.73-8.835L1.254 2.25H8.08l4.713 6.231zm-1.161 17.52h1.833L7.084 4.126H5.117z"/></svg>
+            Xでシェア
+          </a>
+          <a href="https://social-plugins.line.me/lineit/share?url={{ request.url | urlencode }}"
+             target="_blank" rel="noopener"
+             style="background:rgba(6,199,85,.1);border:1px solid rgba(6,199,85,.3);border-radius:50px;padding:.6rem 1.25rem;color:#4ade80;font-size:.85rem;text-decoration:none;">
+            LINEで送る
+          </a>
         </div>
 
         <!-- Comments -->
@@ -273,6 +300,26 @@ function toggleLike(slug) {
         btn.style.borderColor = 'rgba(255,255,255,.15)';
         btn.style.color = 'var(--gray-400)';
         label.textContent = 'いいね';
+      }
+    })
+    .catch(() => {});
+}
+function toggleBookmark(slug) {
+  fetch('/learn/' + slug + '/bookmark', {method: 'POST', headers: {'X-Requested-With': 'XMLHttpRequest'}})
+    .then(r => r.json())
+    .then(data => {
+      const btn = document.getElementById('bookmark-btn');
+      const label = document.getElementById('bookmark-label');
+      if (data.bookmarked) {
+        btn.style.background = 'rgba(249,115,22,.15)';
+        btn.style.borderColor = 'rgba(249,115,22,.4)';
+        btn.style.color = 'var(--orange)';
+        label.textContent = '保存済み';
+      } else {
+        btn.style.background = 'rgba(255,255,255,.05)';
+        btn.style.borderColor = 'rgba(255,255,255,.15)';
+        btn.style.color = 'var(--gray-400)';
+        label.textContent = '保存';
       }
     })
     .catch(() => {});

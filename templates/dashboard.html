@@ -80,16 +80,45 @@
         {% endif %}
 
         <!-- Quick links -->
-        <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.75rem;">
+        <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.75rem;margin-bottom:1.5rem;">
           <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">クイックリンク</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
             <a href="{{ url_for('library') }}" class="btn btn-ghost" style="justify-content:center;">⚡ ドリルライブラリ</a>
             <a href="{{ url_for('learn') }}" class="btn btn-ghost" style="justify-content:center;">📚 記事一覧</a>
             {% if session.get('role') == 'admin' %}
             <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost" style="justify-content:center;">⚙️ 管理画面</a>
+            <a href="{{ url_for('admin_notices') }}" class="btn btn-ghost" style="justify-content:center;">📢 お知らせ</a>
             {% endif %}
           </div>
         </div>
+
+        <!-- お知らせ -->
+        {% if notices %}
+        <div style="background:rgba(249,115,22,.05);border:1px solid rgba(249,115,22,.2);border-radius:16px;padding:1.5rem;margin-bottom:1.5rem;">
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">📢 お知らせ</h3>
+          {% for notice in notices %}
+          <div style="padding:.6rem 0;border-bottom:1px solid rgba(249,115,22,.1);">
+            <div style="font-weight:600;font-size:.9rem;margin-bottom:.2rem;">{{ notice.title }}</div>
+            {% if notice.content %}
+            <div style="color:var(--gray-400);font-size:.825rem;line-height:1.6;">{{ notice.content }}</div>
+            {% endif %}
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+
+        <!-- ブックマーク -->
+        {% if bookmarks %}
+        <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:1.5rem;">
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">🔖 保存した記事</h3>
+          {% for a in bookmarks %}
+          <a href="{{ url_for('learn_detail', slug=a.slug) }}"
+             style="display:block;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05);text-decoration:none;color:inherit;">
+            <div style="font-size:.875rem;font-weight:500;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ a.title }}</div>
+          </a>
+          {% endfor %}
+        </div>
+        {% endif %}
       </div>
 
       <!-- Right column / Profile -->

@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}ようこそ | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<section class="section">
+  <div class="container" style="max-width:640px;text-align:center;">
+
+    <div style="font-size:3rem;margin-bottom:1rem;">⚾</div>
+    <h1 style="font-size:clamp(1.6rem,4vw,2.2rem);font-weight:900;margin-bottom:.75rem;">
+      {{ session.get('name') }}さん、ようこそ！
+    </h1>
+    <p style="color:var(--gray-400);line-height:1.8;margin-bottom:2.5rem;">
+      Ignite Potential Baseへの登録が完了しました。<br>
+      まずは無料記事を読んで、コーチングの考え方に触れてみてください。
+    </p>
+
+    {% if free_articles %}
+    <div style="text-align:left;margin-bottom:2.5rem;">
+      <h3 style="font-size:.9rem;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:1rem;">📚 まずこの記事から</h3>
+      {% for article in free_articles %}
+      <a href="{{ url_for('learn_detail', slug=article.slug) }}"
+         style="display:block;background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem 1.5rem;margin-bottom:.75rem;text-decoration:none;color:inherit;transition:border-color .2s;"
+         onmouseover="this.style.borderColor='rgba(249,115,22,.4)'"
+         onmouseout="this.style.borderColor='rgba(255,255,255,.08)'">
+        <div style="font-weight:700;font-size:.975rem;margin-bottom:.35rem;">{{ article.title }}</div>
+        {% if article.excerpt %}
+        <div style="color:var(--gray-400);font-size:.825rem;line-height:1.6;">{{ article.excerpt[:80] }}{% if article.excerpt|length > 80 %}…{% endif %}</div>
+        {% endif %}
+        <div style="margin-top:.6rem;color:var(--orange);font-size:.8rem;font-weight:600;">読む →</div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    <div style="display:flex;flex-direction:column;gap:.75rem;align-items:center;">
+      <a href="{{ url_for('library') }}" class="btn btn-primary btn-lg" style="width:100%;max-width:320px;justify-content:center;">
+        ⚡ ドリルライブラリを見る
+      </a>
+      <a href="{{ url_for('learn') }}" class="btn btn-ghost" style="width:100%;max-width:320px;justify-content:center;">
+        📄 記事一覧へ
+      </a>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm" style="color:var(--gray-400);">
+        ダッシュボードへ →
+      </a>
+    </div>
+
+  </div>
+</section>
+{% endblock %}
