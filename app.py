@@ -10,14 +10,6 @@ from dotenv import load_dotenv
 import bcrypt
 import markdown as md
 from dateutil import parser as dtparser
-import ssl as _ssl
-from urllib.parse import urlparse as _urlparse
-try:
-    import pg8000.dbapi as _pg8000
-    HAS_PSYCOPG2 = True
-except ImportError:
-    _pg8000 = None
-    HAS_PSYCOPG2 = False
 
 load_dotenv()
 
@@ -105,98 +97,28 @@ def sb_rpc(func_name, data, service=False):
         return None
 
 
-# ── Direct PostgreSQL helpers (for columns PostgREST cache doesn't know yet) ──
+# ── Drill helpers (Supabase REST API) ─────────────────────────────────────────
 
-_last_pg_error = None
-
-def _pg_conn():
-    global _last_pg_error
-    if not HAS_PSYCOPG2 or not DATABASE_URL:
-        return None
-    try:
-        p = _urlparse(DATABASE_URL)
-        db = p.path.lstrip('/')
-        ssl_ctx = _ssl.create_default_context()
-        ssl_ctx.check_hostname = False
-        ssl_ctx.verify_mode = _ssl.CERT_NONE
-        conn = _pg8000.connect(
-            host=p.hostname,
-            port=p.port or 5432,
-            database=db,
-            user=p.username,
-            password=p.password,
-            ssl_context=ssl_ctx,
-        )
-        _last_pg_error = None
-        return conn
-    except Exception as e:
-        _last_pg_error = str(e)
-        print(f'[pg] connect error: {e}')
-        return None
+_DRILL_SELECT = 'id,name,purpose,video_url,method,points,is_free,created_at,category'
 
 
-def _rows_to_dicts(cur):
-    cols = [d[0] for d in cur.description]
-    return [dict(zip(cols, row)) for row in cur.fetchall()]
-
-
-def pg_drills(where_clause='', params=None):
-    """Get drills including category column, bypassing PostgREST."""
-    conn = _pg_conn()
-    if not conn:
-        return []
-    sql = f"""
-        SELECT id, name, purpose, video_url, method, points, is_free, created_at, category
-        FROM ipb_drills
-        {where_clause}
-        ORDER BY created_at DESC
-    """
-    try:
-        cur = conn.cursor()
-        cur.execute(sql, params or ())
-        return _rows_to_dicts(cur)
-    except Exception as e:
-        print(f'[pg_drills] {e}')
-        return []
-    finally:
-        conn.close()
+def pg_drills(**filters):
+    """Get drills via Supabase REST API."""
+    params = {'select': _DRILL_SELECT, 'order': 'created_at.desc'}
+    params.update(filters)
+    return sb_get('ipb_drills', params=params, service=True)
 
 
 def pg_drill_save(data, drill_id=None):
-    """Insert or update a drill (with category) via direct SQL."""
-    conn = _pg_conn()
-    if not conn:
-        return None
-    try:
-        cur = conn.cursor()
-        if drill_id:
-            cur.execute("""
-                UPDATE ipb_drills
-                SET name=%s, purpose=%s, video_url=%s, method=%s,
-                    points=%s, is_free=%s, category=%s
-                WHERE id=%s
-                RETURNING *
-            """, (data['name'], data['purpose'], data['video_url'],
-                  data['method'], data['points'], data['is_free'],
-                  data.get('category'), drill_id))
-        else:
-            cur.execute("""
-                INSERT INTO ipb_drills
-                    (name, purpose, video_url, method, points, is_free, category)
-                VALUES (%s, %s, %s, %s, %s, %s, %s)
-                RETURNING *
-            """, (data['name'], data['purpose'], data['video_url'],
-                  data['method'], data['points'], data['is_free'],
-                  data.get('category')))
-        rows = _rows_to_dicts(cur)
-        conn.commit()
+    """Insert or update a drill via Supabase REST API."""
+    if drill_id:
+        ok = sb_patch('ipb_drills', {'id': f'eq.{drill_id}'}, data, service=True)
+        if not ok:
+            return None
+        rows = pg_drills(**{'id': f'eq.{drill_id}'})
         return rows[0] if rows else None
-    except Exception as e:
-        print(f'[pg_drill_save] {e}')
-        conn.rollback()
-        return None
-    finally:
-        conn.close()
+    else:
+        return sb_post('ipb_drills', data, service=True)
 
 
 def sb_patch(table, params, data, service=False):
@@ -506,7 +428,7 @@ def library():
 
 @app.route('/library/<drill_id>')
 def drill_detail(drill_id):
-    drills = pg_drills('WHERE id = %s', (drill_id,))
+    drills = pg_drills(**{'id': f'eq.{drill_id}'})
     if not drills:
         return redirect(url_for('library'))
     drill = drills[0]
@@ -537,7 +459,7 @@ def drill_detail(drill_id):
     # 同カテゴリの関連ドリル
     related_drills = []
     if drill.get('category'):
-        related_drills = pg_drills('WHERE category = %s AND id != %s', (drill['category'], drill_id))[:3]
+        related_drills = pg_drills(**{'category': f'eq.{drill["category"]}', 'id': f'neq.{drill_id}', 'limit': '3'})
 
     return render_template('drill.html', drill=drill, related_drills=related_drills)
 
@@ -639,30 +561,6 @@ def _article_form_data(form):
     }
 
 
-@app.route('/admin/dbcheck')
-@admin_required
-def admin_dbcheck():
-    info = {
-        'HAS_PSYCOPG2': HAS_PSYCOPG2,
-        'DATABASE_URL_SET': bool(DATABASE_URL),
-        'DATABASE_URL_PREFIX': DATABASE_URL[:40] if DATABASE_URL else None,
-    }
-    conn = _pg_conn()
-    if conn:
-        try:
-            with conn.cursor() as cur:
-                cur.execute('SELECT COUNT(*) FROM ipb_drills')
-                info['drill_count'] = cur.fetchone()[0]
-                info['connected'] = True
-        except Exception as e:
-            info['query_error'] = str(e)
-        finally:
-            conn.close()
-    else:
-        info['connected'] = False
-        info['connect_error'] = _last_pg_error
-    return jsonify(info)
-
 
 @app.route('/admin/library')
 @admin_required
@@ -682,25 +580,11 @@ def admin_library_bulk_category():
 
     category = None if cat_raw == '__clear__' else (cat_raw or None)
 
-    conn = _pg_conn()
-    if not conn:
-        flash('DB接続エラー', 'error')
-        return redirect(url_for('admin_library'))
-    try:
-        cur = conn.cursor()
-        placeholders = ','.join(['%s'] * len(ids))
-        cur.execute(
-            f'UPDATE ipb_drills SET category = %s WHERE id::text IN ({placeholders})',
-            [category] + ids
-        )
-        conn.commit()
+    ok = sb_patch('ipb_drills', {'id': f'in.({",".join(ids)})'}, {'category': category}, service=True)
+    if ok:
         flash(f'{len(ids)} 件のカテゴリを更新しました', 'success')
-    except Exception as e:
-        print(f'[bulk_category] {e}')
-        conn.rollback()
+    else:
         flash('更新に失敗しました', 'error')
-    finally:
-        conn.close()
     return redirect(url_for('admin_library'))
 
 
@@ -728,7 +612,7 @@ def admin_library_new():
 @app.route('/admin/library/<drill_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def admin_library_edit(drill_id):
-    rows = pg_drills('WHERE id = %s', (drill_id,))
+    rows = pg_drills(**{'id': f'eq.{drill_id}'})
     if not rows:
         return redirect(url_for('admin_library'))
     drill = rows[0]
