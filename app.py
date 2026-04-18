@@ -736,11 +736,8 @@ def admin_members_plan(member_id):
         flash('不正なプランです', 'error')
         return redirect(url_for('admin_members'))
 
-    # 直接SQLでUPDATE（PostgRESTを完全回避、plan='team'をそのまま保存）
-    ok = db_execute(
-        "UPDATE ipb_users SET plan = %s WHERE id = %s",
-        (new_plan, member_id)
-    )
+    # service_role（RLSバイパス）でPATCH
+    ok = sb_patch('ipb_users', {'id': f'eq.{member_id}'}, {'plan': new_plan}, service=True)
 
     print(f'[plan_change] member={member_id} plan={new_plan} ok={ok}', flush=True)
     if ok:
