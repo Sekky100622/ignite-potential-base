@@ -10,6 +10,7 @@ from dotenv import load_dotenv
 import bcrypt
 import markdown as md
 from dateutil import parser as dtparser
+import ssl as _ssl
 from urllib.parse import urlparse as _urlparse
 try:
     import pg8000.dbapi as _pg8000
@@ -112,13 +113,16 @@ def _pg_conn():
     try:
         p = _urlparse(DATABASE_URL)
         db = p.path.lstrip('/')
+        ssl_ctx = _ssl.create_default_context()
+        ssl_ctx.check_hostname = False
+        ssl_ctx.verify_mode = _ssl.CERT_NONE
         return _pg8000.connect(
             host=p.hostname,
             port=p.port or 5432,
             database=db,
             user=p.username,
             password=p.password,
-            ssl_context=True,
+            ssl_context=ssl_ctx,
         )
     except Exception as e:
         print(f'[pg] connect error: {e}')
