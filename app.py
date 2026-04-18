@@ -17,6 +17,16 @@ app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
 
 NOTE_URL = os.getenv('NOTE_URL', '#')
+
+DRILL_CATEGORIES = [
+    'リセット',
+    'コレクティブ',
+    'モーターコントロール',
+    'ベーシックムーブメント',
+    'ウエイトトレーニング',
+    'プライオメトリクス',
+    'スキル（アトラクターベース）',
+]
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
@@ -324,7 +334,11 @@ def learn_detail(slug):
 
 @app.route('/library')
 def library():
+    if not session.get('user_id'):
+        return redirect(url_for('register'))
+
     q = request.args.get('q', '').strip()
+    cat = request.args.get('cat', '').strip()
     params = {'order': 'created_at.desc', 'select': '*'}
     drills = sb_get('ipb_drills', params) or []
 
@@ -334,16 +348,17 @@ def library():
                   or ql in (d.get('purpose') or '').lower()
                   or ql in (d.get('points') or '').lower()]
 
-    if not session.get('user_id'):
-        return redirect(url_for('register'))
+    if cat:
+        drills = [d for d in drills if d.get('category') == cat]
 
     is_premium = session.get('plan') == 'premium'
 
     if not is_premium:
         drills = [d for d in drills if d.get('is_free')]
-        drills = drills[:20]   # フリー会員: 20本まで
+        drills = drills[:20]
 
-    return render_template('library.html', drills=drills, q=q, is_premium=is_premium, is_logged_in=True)
+    return render_template('library.html', drills=drills, q=q, cat=cat,
+                           categories=DRILL_CATEGORIES, is_premium=is_premium, is_logged_in=True)
 
 
 @app.route('/library/<drill_id>')
@@ -489,6 +504,7 @@ def admin_library_new():
     if request.method == 'POST':
         result = sb_post('ipb_drills', {
             'name':      request.form.get('name', '').strip(),
+            'category':  request.form.get('category', '').strip() or None,
             'purpose':   request.form.get('purpose', '').strip(),
             'video_url': request.form.get('video_url', '').strip(),
             'method':    request.form.get('method', '').strip(),
@@ -499,7 +515,7 @@ def admin_library_new():
             flash('ドリルを追加しました', 'success')
             return redirect(url_for('admin_library'))
         flash('追加に失敗しました', 'error')
-    return render_template('admin/drill_form.html', drill={}, edit=False)
+    return render_template('admin/drill_form.html', drill={}, edit=False, categories=DRILL_CATEGORIES)
 
 
 @app.route('/admin/library/<drill_id>/edit', methods=['GET', 'POST'])
@@ -512,6 +528,7 @@ def admin_library_edit(drill_id):
     if request.method == 'POST':
         sb_patch('ipb_drills', {'id': f'eq.{drill_id}'}, {
             'name':      request.form.get('name', '').strip(),
+            'category':  request.form.get('category', '').strip() or None,
             'purpose':   request.form.get('purpose', '').strip(),
             'video_url': request.form.get('video_url', '').strip(),
             'method':    request.form.get('method', '').strip(),
@@ -520,7 +537,7 @@ def admin_library_edit(drill_id):
         }, service=True)
         flash('更新しました', 'success')
         return redirect(url_for('admin_library'))
-    return render_template('admin/drill_form.html', drill=drill, edit=True)
+    return render_template('admin/drill_form.html', drill=drill, edit=True, categories=DRILL_CATEGORIES)
 
 
 @app.route('/admin/library/<drill_id>/delete', methods=['POST'])
