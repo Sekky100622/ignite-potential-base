@@ -334,17 +334,16 @@ def library():
                   or ql in (d.get('purpose') or '').lower()
                   or ql in (d.get('points') or '').lower()]
 
+    if not session.get('user_id'):
+        return redirect(url_for('register'))
+
     is_premium = session.get('plan') == 'premium'
-    is_logged_in = bool(session.get('user_id'))
 
     if not is_premium:
         drills = [d for d in drills if d.get('is_free')]
-        if not is_logged_in:
-            drills = drills[:10]   # 未ログイン: 10本まで
-        else:
-            drills = drills[:20]   # フリー会員: 20本まで
+        drills = drills[:20]   # フリー会員: 20本まで
 
-    return render_template('library.html', drills=drills, q=q, is_premium=is_premium, is_logged_in=is_logged_in)
+    return render_template('library.html', drills=drills, q=q, is_premium=is_premium, is_logged_in=True)
 
 
 @app.route('/library/<drill_id>')
@@ -353,6 +352,8 @@ def drill_detail(drill_id):
     if not drills:
         return redirect(url_for('library'))
     drill = drills[0]
+    if not session.get('user_id'):
+        return redirect(url_for('register'))
     is_premium_drill = not drill.get('is_free')
     is_premium_user = session.get('plan') == 'premium'
     if is_premium_drill and not is_premium_user:
