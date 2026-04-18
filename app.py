@@ -10,6 +10,12 @@ from dotenv import load_dotenv
 import bcrypt
 import markdown as md
 from dateutil import parser as dtparser
+try:
+    import psycopg2
+    import psycopg2.extras
+    HAS_PSYCOPG2 = True
+except ImportError:
+    HAS_PSYCOPG2 = False
 
 load_dotenv()
 
@@ -30,6 +36,7 @@ DRILL_CATEGORIES = [
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
+DATABASE_URL = os.getenv('DATABASE_URL')
 
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
@@ -93,6 +100,77 @@ def sb_rpc(func_name, data, service=False):
     except Exception as e:
         print(f'[sb_rpc] exception: {e}')
         return None
+
+
+# ── Direct PostgreSQL helpers (for columns PostgREST cache doesn't know yet) ──
+
+def _pg_conn():
+    if not HAS_PSYCOPG2 or not DATABASE_URL:
+        return None
+    try:
+        return psycopg2.connect(DATABASE_URL)
+    except Exception as e:
+        print(f'[pg] connect error: {e}')
+        return None
+
+
+def pg_drills(where_clause='', params=None):
+    """Get drills including category column, bypassing PostgREST."""
+    conn = _pg_conn()
+    if not conn:
+        return []
+    sql = f"""
+        SELECT id, name, purpose, video_url, method, points, is_free, created_at, category
+        FROM ipb_drills
+        {where_clause}
+        ORDER BY created_at DESC
+    """
+    try:
+        with conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                cur.execute(sql, params)
+                return [dict(r) for r in cur.fetchall()]
+    except Exception as e:
+        print(f'[pg_drills] {e}')
+        return []
+    finally:
+        conn.close()
+
+
+def pg_drill_save(data, drill_id=None):
+    """Insert or update a drill (with category) via direct SQL."""
+    conn = _pg_conn()
+    if not conn:
+        return None
+    try:
+        with conn:
+            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+                if drill_id:
+                    cur.execute("""
+                        UPDATE ipb_drills
+                        SET name=%s, purpose=%s, video_url=%s, method=%s,
+                            points=%s, is_free=%s, category=%s
+                        WHERE id=%s
+                        RETURNING *
+                    """, (data['name'], data['purpose'], data['video_url'],
+                          data['method'], data['points'], data['is_free'],
+                          data.get('category'), drill_id))
+                else:
+                    cur.execute("""
+                        INSERT INTO ipb_drills
+                            (name, purpose, video_url, method, points, is_free, category)
+                        VALUES (%s, %s, %s, %s, %s, %s, %s)
+                        RETURNING *
+                    """, (data['name'], data['purpose'], data['video_url'],
+                          data['method'], data['points'], data['is_free'],
+                          data.get('category')))
+                row = cur.fetchone()
+                return dict(row) if row else None
+    except Exception as e:
+        print(f'[pg_drill_save] {e}')
+        return None
+    finally:
+        conn.close()
 
 
 def sb_patch(table, params, data, service=False):
@@ -357,7 +435,7 @@ def library():
 
     q = request.args.get('q', '').strip()
     cat = request.args.get('cat', '').strip()
-    drills = sb_rpc('get_drills_with_category', {}) or []
+    drills = pg_drills()
 
     if q:
         ql = q.lower()
@@ -511,7 +589,7 @@ def _article_form_data(form):
 @app.route('/admin/library')
 @admin_required
 def admin_library():
-    drills = sb_get('ipb_drills', {'order': 'created_at.desc', 'select': '*'}) or []
+    drills = pg_drills()
     return render_template('admin/library.html', drills=drills)
 
 
@@ -519,7 +597,6 @@ def admin_library():
 @admin_required
 def admin_library_new():
     if request.method == 'POST':
-        cat = request.form.get('category', '').strip() or None
         data = {
             'name':      request.form.get('name', '').strip(),
             'purpose':   request.form.get('purpose', '').strip(),
@@ -527,13 +604,10 @@ def admin_library_new():
             'method':    request.form.get('method', '').strip(),
             'points':    request.form.get('points', '').strip(),
             'is_free':   'is_free' in request.form,
+            'category':  request.form.get('category', '').strip() or None,
         }
-        if cat:
-            data['category'] = cat
-        result = sb_post('ipb_drills', data, service=True)
+        result = pg_drill_save(data)
         if result:
-            if cat and isinstance(result, dict):
-                sb_rpc('set_drill_category', {'p_id': result['id'], 'p_category': cat}, service=True)
             flash('ドリルを追加しました', 'success')
             return redirect(url_for('admin_library'))
         flash('追加に失敗しました', 'error')
@@ -543,26 +617,25 @@ def admin_library_new():
 @app.route('/admin/library/<drill_id>/edit', methods=['GET', 'POST'])
 @admin_required
 def admin_library_edit(drill_id):
-    drills = sb_get('ipb_drills', {'id': f'eq.{drill_id}', 'select': '*'})
-    if not drills:
+    rows = pg_drills('WHERE id = %s', (drill_id,))
+    if not rows:
         return redirect(url_for('admin_library'))
-    drill = drills[0]
+    drill = rows[0]
     if request.method == 'POST':
-        cat = request.form.get('category', '').strip() or None
-        patch_data = {
+        data = {
             'name':      request.form.get('name', '').strip(),
             'purpose':   request.form.get('purpose', '').strip(),
             'video_url': request.form.get('video_url', '').strip(),
             'method':    request.form.get('method', '').strip(),
             'points':    request.form.get('points', '').strip(),
             'is_free':   'is_free' in request.form,
+            'category':  request.form.get('category', '').strip() or None,
         }
-        if cat:
-            patch_data['category'] = cat
-        sb_patch('ipb_drills', {'id': f'eq.{drill_id}'}, patch_data, service=True)
-        if cat:
-            sb_rpc('set_drill_category', {'p_id': drill_id, 'p_category': cat}, service=True)
-        flash('更新しました', 'success')
+        result = pg_drill_save(data, drill_id=drill_id)
+        if result:
+            flash('更新しました', 'success')
+        else:
+            flash('更新に失敗しました', 'error')
         return redirect(url_for('admin_library'))
     return render_template('admin/drill_form.html', drill=drill, edit=True, categories=DRILL_CATEGORIES)
 
