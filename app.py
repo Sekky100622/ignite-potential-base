@@ -226,6 +226,31 @@ def admin_required(f):
     return decorated
 
 
+# ── DB setup (auto-create tables) ─────────────────────────────────────────────
+
+def ensure_tables():
+    db_execute('''
+        CREATE TABLE IF NOT EXISTS ipb_likes (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            user_id UUID NOT NULL,
+            article_id UUID NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            UNIQUE(user_id, article_id)
+        )
+    ''')
+    db_execute('''
+        CREATE TABLE IF NOT EXISTS ipb_comments (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            user_id UUID NOT NULL,
+            article_id UUID NOT NULL,
+            content TEXT NOT NULL,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+    ''')
+
+ensure_tables()
+
+
 # ── Context processor ─────────────────────────────────────────────────────────
 
 @app.context_processor
@@ -383,6 +408,7 @@ def dashboard():
 def learn():
     cat_slug = request.args.get('category', '')
     q = request.args.get('q', '').strip()
+    sort = request.args.get('sort', 'newest')  # 'newest' or 'popular'
 
     categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
     cat_map = {c['id']: c for c in categories}
@@ -409,11 +435,22 @@ def learn():
                     ql in (a.get('title') or '').lower() or
                     ql in (a.get('excerpt') or '').lower()]
 
+    # いいね数を付与
+    all_likes = sb_get('ipb_likes', {'select': 'article_id'}) or []
+    like_counts = {}
+    for like in all_likes:
+        aid = str(like.get('article_id', ''))
+        like_counts[aid] = like_counts.get(aid, 0) + 1
+
     for a in articles:
         a['category'] = cat_map.get(a.get('category_id'))
+        a['like_count'] = like_counts.get(str(a.get('id', '')), 0)
+
+    if sort == 'popular':
+        articles.sort(key=lambda a: a['like_count'], reverse=True)
 
     return render_template('learn.html', articles=articles, categories=categories,
-                           active_category=cat_slug, q=q)
+                           active_category=cat_slug, q=q, sort=sort)
 
 
 @app.route('/learn/<slug>')
@@ -422,6 +459,7 @@ def learn_detail(slug):
     if not articles:
         return redirect(url_for('learn'))
     article = articles[0]
+    article_id = article['id']
 
     # attach category
     if article.get('category_id'):
@@ -464,7 +502,75 @@ def learn_detail(slug):
     can_view = article.get('is_free') or session.get('plan') in ('premium', 'team') or session.get('is_team')
     if not can_view:
         return redirect(url_for('register'))
-    return render_template('article.html', article=article, related=related, can_view=True)
+
+    # いいね
+    user_id = session.get('user_id')
+    likes = sb_get('ipb_likes', {'article_id': f'eq.{article_id}', 'select': 'user_id'}) or []
+    like_count = len(likes)
+    user_liked = any(str(l.get('user_id')) == str(user_id) for l in likes) if user_id else False
+
+    # コメント（ユーザー名付き）
+    comments = db_fetchall('''
+        SELECT c.id, c.content, c.created_at, u.name AS user_name, c.user_id
+        FROM ipb_comments c
+        JOIN ipb_users u ON c.user_id = u.id
+        WHERE c.article_id = %s
+        ORDER BY c.created_at ASC
+    ''', (article_id,))
+
+    return render_template('article.html', article=article, related=related, can_view=True,
+                           like_count=like_count, user_liked=user_liked,
+                           comments=comments or [], user_id=user_id)
+
+
+@app.route('/learn/<slug>/like', methods=['POST'])
+@login_required
+def article_like(slug):
+    articles = sb_get('ipb_articles', {'slug': f'eq.{slug}', 'select': 'id,published'})
+    if not articles:
+        return jsonify({'error': 'not found'}), 404
+    article = articles[0]
+    if not article.get('published'):
+        return jsonify({'error': 'not found'}), 404
+    article_id = article['id']
+    user_id = session.get('user_id')
+
+    existing = db_fetchone('SELECT id FROM ipb_likes WHERE user_id=%s AND article_id=%s',
+                           (user_id, article_id))
+    if existing:
+        db_execute('DELETE FROM ipb_likes WHERE user_id=%s AND article_id=%s',
+                   (user_id, article_id))
+        liked = False
+    else:
+        db_execute('INSERT INTO ipb_likes (user_id, article_id) VALUES (%s, %s)',
+                   (user_id, article_id))
+        liked = True
+
+    count_row = db_fetchone('SELECT COUNT(*) AS cnt FROM ipb_likes WHERE article_id=%s', (article_id,))
+    count = count_row['cnt'] if count_row else 0
+    return jsonify({'liked': liked, 'count': count})
+
+
+@app.route('/learn/<slug>/comment', methods=['POST'])
+@login_required
+def article_comment(slug):
+    articles = sb_get('ipb_articles', {'slug': f'eq.{slug}', 'select': 'id,published'})
+    if not articles or not articles[0].get('published'):
+        return redirect(url_for('learn'))
+    article_id = articles[0]['id']
+    user_id = session.get('user_id')
+    content = request.form.get('content', '').strip()
+    if content:
+        db_execute('INSERT INTO ipb_comments (user_id, article_id, content) VALUES (%s, %s, %s)',
+                   (user_id, article_id, content))
+    return redirect(url_for('learn_detail', slug=slug) + '#comments')
+
+
+@app.route('/learn/<slug>/comment/<comment_id>/delete', methods=['POST'])
+@admin_required
+def article_comment_delete(slug, comment_id):
+    db_execute('DELETE FROM ipb_comments WHERE id=%s', (comment_id,))
+    return redirect(url_for('learn_detail', slug=slug) + '#comments')
 
 
 # ── Library routes ────────────────────────────────────────────────────────────

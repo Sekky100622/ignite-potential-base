@@ -163,6 +163,53 @@
         <div class="article-content">
           {{ article.content_html | safe }}
         </div>
+
+        <!-- Like button -->
+        <div style="text-align:center;margin:2rem 0 1rem;" id="like-section">
+          <button id="like-btn"
+                  onclick="toggleLike('{{ article.slug }}')"
+                  style="background:{% if user_liked %}rgba(239,68,68,.15){% else %}rgba(255,255,255,.05){% endif %};border:1px solid {% if user_liked %}rgba(239,68,68,.4){% else %}rgba(255,255,255,.15){% endif %};border-radius:50px;padding:.6rem 1.5rem;color:{% if user_liked %}#f87171{% else %}var(--gray-400){% endif %};cursor:pointer;font-size:.95rem;transition:all .2s;">
+            ❤ <span id="like-count">{{ like_count }}</span>
+            <span id="like-label">{% if user_liked %}いいね済み{% else %}いいね{% endif %}</span>
+          </button>
+        </div>
+
+        <!-- Comments -->
+        <div id="comments" style="margin-top:2rem;">
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">
+            コメント <span style="color:var(--gray-400);font-weight:400;font-size:.875rem;">({{ comments|length }}件)</span>
+          </h3>
+
+          {% for c in comments %}
+          <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.07);border-radius:10px;padding:1rem 1.25rem;margin-bottom:.75rem;">
+            <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:.5rem;">
+              <span style="font-size:.85rem;font-weight:600;color:var(--orange);">{{ c.user_name }}</span>
+              <div style="display:flex;align-items:center;gap:.75rem;">
+                <span style="font-size:.75rem;color:var(--gray-400);">{{ c.created_at.strftime('%Y/%m/%d %H:%M') if c.created_at else '' }}</span>
+                {% if session.get('role') == 'admin' %}
+                <form method="POST" action="{{ url_for('article_comment_delete', slug=article.slug, comment_id=c.id) }}" style="margin:0;">
+                  <button type="submit" style="background:none;border:none;color:var(--gray-400);cursor:pointer;font-size:.75rem;padding:0;" onclick="return confirm('削除しますか？')">削除</button>
+                </form>
+                {% endif %}
+              </div>
+            </div>
+            <p style="color:var(--gray-200);font-size:.875rem;line-height:1.6;margin:0;">{{ c.content }}</p>
+          </div>
+          {% else %}
+          <p style="color:var(--gray-400);font-size:.875rem;">まだコメントはありません。</p>
+          {% endfor %}
+
+          {% if user_id %}
+          <form method="POST" action="{{ url_for('article_comment', slug=article.slug) }}" style="margin-top:1.25rem;">
+            <textarea name="content" rows="3" placeholder="コメントを書く..."
+                      style="width:100%;background:var(--navy-light);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;padding:.75rem 1rem;font-size:.875rem;resize:vertical;box-sizing:border-box;"
+                      required></textarea>
+            <div style="margin-top:.5rem;text-align:right;">
+              <button type="submit" class="btn btn-primary btn-sm">投稿する</button>
+            </div>
+          </form>
+          {% endif %}
+        </div>
       </div>
 
       <!-- Sidebar -->
@@ -204,4 +251,31 @@
     </div>
   </div>
 </section>
+{% endblock %}
+
+{% block extra_scripts %}
+<script>
+function toggleLike(slug) {
+  fetch('/learn/' + slug + '/like', {method: 'POST', headers: {'X-Requested-With': 'XMLHttpRequest'}})
+    .then(r => r.json())
+    .then(data => {
+      const btn = document.getElementById('like-btn');
+      const count = document.getElementById('like-count');
+      const label = document.getElementById('like-label');
+      count.textContent = data.count;
+      if (data.liked) {
+        btn.style.background = 'rgba(239,68,68,.15)';
+        btn.style.borderColor = 'rgba(239,68,68,.4)';
+        btn.style.color = '#f87171';
+        label.textContent = 'いいね済み';
+      } else {
+        btn.style.background = 'rgba(255,255,255,.05)';
+        btn.style.borderColor = 'rgba(255,255,255,.15)';
+        btn.style.color = 'var(--gray-400)';
+        label.textContent = 'いいね';
+      }
+    })
+    .catch(() => {});
+}
+</script>
 {% endblock %}

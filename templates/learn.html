@@ -28,17 +28,30 @@
     </form>
 
     <!-- Category filter -->
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem;">
-      <a href="{{ url_for('learn') }}"
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;">
+      <a href="{{ url_for('learn', sort=sort) }}"
          class="btn btn-sm {% if not active_category %}btn-primary{% else %}btn-ghost{% endif %}">
         全て
       </a>
       {% for cat in categories %}
-      <a href="{{ url_for('learn', category=cat.slug) }}"
+      <a href="{{ url_for('learn', category=cat.slug, sort=sort) }}"
          class="btn btn-sm {% if active_category == cat.slug %}btn-primary{% else %}btn-ghost{% endif %}">
         {{ cat.name }}
       </a>
       {% endfor %}
+    </div>
+
+    <!-- Sort -->
+    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem;align-items:center;">
+      <span style="color:var(--gray-400);font-size:.8rem;">並び替え：</span>
+      <a href="{{ url_for('learn', category=active_category, q=q, sort='newest') }}"
+         class="btn btn-sm {% if sort == 'newest' %}btn-primary{% else %}btn-ghost{% endif %}">
+        最新
+      </a>
+      <a href="{{ url_for('learn', category=active_category, q=q, sort='popular') }}"
+         class="btn btn-sm {% if sort == 'popular' %}btn-primary{% else %}btn-ghost{% endif %}">
+        人気
+      </a>
     </div>
 
     {% if q %}
@@ -83,10 +96,13 @@
           {% if article.excerpt %}
             <p class="text-gray text-sm" style="line-height:1.6;">{{ article.excerpt }}</p>
           {% endif %}
-          <div style="margin-top:1rem;">
+          <div style="margin-top:1rem;display:flex;align-items:center;justify-content:space-between;">
             <a href="{{ url_for('learn_detail', slug=article.slug) }}" class="btn btn-outline btn-sm">
               見る →
             </a>
+            {% if article.like_count %}
+            <span style="color:var(--gray-400);font-size:.8rem;">❤ {{ article.like_count }}</span>
+            {% endif %}
           </div>
         </div>
       </div>
