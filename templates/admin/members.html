@@ -45,6 +45,7 @@
             <tr>
               <th>名前</th>
               <th>メールアドレス</th>
+              <th>チーム</th>
               <th>権限</th>
               <th>プラン</th>
               <th>登録日</th>
@@ -65,6 +66,7 @@
                 </div>
               </td>
               <td style="color:var(--gray-400);">{{ member.email }}</td>
+              <td style="color:var(--gray-400);font-size:.85rem;">{{ member.team_name or '-' }}</td>
               <td>
                 {% if member.role == 'admin' %}
                   <span class="badge badge-admin">管理者</span>
@@ -107,7 +109,7 @@
             </tr>
             {% else %}
             <tr>
-              <td colspan="6" style="text-align:center;padding:3rem;color:var(--gray-400);">
+              <td colspan="7" style="text-align:center;padding:3rem;color:var(--gray-400);">
                 メンバーはまだいません
               </td>
             </tr>

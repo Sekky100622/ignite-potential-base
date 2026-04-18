@@ -751,18 +751,24 @@ def invite_register(token):
         name = request.form.get('name', '').strip()
         email = request.form.get('email', '').strip().lower()
         password = request.form.get('password', '')
+        team_name = request.form.get('team_name', '').strip()
 
         if not name or not email or len(password) < 6:
             return render_template('invite.html', error='すべての項目を入力してください（パスワードは6文字以上）', token=token, invite=invite)
+        if invite['plan'] == 'team' and not team_name:
+            return render_template('invite.html', error='チーム名を入力してください', token=token, invite=invite)
 
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
-        user = sb_post('ipb_users', {
+        user_data = {
             'name': name,
             'email': email,
             'password_hash': pw_hash,
             'role': 'member',
             'plan': invite['plan'],
-        }, service=True)
+        }
+        if team_name:
+            user_data['team_name'] = team_name
+        user = sb_post('ipb_users', user_data, service=True)
 
         if not user or not isinstance(user, dict):
             return render_template('invite.html', error='登録に失敗しました（メールアドレスが重複している可能性があります）', token=token, invite=invite)

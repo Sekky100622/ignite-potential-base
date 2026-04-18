@@ -20,7 +20,7 @@
     <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:2rem;">
       {% if invite %}
       <div style="margin-bottom:1.25rem;padding:.6rem 1rem;background:rgba(249,115,22,.12);border-radius:8px;font-size:.85rem;color:var(--orange);">
-        プラン: {% if invite.plan == 'premium' %}⭐ プレミアム{% else %}フリー{% endif %}
+        プラン: {% if invite.plan == 'premium' %}⭐ プレミアム{% elif invite.plan == 'team' %}🤝 チームプラン{% else %}フリー{% endif %}
       </div>
       {% endif %}
       <form method="POST" action="{{ url_for('invite_register', token=token) }}">
@@ -29,6 +29,13 @@
           <input class="form-control" type="text" id="name" name="name"
                  placeholder="山田 太郎" required autocomplete="name">
         </div>
+        {% if invite and invite.plan == 'team' %}
+        <div class="form-group">
+          <label class="form-label" for="team_name">チーム名</label>
+          <input class="form-control" type="text" id="team_name" name="team_name"
+                 placeholder="〇〇大学野球部" required>
+        </div>
+        {% endif %}
         <div class="form-group">
           <label class="form-label" for="email">メールアドレス</label>
           <input class="form-control" type="email" id="email" name="email"
