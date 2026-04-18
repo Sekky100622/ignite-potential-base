@@ -1,0 +1,33 @@
+{% extends 'base.html' %}
+{% block title %}{{ drill.name }} | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <a href="{{ url_for('library') }}" style="color:var(--gray-400);font-size:.875rem;">← ライブラリ</a>
+    <div style="display:flex;align-items:center;gap:.75rem;margin-top:.5rem;">
+      <h1 style="font-size:1.6rem;">{{ drill.name }}</h1>
+      <span class="badge badge-premium">会員限定</span>
+    </div>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container" style="max-width:600px;text-align:center;">
+    <div style="background:var(--navy-light);border:2px solid rgba(249,115,22,.4);border-radius:16px;padding:2.5rem 2rem;">
+      <div style="font-size:3rem;margin-bottom:1rem;">🔒</div>
+      <h2 style="font-size:1.4rem;font-weight:800;margin-bottom:.75rem;">このドリルは会員限定コンテンツです</h2>
+      <p style="color:var(--gray-400);font-size:.925rem;line-height:1.8;margin-bottom:2rem;">
+        Noteメンバーシップに登録すると、すべてのドリル・エクササイズを閲覧できます。
+      </p>
+      <a href="{{ note_url }}" target="_blank" rel="noopener"
+         class="btn btn-primary btn-lg" style="width:100%;justify-content:center;margin-bottom:.75rem;">
+        Noteメンバーシップに参加する →
+      </a>
+      <a href="{{ url_for('library') }}" class="btn btn-ghost" style="width:100%;justify-content:center;">
+        無料ドリルを見る
+      </a>
+    </div>
+  </div>
+</section>
+{% endblock %}

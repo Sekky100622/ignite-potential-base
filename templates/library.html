@@ -32,8 +32,13 @@
 
     {% if not session.get('user_id') %}
     <div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:.875rem;color:var(--orange);">
-      ⚾ 会員登録するとすべてのドリル・エクササイズを閲覧できます。
-      <a href="{{ url_for('login') }}" style="color:var(--white);font-weight:700;margin-left:.5rem;">ログイン →</a>
+      ⚾ 無料登録すると無料ドリルが見られます。Noteメンバーシップですべて閲覧可能。
+      <a href="{{ url_for('register') }}" style="color:var(--white);font-weight:700;margin-left:.5rem;">無料登録 →</a>
+    </div>
+    {% elif not is_premium %}
+    <div style="background:rgba(249,115,22,.08);border:1px solid rgba(249,115,22,.25);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:.875rem;color:var(--orange);">
+      ⭐ すべてのドリルを見るには
+      <a href="{{ note_url }}" target="_blank" rel="noopener" style="color:var(--white);font-weight:700;margin-left:.25rem;">Noteメンバーシップ →</a>
     </div>
     {% endif %}
 

@@ -135,6 +135,37 @@ def index():
     return render_template('index.html', free_articles=free_articles)
 
 
+@app.route('/register', methods=['GET', 'POST'])
+def register():
+    if session.get('user_id'):
+        return redirect(url_for('library'))
+    error = None
+    if request.method == 'POST':
+        name  = request.form.get('name', '').strip()
+        email = request.form.get('email', '').strip().lower()
+        password = request.form.get('password', '')
+        if not name or not email or not password:
+            error = 'すべての項目を入力してください'
+        elif len(password) < 8:
+            error = 'パスワードは8文字以上で設定してください'
+        else:
+            existing = sb_get('ipb_users', {'email': f'eq.{email}', 'select': 'id'}, service=True)
+            if existing:
+                error = 'このメールアドレスはすでに登録されています'
+            else:
+                pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
+                user = sb_post('ipb_users', {
+                    'name': name, 'email': email,
+                    'password_hash': pw_hash, 'role': 'member', 'plan': 'free',
+                }, service=True)
+                if user and isinstance(user, dict):
+                    _set_session(user)
+                    flash('登録が完了しました！ライブラリをご覧ください。', 'success')
+                    return redirect(url_for('library'))
+                error = '登録に失敗しました。時間をおいて再度お試しください。'
+    return render_template('register.html', error=error)
+
+
 @app.route('/login', methods=['GET', 'POST'])
 def login():
     if session.get('user_id'):
@@ -303,11 +334,12 @@ def library():
                   or ql in (d.get('purpose') or '').lower()
                   or ql in (d.get('points') or '').lower()]
 
-    # 非会員は無料ドリルのみ
-    if not session.get('user_id'):
+    # プレミアム以外は無料ドリルのみ
+    is_premium = session.get('plan') == 'premium'
+    if not is_premium:
         drills = [d for d in drills if d.get('is_free')]
 
-    return render_template('library.html', drills=drills, q=q)
+    return render_template('library.html', drills=drills, q=q, is_premium=is_premium)
 
 
 @app.route('/library/<drill_id>')
@@ -316,8 +348,10 @@ def drill_detail(drill_id):
     if not drills:
         return redirect(url_for('library'))
     drill = drills[0]
-    if not drill.get('is_free') and not session.get('user_id'):
-        return redirect(url_for('login'))
+    is_premium_drill = not drill.get('is_free')
+    is_premium_user = session.get('plan') == 'premium'
+    if is_premium_drill and not is_premium_user:
+        return render_template('drill_upsell.html', drill=drill)
 
     # 動画URLをYouTube埋め込みに変換
     video_url = drill.get('video_url', '') or ''

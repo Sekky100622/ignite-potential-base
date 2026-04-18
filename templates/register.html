@@ -2,48 +2,54 @@
 {% block title %}無料登録 | Ignite Potential Base{% endblock %}
 
 {% block content %}
-<section class="section">
+<div class="page-header">
+  <div class="container">
+    <h1>無料会員登録</h1>
+    <p>登録するとドリル・エクササイズライブラリの無料コンテンツを閲覧できます</p>
+  </div>
+</div>
+
+<section class="section-sm">
   <div class="container" style="max-width:480px;">
-    <div style="text-align:center;margin-bottom:2rem;">
-      <div style="font-size:2.5rem;margin-bottom:.75rem;">⚾</div>
-      <h1 style="font-size:1.75rem;font-weight:800;">無料アカウント登録</h1>
-      <p class="text-gray text-sm mt-1">30秒で登録完了。クレジットカード不要。</p>
+
+    {% if error %}
+    <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1.25rem;color:#f87171;font-size:.875rem;">
+      {{ error }}
     </div>
+    {% endif %}
 
     <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:16px;padding:2rem;">
-      <form method="POST" action="{{ url_for('register') }}">
+      <form method="POST">
         <div class="form-group">
-          <label class="form-label" for="name">お名前</label>
-          <input class="form-control" type="text" id="name" name="name"
-                 placeholder="山田 太郎" required autocomplete="name"
-                 value="{{ request.form.get('name', '') }}">
+          <label class="form-label">お名前 *</label>
+          <input class="form-control" type="text" name="name" required placeholder="積山 大輝"
+                 value="{{ request.form.get('name', '') }}" autocomplete="name">
         </div>
         <div class="form-group">
-          <label class="form-label" for="email">メールアドレス</label>
-          <input class="form-control" type="email" id="email" name="email"
-                 placeholder="coach@example.com" required autocomplete="email"
-                 value="{{ request.form.get('email', '') }}">
+          <label class="form-label">メールアドレス *</label>
+          <input class="form-control" type="email" name="email" required placeholder="example@email.com"
+                 value="{{ request.form.get('email', '') }}" autocomplete="email">
         </div>
         <div class="form-group">
-          <label class="form-label" for="password">パスワード</label>
-          <input class="form-control" type="password" id="password" name="password"
-                 placeholder="6文字以上" required autocomplete="new-password" minlength="6">
-        </div>
-        <div class="form-group">
-          <label class="form-label" for="confirm_password">パスワード確認</label>
-          <input class="form-control" type="password" id="confirm_password" name="confirm_password"
-                 placeholder="もう一度入力" required autocomplete="new-password" minlength="6">
+          <label class="form-label">パスワード *（8文字以上）</label>
+          <input class="form-control" type="password" name="password" required minlength="8"
+                 placeholder="8文字以上" autocomplete="new-password">
         </div>
         <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem;">
           無料で登録する
         </button>
       </form>
+
+      <div style="margin-top:1.25rem;text-align:center;font-size:.875rem;color:var(--gray-400);">
+        すでにアカウントをお持ちの方は
+        <a href="{{ url_for('login') }}" style="color:var(--orange);">ログイン</a>
+      </div>
     </div>
 
-    <div style="text-align:center;margin-top:1.5rem;">
-      <p class="text-gray text-sm">
-        既にアカウントをお持ちの方は <a href="{{ url_for('login') }}">ログイン</a>
-      </p>
+    <div style="margin-top:1.25rem;background:rgba(249,115,22,.06);border:1px solid rgba(249,115,22,.2);border-radius:10px;padding:1rem 1.25rem;font-size:.85rem;color:var(--gray-400);">
+      ⭐ すべてのドリル・記事を見るには
+      <a href="{{ note_url }}" target="_blank" rel="noopener" style="color:var(--orange);font-weight:700;">Noteメンバーシップ（¥1,980/月）</a>
+      をご利用ください。
     </div>
   </div>
 </section>
