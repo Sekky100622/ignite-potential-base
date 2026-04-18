@@ -387,22 +387,22 @@ def learn():
     categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
     cat_map = {c['id']: c for c in categories}
 
-    params = {
-        'published': 'is.true',
+    # 全記事取得（管理ダッシュボードと同じ方式）→ Python側でフィルタ
+    all_articles = sb_get('ipb_articles', {
         'order': 'created_at.desc',
-        'select': 'id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at',
-    }
+        'select': 'id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at,published,content',
+    }) or []
+
+    articles = [a for a in all_articles if a.get('published')]
+
     if cat_slug:
         matching = [c for c in categories if c['slug'] == cat_slug]
         if matching:
-            params['category_id'] = f'eq.{matching[0]["id"]}'
+            cat_id = matching[0]['id']
+            articles = [a for a in articles if str(a.get('category_id')) == str(cat_id)]
         else:
-            return render_template('learn.html', articles=[], categories=categories,
-                                   active_category=cat_slug, q=q)
+            articles = []
 
-    articles = sb_get('ipb_articles', params) or []
-
-    # キーワード検索（Python側でフィルタ）
     if q:
         ql = q.lower()
         articles = [a for a in articles if
@@ -565,7 +565,7 @@ def admin_dashboard():
 @app.route('/admin/articles')
 @admin_required
 def admin_articles():
-    articles = sb_get('ipb_articles', {'order': 'created_at.desc', 'select': '*'}) or []
+    articles = sb_get('ipb_articles', {'order': 'created_at.desc', 'select': 'id,title,slug,published,is_free,category_id,created_at'}) or []
     categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
     cat_map = {c['id']: c for c in categories}
     for a in articles:
