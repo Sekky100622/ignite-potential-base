@@ -373,7 +373,7 @@ window.addEventListener('scroll', function() {
 })();
 
 function toggleLike(slug) {
-  fetch('/learn/' + slug + '/like', {method: 'POST', headers: {'X-Requested-With': 'XMLHttpRequest'}})
+  csrfFetch('/learn/' + slug + '/like', {method: 'POST', headers: {'X-Requested-With': 'XMLHttpRequest'}})
     .then(r => r.json())
     .then(data => {
       const btn = document.getElementById('like-btn');
@@ -395,7 +395,7 @@ function toggleLike(slug) {
     .catch(() => {});
 }
 function toggleBookmark(slug) {
-  fetch('/learn/' + slug + '/bookmark', {method: 'POST', headers: {'X-Requested-With': 'XMLHttpRequest'}})
+  csrfFetch('/learn/' + slug + '/bookmark', {method: 'POST', headers: {'X-Requested-With': 'XMLHttpRequest'}})
     .then(r => r.json())
     .then(data => {
       const btn = document.getElementById('bookmark-btn');

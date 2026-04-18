@@ -152,7 +152,7 @@ function saveOrder() {
   const btn = document.getElementById('save-order-btn');
   btn.textContent = '保存中...';
   btn.disabled = true;
-  fetch('{{ url_for("admin_library_sort") }}', {
+  csrfFetch('{{ url_for("admin_library_sort") }}', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({order: ids}),

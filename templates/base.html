@@ -5,6 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>{% block title %}Ignite Potential Base{% endblock %}</title>
   <meta name="description" content="{% block meta_description %}野球パフォーマンスコーチによる、野球が上手くなるための方法を体系化したサービス。無料登録でドリル・エクササイズ・記事が読める。Noteメンバーシップ加入で全コンテンツ見放題。{% endblock %}">
+  <meta name="csrf-token" content="{{ csrf_token() }}">
   <!-- OGP -->
   <meta property="og:type" content="website">
   <meta property="og:site_name" content="Ignite Potential Base">
@@ -422,6 +423,26 @@
   </footer>
 
   <script>
+    // ── CSRF ──
+    const _csrfToken = document.querySelector('meta[name="csrf-token"]')?.content || '';
+    // 全フォームに CSRF 隠しフィールドを注入
+    function _injectCsrf(root) {
+      (root || document).querySelectorAll('form[method="post"],form[method="POST"]').forEach(f => {
+        if (!f.querySelector('input[name="csrf_token"]')) {
+          const inp = document.createElement('input');
+          inp.type = 'hidden'; inp.name = 'csrf_token'; inp.value = _csrfToken;
+          f.prepend(inp);
+        }
+      });
+    }
+    document.addEventListener('DOMContentLoaded', () => _injectCsrf());
+    // CSRF ヘッダー付き fetch ラッパー
+    function csrfFetch(url, opts) {
+      opts = opts || {};
+      opts.headers = Object.assign({'X-CSRFToken': _csrfToken}, opts.headers || {});
+      return fetch(url, opts);
+    }
+
     function toggleMenu() {
       document.getElementById('mobileMenu').classList.toggle('open');
     }

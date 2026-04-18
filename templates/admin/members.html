@@ -190,7 +190,7 @@ function updateCount() {
 
 async function generateInvite() {
   const plan = document.getElementById('invite-plan').value;
-  const res = await fetch('{{ url_for("admin_invites_create") }}', {
+  const res = await csrfFetch('{{ url_for("admin_invites_create") }}', {
     method: 'POST',
     headers: {'Content-Type': 'application/json'},
     body: JSON.stringify({plan}),

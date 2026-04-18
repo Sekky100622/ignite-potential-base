@@ -15,11 +15,15 @@ from urllib.parse import urlparse, quote_plus
 from email.mime.text import MIMEText
 from email.mime.multipart import MIMEMultipart
 from flask import Flask, render_template, request, session, redirect, url_for, flash, jsonify, Response
+from flask_wtf.csrf import CSRFProtect
+from flask_limiter import Limiter
+from flask_limiter.util import get_remote_address
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 from dotenv import load_dotenv
 import bcrypt
 import markdown as md
+import bleach
 from dateutil import parser as dtparser
 import psycopg
 from psycopg.rows import dict_row
@@ -28,6 +32,15 @@ load_dotenv()
 
 app = Flask(__name__)
 app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
+
+# セキュリティ設定
+app.config['SESSION_COOKIE_HTTPONLY'] = True
+app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
+app.config['SESSION_COOKIE_SECURE'] = os.getenv('FLASK_ENV') == 'production'
+app.config['WTF_CSRF_TIME_LIMIT'] = 3600
+
+csrf = CSRFProtect(app)
+limiter = Limiter(key_func=get_remote_address, app=app, default_limits=[], storage_uri='memory://')
 
 NOTE_URL = os.getenv('NOTE_URL', '#')
 OG_IMAGE_URL = os.getenv('OG_IMAGE_URL', '')
@@ -49,6 +62,28 @@ SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL')
+
+# bleach 許可設定（markdownコンテンツのサニタイズ用）
+_BLEACH_TAGS = [
+    'p', 'br', 'strong', 'em', 'b', 'i', 'u', 's',
+    'h1', 'h2', 'h3', 'h4', 'h5', 'h6',
+    'ul', 'ol', 'li', 'blockquote', 'hr',
+    'pre', 'code', 'a', 'img',
+    'table', 'thead', 'tbody', 'tr', 'th', 'td',
+]
+_BLEACH_ATTRS = {
+    'a': ['href', 'title', 'target', 'rel'],
+    'img': ['src', 'alt', 'title', 'loading', 'width', 'height'],
+    'td': ['colspan', 'rowspan'],
+    'th': ['colspan', 'rowspan'],
+    'code': ['class'],
+    'pre': ['class'],
+}
+
+
+def sanitize_html(html: str) -> str:
+    return bleach.clean(html, tags=_BLEACH_TAGS, attributes=_BLEACH_ATTRS, strip=True)
+
 
 # パスワードの特殊文字（!など）をURLエンコード
 def _encode_db_url(url):
@@ -291,6 +326,16 @@ def ensure_tables():
 ensure_tables()
 
 
+# ── Security headers ──────────────────────────────────────────────────────────
+
+@app.after_request
+def set_security_headers(resp):
+    resp.headers['X-Frame-Options'] = 'SAMEORIGIN'
+    resp.headers['X-Content-Type-Options'] = 'nosniff'
+    resp.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    return resp
+
+
 # ── Context processor ─────────────────────────────────────────────────────────
 
 @app.context_processor
@@ -322,6 +367,7 @@ def index():
 
 
 @app.route('/register', methods=['GET', 'POST'])
+@limiter.limit('10 per minute')
 def register():
     if session.get('user_id'):
         return redirect(url_for('library'))
@@ -353,6 +399,7 @@ def register():
 
 
 @app.route('/login', methods=['GET', 'POST'])
+@limiter.limit('10 per minute')
 def login():
     if session.get('user_id'):
         return redirect(url_for('dashboard'))
@@ -392,6 +439,7 @@ def login():
 
 
 @app.route('/auth/google', methods=['POST'])
+@csrf.exempt
 def auth_google():
     credential = request.form.get('credential', '')
     if not credential or not GOOGLE_CLIENT_ID:
@@ -626,11 +674,11 @@ def learn_detail(slug):
     else:
         article['category'] = None
 
-    # render markdown
-    article['content_html'] = md.markdown(
+    # render markdown (bleach でサニタイズ)
+    article['content_html'] = sanitize_html(md.markdown(
         article.get('content', ''),
         extensions=['fenced_code', 'tables'],
-    )
+    ))
 
     # convert YouTube watch URL to embed URL
     video_url = article.get('video_url', '') or ''
@@ -1387,6 +1435,7 @@ def invite_register(token):
 # ── Password reset routes ─────────────────────────────────────────────────────
 
 @app.route('/forgot-password', methods=['GET', 'POST'])
+@limiter.limit('5 per minute')
 def forgot_password():
     if request.method == 'POST':
         email = request.form.get('email', '').strip().lower()
@@ -1550,4 +1599,4 @@ def robots_txt():
 
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5001))
-    app.run(host='0.0.0.0', port=port, debug=True)
+    app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_DEBUG', 'false').lower() == 'true')

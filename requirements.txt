@@ -7,3 +7,6 @@ markdown==3.5.2
 python-dateutil==2.9.0
 psycopg[binary]==3.2.13
 google-auth==2.29.0
+Flask-WTF==1.2.1
+Flask-Limiter==3.7.0
+bleach==6.1.0
