@@ -60,7 +60,7 @@
     {% if drills %}
     <div class="grid grid-3">
       {% for drill in drills %}
-      {% set locked = not is_premium and not drill.is_free %}
+      {% set locked = (not is_logged_in and not drill.is_free) or (is_logged_in and not is_premium and not drill.is_free) %}
       <a href="{{ url_for('drill_detail', drill_id=drill.id) }}"
          style="background:var(--navy-light);border:1px solid {% if locked %}rgba(255,255,255,.04){% else %}rgba(255,255,255,.08){% endif %};border-radius:12px;padding:1.5rem;display:block;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s;{% if locked %}opacity:.6;{% endif %}position:relative;overflow:hidden;"
          {% if not locked %}onmouseover="this.style.borderColor='rgba(249,115,22,.4)';this.style.transform='translateY(-3px)'"

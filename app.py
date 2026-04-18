@@ -171,7 +171,7 @@ def sb_rpc(func_name, data, service=False):
 
 # ── Drill helpers (Supabase REST API) ─────────────────────────────────────────
 
-_DRILL_SELECT = 'id,name,purpose,video_url,method,points,is_free,created_at,category,difficulty'
+_DRILL_SELECT = 'id,name,purpose,video_url,method,points,is_free,created_at,category'
 
 
 def pg_drills(**filters):
@@ -802,12 +802,10 @@ def search():
 
 @app.route('/library')
 def library():
-    if not session.get('user_id'):
-        return redirect(url_for('register'))
-
+    is_logged_in = bool(session.get('user_id'))
     q = request.args.get('q', '').strip()
     cat = request.args.get('cat', '').strip()
-    drills = pg_drills()
+    drills = pg_drills() or []
 
     if q:
         ql = q.lower()
@@ -828,7 +826,8 @@ def library():
     drills_page = drills[(page - 1) * per_page: page * per_page]
 
     return render_template('library.html', drills=drills_page, q=q, cat=cat,
-                           categories=DRILL_CATEGORIES, is_premium=is_premium, is_logged_in=True,
+                           categories=DRILL_CATEGORIES, is_premium=is_premium,
+                           is_logged_in=is_logged_in,
                            page=page, total_pages=total_pages, total=total, per_page=per_page)
 
 
