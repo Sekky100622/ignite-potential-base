@@ -1615,6 +1615,24 @@ def history():
     return render_template('history.html', recently_viewed=recently_viewed)
 
 
+@app.route('/admin/debug-db')
+@admin_required
+def admin_debug_db():
+    results = {}
+    results['database_url_set'] = bool(_DB_URL)
+    try:
+        row = db_fetchone('SELECT COUNT(*) AS cnt FROM ipb_drills')
+        results['drills_count'] = row['cnt'] if row else 'query failed'
+    except Exception as e:
+        results['drills_count'] = f'error: {e}'
+    try:
+        tables = db_fetchall("SELECT tablename FROM pg_tables WHERE schemaname='public' ORDER BY tablename")
+        results['tables'] = [t['tablename'] for t in tables]
+    except Exception as e:
+        results['tables'] = f'error: {e}'
+    return jsonify(results)
+
+
 @app.route('/robots.txt')
 def robots_txt():
     content = f'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /profile\nSitemap: {request.host_url}sitemap.xml\n'
