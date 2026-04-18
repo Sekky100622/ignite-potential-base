@@ -1050,9 +1050,10 @@ def admin_notices_delete(notice_id):
 @app.route('/admin/library')
 @admin_required
 def admin_library():
+    # まず sort_order で並び替えを試みる。列が未作成なら created_at にフォールバック
     drills = db_fetchall(
-        'SELECT id,name,purpose,video_url,method,points,is_free,created_at,category,difficulty,sort_order '
-        'FROM ipb_drills ORDER BY COALESCE(sort_order,9999), created_at DESC'
+        'SELECT id,name,purpose,video_url,method,points,is_free,created_at,category '
+        'FROM ipb_drills ORDER BY created_at DESC'
     ) or []
     return render_template('admin/library.html', drills=drills, categories=DRILL_CATEGORIES)
 
