@@ -11,6 +11,8 @@ from dotenv import load_dotenv
 import bcrypt
 import markdown as md
 from dateutil import parser as dtparser
+import psycopg2
+import psycopg2.extras
 
 load_dotenv()
 
@@ -33,6 +35,45 @@ SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
 DATABASE_URL = os.getenv('DATABASE_URL')
+
+
+# ── Direct PostgreSQL helpers (PostgRESTキャッシュを完全回避) ─────────────────
+
+def db_execute(sql, params=None):
+    """直接SQLを実行（PostgRESTを経由しない）"""
+    if not DATABASE_URL:
+        print('[db_execute] DATABASE_URL not set', flush=True)
+        return False
+    conn = psycopg2.connect(DATABASE_URL)
+    try:
+        with conn.cursor() as cur:
+            cur.execute(sql, params)
+        conn.commit()
+        return True
+    except Exception as e:
+        print(f'[db_execute] error: {e}', flush=True)
+        conn.rollback()
+        return False
+    finally:
+        conn.close()
+
+
+def db_fetchone(sql, params=None):
+    """直接SQLで1行取得（PostgRESTを経由しない）"""
+    if not DATABASE_URL:
+        print('[db_fetchone] DATABASE_URL not set', flush=True)
+        return None
+    conn = psycopg2.connect(DATABASE_URL)
+    try:
+        with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
+            cur.execute(sql, params)
+            row = cur.fetchone()
+            return dict(row) if row else None
+    except Exception as e:
+        print(f'[db_fetchone] error: {e}', flush=True)
+        return None
+    finally:
+        conn.close()
 
 
 # ── Supabase helpers ──────────────────────────────────────────────────────────
@@ -686,30 +727,29 @@ def admin_members_plan(member_id):
     if new_plan not in ('premium', 'team', 'free'):
         flash('不正なプランです', 'error')
         return redirect(url_for('admin_members'))
-    # 'team'はis_teamフラグ+plan='premium'で管理（PostgRESTキャッシュ回避）
+
+    # 直接SQLでUPDATE（PostgRESTのスキーマキャッシュを完全回避）
     if new_plan == 'team':
-        patch_data = {'is_team': True, 'plan': 'premium'}
-    elif new_plan == 'premium':
-        patch_data = {'is_team': False, 'plan': 'premium'}
-    else:
-        patch_data = {'is_team': False, 'plan': 'free'}
-    try:
-        r = req.patch(
-            f'{SUPABASE_URL}/rest/v1/ipb_users',
-            headers={'apikey': SUPABASE_SERVICE_KEY, 'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}', 'Content-Type': 'application/json'},
-            params={'id': f'eq.{member_id}'},
-            json=patch_data,
-            timeout=10,
+        ok = db_execute(
+            "UPDATE ipb_users SET plan = 'premium', is_team = TRUE WHERE id = %s",
+            (member_id,)
         )
-        print(f'[plan_change] member={member_id} plan={new_plan} status={r.status_code} body={r.text[:200]}', flush=True)
-        ok = r.ok
-    except Exception as e:
-        print(f'[plan_change] exception: {e}', flush=True)
-        ok = False
+    elif new_plan == 'premium':
+        ok = db_execute(
+            "UPDATE ipb_users SET plan = 'premium', is_team = FALSE WHERE id = %s",
+            (member_id,)
+        )
+    else:
+        ok = db_execute(
+            "UPDATE ipb_users SET plan = 'free', is_team = FALSE WHERE id = %s",
+            (member_id,)
+        )
+
+    print(f'[plan_change] member={member_id} plan={new_plan} ok={ok}', flush=True)
     if ok:
         flash('プランを変更しました', 'success')
     else:
-        flash('プランの変更に失敗しました', 'error')
+        flash('プランの変更に失敗しました（DATABASE_URLを確認してください）', 'error')
     return redirect(url_for('admin_members'))
 
 
@@ -785,19 +825,20 @@ def invite_register(token):
 
         pw_hash = bcrypt.hashpw(password.encode(), bcrypt.gensalt()).decode()
         invite_plan = invite['plan']
-        user_data = {
-            'name': name,
-            'email': email,
-            'password_hash': pw_hash,
-            'role': 'member',
-            'plan': 'premium' if invite_plan == 'team' else invite_plan,
-            'is_team': invite_plan == 'team',
-        }
-        if team_name:
-            user_data['team_name'] = team_name
-        user = sb_post('ipb_users', user_data, service=True)
+        plan_val = 'premium' if invite_plan == 'team' else invite_plan
+        is_team_val = (invite_plan == 'team')
 
-        if not user or not isinstance(user, dict):
+        # 直接SQLでINSERT（is_team・team_nameがPostgRESTキャッシュにない場合の回避）
+        user = db_fetchone(
+            """
+            INSERT INTO ipb_users (name, email, password_hash, role, plan, is_team, team_name)
+            VALUES (%s, %s, %s, 'member', %s, %s, %s)
+            RETURNING *
+            """,
+            (name, email, pw_hash, plan_val, is_team_val, team_name or None)
+        )
+
+        if not user:
             return render_template('invite.html', error='登録に失敗しました（メールアドレスが重複している可能性があります）', token=token, invite=invite)
 
         _set_session(user)
