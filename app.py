@@ -177,7 +177,7 @@ def sb_patch(table, params, data, service=False):
     try:
         r = req.patch(f'{SUPABASE_URL}/rest/v1/{table}',
                       headers=supabase_headers(service), params=params, json=data, timeout=10)
-        print(f'[sb_patch] {table} params={params} status={r.status_code} body={r.text[:200]}', flush=True)
+        print(f'[sb_patch] {table} params={params} status={r.status_code} body={r.text[:600]}', flush=True)
         return r.ok
     except Exception as e:
         print(f'[sb_patch] exception: {e}', flush=True)
