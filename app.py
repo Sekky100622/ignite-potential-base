@@ -697,7 +697,6 @@ def admin_invites_create():
     payload = {
         'token': token,
         'plan': plan,
-        'created_by': session['user_id'],
     }
     print(f'[invite] posting to ipb_invites: {payload}')
     result = sb_post('ipb_invites', payload, service=True)
