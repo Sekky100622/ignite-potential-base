@@ -206,14 +206,21 @@ def sb_rpc(func_name, data, service=False):
 
 # ── Drill helpers (Supabase REST API) ─────────────────────────────────────────
 
-_DRILL_SELECT = 'id,name,purpose,video_url,method,points,is_free,created_at,category'
-
-
 def pg_drills(**filters):
-    """Get drills via Supabase REST API."""
-    params = {'select': _DRILL_SELECT, 'order': 'created_at.desc'}
-    params.update(filters)
-    return sb_get('ipb_drills', params=params, service=True)
+    """Get drills via direct SQL."""
+    sql = 'SELECT id,name,purpose,video_url,method,points,is_free,created_at,category FROM ipb_drills'
+    conditions = []
+    params = []
+    if 'is_free' in filters:
+        conditions.append('is_free=%s')
+        params.append(filters['is_free'])
+    if 'category' in filters:
+        conditions.append('category=%s')
+        params.append(filters['category'])
+    if conditions:
+        sql += ' WHERE ' + ' AND '.join(conditions)
+    sql += ' ORDER BY sort_order ASC, created_at DESC'
+    return db_fetchall(sql, params) or []
 
 
 def pg_drill_save(data, drill_id=None):
@@ -280,6 +287,21 @@ def admin_required(f):
 # ── DB setup (auto-create tables) ─────────────────────────────────────────────
 
 def ensure_tables():
+    db_execute('''
+        CREATE TABLE IF NOT EXISTS ipb_drills (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            name TEXT NOT NULL,
+            purpose TEXT DEFAULT '',
+            video_url TEXT DEFAULT '',
+            method TEXT DEFAULT '',
+            points TEXT DEFAULT '',
+            is_free BOOLEAN DEFAULT FALSE,
+            category TEXT DEFAULT '',
+            difficulty TEXT DEFAULT '',
+            sort_order INTEGER DEFAULT 9999,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+    ''')
     db_execute('''
         CREATE TABLE IF NOT EXISTS ipb_likes (
             id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -1117,7 +1139,9 @@ def admin_library_bulk_category():
 
     category = None if cat_raw == '__clear__' else (cat_raw or None)
 
-    ok = sb_patch('ipb_drills', {'id': f'in.({",".join(ids)})'}, {'category': category}, service=True)
+    placeholders = ','.join(['%s'] * len(ids))
+    ok = db_execute(f'UPDATE ipb_drills SET category=%s WHERE id IN ({placeholders})',
+                    [category] + ids)
     if ok:
         flash(f'{len(ids)} 件のカテゴリを更新しました', 'success')
     else:
@@ -1177,7 +1201,7 @@ def admin_library_edit(drill_id):
 @app.route('/admin/library/<drill_id>/delete', methods=['POST'])
 @admin_required
 def admin_library_delete(drill_id):
-    sb_delete('ipb_drills', {'id': f'eq.{drill_id}'}, service=True)
+    db_execute('DELETE FROM ipb_drills WHERE id=%s', (drill_id,))
     flash('削除しました', 'success')
     return redirect(url_for('admin_library'))
 
