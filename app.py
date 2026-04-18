@@ -128,8 +128,10 @@ def sb_patch(table, params, data, service=False):
     try:
         r = req.patch(f'{SUPABASE_URL}/rest/v1/{table}',
                       headers=supabase_headers(service), params=params, json=data, timeout=10)
+        print(f'[sb_patch] {table} params={params} status={r.status_code} body={r.text[:200]}', flush=True)
         return r.ok
-    except Exception:
+    except Exception as e:
+        print(f'[sb_patch] exception: {e}', flush=True)
         return False
 
 
@@ -683,8 +685,12 @@ def admin_members_plan(member_id):
     if new_plan not in ('premium', 'team', 'free'):
         flash('不正なプランです', 'error')
         return redirect(url_for('admin_members'))
-    sb_patch('ipb_users', {'id': f'eq.{member_id}'}, {'plan': new_plan}, service=True)
-    flash('プランを変更しました', 'success')
+    ok = sb_patch('ipb_users', {'id': f'eq.{member_id}'}, {'plan': new_plan}, service=True)
+    print(f'[plan_change] member={member_id} plan={new_plan} ok={ok}', flush=True)
+    if ok:
+        flash('プランを変更しました', 'success')
+    else:
+        flash('プランの変更に失敗しました', 'error')
     return redirect(url_for('admin_members'))
 
 
