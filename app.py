@@ -502,15 +502,18 @@ def admin_library():
 @admin_required
 def admin_library_new():
     if request.method == 'POST':
-        result = sb_post('ipb_drills', {
+        cat = request.form.get('category', '').strip() or None
+        data = {
             'name':      request.form.get('name', '').strip(),
-            'category':  request.form.get('category', '').strip() or None,
             'purpose':   request.form.get('purpose', '').strip(),
             'video_url': request.form.get('video_url', '').strip(),
             'method':    request.form.get('method', '').strip(),
             'points':    request.form.get('points', '').strip(),
             'is_free':   'is_free' in request.form,
-        }, service=True)
+        }
+        if cat:
+            data['category'] = cat
+        result = sb_post('ipb_drills', data, service=True)
         if result:
             flash('ドリルを追加しました', 'success')
             return redirect(url_for('admin_library'))
@@ -526,15 +529,18 @@ def admin_library_edit(drill_id):
         return redirect(url_for('admin_library'))
     drill = drills[0]
     if request.method == 'POST':
-        sb_patch('ipb_drills', {'id': f'eq.{drill_id}'}, {
+        cat = request.form.get('category', '').strip() or None
+        patch_data = {
             'name':      request.form.get('name', '').strip(),
-            'category':  request.form.get('category', '').strip() or None,
             'purpose':   request.form.get('purpose', '').strip(),
             'video_url': request.form.get('video_url', '').strip(),
             'method':    request.form.get('method', '').strip(),
             'points':    request.form.get('points', '').strip(),
             'is_free':   'is_free' in request.form,
-        }, service=True)
+        }
+        if cat:
+            patch_data['category'] = cat
+        sb_patch('ipb_drills', {'id': f'eq.{drill_id}'}, patch_data, service=True)
         flash('更新しました', 'success')
         return redirect(url_for('admin_library'))
     return render_template('admin/drill_form.html', drill=drill, edit=True, categories=DRILL_CATEGORIES)
