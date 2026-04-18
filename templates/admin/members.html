@@ -38,86 +38,109 @@
       </div>
     </div>
 
-    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;">
-      <div class="table-wrap">
-        <table>
-          <thead>
-            <tr>
-              <th>名前</th>
-              <th>メールアドレス</th>
-              <th>チーム</th>
-              <th>権限</th>
-              <th>プラン</th>
-              <th>登録日</th>
-              <th>操作</th>
-            </tr>
-          </thead>
-          <tbody>
-            {% for member in members %}
-            <tr>
-              <td>
-                <div style="display:flex;align-items:center;gap:.75rem;">
-                  <div style="width:36px;height:36px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">
-                    {{ member.name[0] }}
+    {# 一括プラン変更パネル #}
+    <form id="bulk-form" action="{{ url_for('admin_members_bulk_plan') }}" method="POST">
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;">
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.75rem 1rem;border-bottom:1px solid rgba(255,255,255,.06);flex-wrap:wrap;">
+          <label style="font-size:.85rem;color:var(--gray-400);">
+            <input type="checkbox" id="check-all" style="margin-right:.4rem;" onchange="toggleAll(this)">全選択
+          </label>
+          <span style="font-size:.85rem;color:var(--gray-400);" id="selected-count">0名選択中</span>
+          <div style="margin-left:auto;display:flex;gap:.5rem;align-items:center;">
+            <select name="plan" style="background:var(--navy);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;padding:.3rem .5rem;font-size:.85rem;">
+              <option value="team">🤝 チーム</option>
+              <option value="premium">⭐ プレミアム</option>
+              <option value="free">フリー</option>
+            </select>
+            <button type="submit" class="btn btn-primary btn-sm">選択した全員を変更</button>
+          </div>
+        </div>
+        <div class="table-wrap">
+          <table>
+            <thead>
+              <tr>
+                <th style="width:40px;"></th>
+                <th>名前</th>
+                <th>メールアドレス</th>
+                <th>チーム</th>
+                <th>権限</th>
+                <th>プラン</th>
+                <th>登録日</th>
+                <th>操作</th>
+              </tr>
+            </thead>
+            <tbody>
+              {% for member in members %}
+              <tr>
+                <td>
+                  {% if member.id != session.get('user_id') %}
+                  <input type="checkbox" name="member_ids" value="{{ member.id }}" class="member-checkbox" onchange="updateCount()">
+                  {% endif %}
+                </td>
+                <td>
+                  <div style="display:flex;align-items:center;gap:.75rem;">
+                    <div style="width:36px;height:36px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-weight:700;flex-shrink:0;">
+                      {{ member.name[0] }}
+                    </div>
+                    <div>
+                      <div style="font-weight:500;">{{ member.name }}</div>
+                    </div>
                   </div>
-                  <div>
-                    <div style="font-weight:500;">{{ member.name }}</div>
+                </td>
+                <td style="color:var(--gray-400);">{{ member.email }}</td>
+                <td style="color:var(--gray-400);font-size:.85rem;">{{ member.team_name or '-' }}</td>
+                <td>
+                  {% if member.role == 'admin' %}
+                    <span class="badge badge-admin">管理者</span>
+                  {% else %}
+                    <span class="badge badge-cat">メンバー</span>
+                  {% endif %}
+                </td>
+                <td>
+                  {% if member.team_name %}
+                    <span class="badge badge-premium">🤝 チーム</span>
+                  {% elif member.plan == 'premium' %}
+                    <span class="badge badge-premium">⭐ プレミアム</span>
+                  {% else %}
+                    <span class="badge badge-cat">フリー</span>
+                  {% endif %}
+                </td>
+                <td style="color:var(--gray-400);font-size:.85rem;">
+                  {{ member.created_at[:10] if member.created_at else '-' }}
+                </td>
+                <td>
+                  {% if member.id != session.get('user_id') %}
+                  <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                    <form action="{{ url_for('admin_members_plan', member_id=member.id) }}" method="POST" style="display:flex;gap:.4rem;">
+                      <select name="plan" style="background:var(--navy);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;padding:.3rem .5rem;font-size:.8rem;">
+                        <option value="premium" {% if member.plan == 'premium' and not member.team_name %}selected{% endif %}>プレミアム</option>
+                        <option value="team" {% if member.team_name %}selected{% endif %}>チーム</option>
+                        <option value="free" {% if member.plan == 'free' %}selected{% endif %}>フリー</option>
+                      </select>
+                      <button type="submit" class="btn btn-ghost btn-sm">変更</button>
+                    </form>
+                    <form action="{{ url_for('admin_members_delete', member_id=member.id) }}" method="POST"
+                          onsubmit="return confirm('{{ member.name }} を削除しますか？');">
+                      <button type="submit" class="btn btn-danger btn-sm">削除</button>
+                    </form>
                   </div>
-                </div>
-              </td>
-              <td style="color:var(--gray-400);">{{ member.email }}</td>
-              <td style="color:var(--gray-400);font-size:.85rem;">{{ member.team_name or '-' }}</td>
-              <td>
-                {% if member.role == 'admin' %}
-                  <span class="badge badge-admin">管理者</span>
-                {% else %}
-                  <span class="badge badge-cat">メンバー</span>
-                {% endif %}
-              </td>
-              <td>
-                {% if member.team_name %}
-                  <span class="badge badge-premium">🤝 チーム</span>
-                {% elif member.plan == 'premium' %}
-                  <span class="badge badge-premium">⭐ プレミアム</span>
-                {% else %}
-                  <span class="badge badge-cat">フリー</span>
-                {% endif %}
-              </td>
-              <td style="color:var(--gray-400);font-size:.85rem;">
-                {{ member.created_at[:10] if member.created_at else '-' }}
-              </td>
-              <td>
-                {% if member.id != session.get('user_id') %}
-                <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
-                  <form action="{{ url_for('admin_members_plan', member_id=member.id) }}" method="POST" style="display:flex;gap:.4rem;">
-                    <select name="plan" style="background:var(--navy);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;padding:.3rem .5rem;font-size:.8rem;">
-                      <option value="premium" {% if member.plan == 'premium' and not member.team_name %}selected{% endif %}>プレミアム</option>
-                      <option value="team" {% if member.team_name %}selected{% endif %}>チーム</option>
-                      <option value="free" {% if member.plan == 'free' %}selected{% endif %}>フリー</option>
-                    </select>
-                    <button type="submit" class="btn btn-ghost btn-sm">変更</button>
-                  </form>
-                  <form action="{{ url_for('admin_members_delete', member_id=member.id) }}" method="POST"
-                        onsubmit="return confirm('{{ member.name }} を削除しますか？');">
-                    <button type="submit" class="btn btn-danger btn-sm">削除</button>
-                  </form>
-                </div>
-                {% else %}
-                  <span class="text-gray text-sm">自分</span>
-                {% endif %}
-              </td>
-            </tr>
-            {% else %}
-            <tr>
-              <td colspan="7" style="text-align:center;padding:3rem;color:var(--gray-400);">
-                メンバーはまだいません
-              </td>
-            </tr>
-            {% endfor %}
-          </tbody>
-        </table>
+                  {% else %}
+                    <span class="text-gray text-sm">自分</span>
+                  {% endif %}
+                </td>
+              </tr>
+              {% else %}
+              <tr>
+                <td colspan="8" style="text-align:center;padding:3rem;color:var(--gray-400);">
+                  メンバーはまだいません
+                </td>
+              </tr>
+              {% endfor %}
+            </tbody>
+          </table>
+        </div>
       </div>
-    </div>
+    </form>
 
     <div style="margin-top:1rem;">
       <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
@@ -127,6 +150,15 @@
 
 {% block scripts %}
 <script>
+function toggleAll(cb) {
+  document.querySelectorAll('.member-checkbox').forEach(c => c.checked = cb.checked);
+  updateCount();
+}
+function updateCount() {
+  const n = document.querySelectorAll('.member-checkbox:checked').length;
+  document.getElementById('selected-count').textContent = n + '名選択中';
+}
+
 async function generateInvite() {
   const plan = document.getElementById('invite-plan').value;
   const res = await fetch('{{ url_for("admin_invites_create") }}', {
