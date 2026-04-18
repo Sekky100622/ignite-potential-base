@@ -1,5 +1,6 @@
 import os
 import re
+import base64
 import secrets
 import hashlib
 import requests as req
@@ -686,6 +687,31 @@ def admin_members_delete(member_id):
     return redirect(url_for('admin_members'))
 
 
+# ── Invite helpers (署名付きトークン、DB不要) ────────────────────────────────
+
+import hmac as _hmac
+import json as _json
+import time as _time
+
+def _invite_sign(payload: dict) -> str:
+    data = _json.dumps(payload, separators=(',', ':')).encode()
+    sig = _hmac.new(app.secret_key.encode(), data, 'sha256').hexdigest()
+    return base64.urlsafe_b64encode(data).decode() + '.' + sig
+
+def _invite_verify(token: str):
+    try:
+        data_b64, sig = token.rsplit('.', 1)
+        data = base64.urlsafe_b64decode(data_b64 + '==')
+        expected = _hmac.new(app.secret_key.encode(), data, 'sha256').hexdigest()
+        if not _hmac.compare_digest(sig, expected):
+            return None
+        payload = _json.loads(data)
+        if payload.get('exp', 0) < _time.time():
+            return None
+        return payload
+    except Exception:
+        return None
+
 # ── Invite routes ─────────────────────────────────────────────────────────────
 
 @app.route('/admin/invites', methods=['POST'])
@@ -693,30 +719,21 @@ def admin_members_delete(member_id):
 def admin_invites_create():
     data = request.get_json() or {}
     plan = data.get('plan', 'premium')
-    token = secrets.token_urlsafe(24)
     payload = {
-        'token': token,
         'plan': plan,
+        'exp': int(_time.time()) + 7 * 24 * 3600,
+        'nonce': secrets.token_urlsafe(8),
     }
-    print(f'[invite] posting to ipb_invites: {payload}')
-    result = sb_post('ipb_invites', payload, service=True)
-    print(f'[invite] result: {result}')
-    if result:
-        invite_url = url_for('invite_register', token=token, _external=True)
-        return jsonify({'url': invite_url})
-    return jsonify({'error': '作成に失敗しました'}), 500
+    token = _invite_sign(payload)
+    invite_url = url_for('invite_register', token=token, _external=True)
+    return jsonify({'url': invite_url})
 
 
-@app.route('/invite/<token>', methods=['GET', 'POST'])
+@app.route('/invite/<path:token>', methods=['GET', 'POST'])
 def invite_register(token):
-    invites = sb_get('ipb_invites', {'token': f'eq.{token}', 'used': 'eq.false', 'select': '*'}, service=True)
-    if not invites:
-        return render_template('invite.html', error='この招待リンクは無効または使用済みです', token=None, invite=None)
-
-    invite = invites[0]
-    expires_at = dtparser.parse(invite['expires_at'])
-    if datetime.now(timezone.utc) > expires_at:
-        return render_template('invite.html', error='この招待リンクは期限切れです（有効期限: 7日）', token=None, invite=None)
+    invite = _invite_verify(token)
+    if not invite:
+        return render_template('invite.html', error='この招待リンクは無効または期限切れです（有効期限: 7日）', token=None, invite=None)
 
     if request.method == 'POST':
         name = request.form.get('name', '').strip()
@@ -738,7 +755,6 @@ def invite_register(token):
         if not user or not isinstance(user, dict):
             return render_template('invite.html', error='登録に失敗しました（メールアドレスが重複している可能性があります）', token=token, invite=invite)
 
-        sb_patch('ipb_invites', {'token': f'eq.{token}'}, {'used': True}, service=True)
         _set_session(user)
         flash('登録が完了しました！', 'success')
         return redirect(url_for('dashboard'))
