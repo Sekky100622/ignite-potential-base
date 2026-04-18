@@ -336,7 +336,7 @@
       <div class="navbar-actions">
         <a href="{{ url_for('library') if session.get('user_id') else url_for('register') }}" class="btn btn-ghost btn-sm">ライブラリ</a>
         {% if session.get('user_id') %}
-          <a href="{{ url_for('learn') }}" class="btn btn-ghost btn-sm">コンテンツ</a>
+          <a href="{{ url_for('learn') }}" class="btn btn-ghost btn-sm">記事</a>
           <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">ダッシュボード</a>
           {% if session.get('role') == 'admin' %}
             <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">管理画面</a>
@@ -356,7 +356,7 @@
     <div class="mobile-actions">
       <a href="{{ url_for('library') if session.get('user_id') else url_for('register') }}" class="btn btn-ghost">ライブラリ</a>
       {% if session.get('user_id') %}
-        <a href="{{ url_for('learn') }}" class="btn btn-ghost">コンテンツ</a>
+        <a href="{{ url_for('learn') }}" class="btn btn-ghost">記事</a>
         <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">ダッシュボード</a>
         {% if session.get('role') == 'admin' %}
           <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost">管理画面</a>
@@ -392,7 +392,7 @@
       </div>
       <div class="footer-links">
         {% if session.get('user_id') %}
-          <a href="{{ url_for('learn') }}">コンテンツ一覧</a>
+          <a href="{{ url_for('learn') }}">記事一覧</a>
           <a href="{{ url_for('dashboard') }}">ダッシュボード</a>
         {% else %}
           <a href="{{ note_url }}" target="_blank" rel="noopener">Noteメンバーシップ</a>

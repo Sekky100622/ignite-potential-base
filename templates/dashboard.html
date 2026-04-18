@@ -84,7 +84,7 @@
           <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">クイックリンク</h3>
           <div style="display:grid;grid-template-columns:1fr 1fr;gap:.75rem;">
             <a href="{{ url_for('library') }}" class="btn btn-ghost" style="justify-content:center;">⚡ ドリルライブラリ</a>
-            <a href="{{ url_for('learn') }}" class="btn btn-ghost" style="justify-content:center;">📚 コンテンツ一覧</a>
+            <a href="{{ url_for('learn') }}" class="btn btn-ghost" style="justify-content:center;">📚 記事一覧</a>
             {% if session.get('role') == 'admin' %}
             <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost" style="justify-content:center;">⚙️ 管理画面</a>
             {% endif %}

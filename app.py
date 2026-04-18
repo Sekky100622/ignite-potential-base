@@ -392,9 +392,6 @@ def learn():
         'order': 'created_at.desc',
         'select': 'id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at,published',
     }) or []
-    print(f'[learn] all_articles={len(all_articles)} cat_slug={cat_slug!r} q={q!r}', flush=True)
-    for a in all_articles:
-        print(f'  article: {a.get("title")!r} published={a.get("published")!r}', flush=True)
 
     articles = [a for a in all_articles if a.get('published')]
 

@@ -1,11 +1,11 @@
 {% extends 'base.html' %}
-{% block title %}コンテンツ一覧 | Ignite Potential Base{% endblock %}
+{% block title %}記事一覧 | Ignite Potential Base{% endblock %}
 
 {% block content %}
 <div class="page-header">
   <div class="container">
-    <h1>📚 コンテンツ一覧</h1>
-    <p>野球パフォーマンス向上のための専門コンテンツ</p>
+    <h1>📄 記事一覧</h1>
+    <p>野球パフォーマンス向上のための専門記事</p>
   </div>
 </div>
 
@@ -95,7 +95,7 @@
     {% else %}
     <div style="text-align:center;padding:4rem 0;">
       <div style="font-size:3rem;margin-bottom:1rem;">📭</div>
-      <h3 style="color:var(--gray-400);">コンテンツはまだありません</h3>
+      <h3 style="color:var(--gray-400);">記事はまだありません</h3>
       {% if session.get('role') == 'admin' %}
         <a href="{{ url_for('admin_articles_new') }}" class="btn btn-primary mt-3">記事を作成する</a>
       {% endif %}

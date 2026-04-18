@@ -99,7 +99,7 @@
   <div class="container">
     <!-- Breadcrumb -->
     <div style="color:var(--gray-400);font-size:.85rem;margin-bottom:1.5rem;">
-      <a href="{{ url_for('learn') }}" style="color:var(--gray-400);">コンテンツ一覧</a>
+      <a href="{{ url_for('learn') }}" style="color:var(--gray-400);">記事一覧</a>
       {% if article.category %}
         <span style="margin:0 .5rem;">›</span>
         <a href="{{ url_for('learn', category=article.category.slug) }}" style="color:var(--gray-400);">{{ article.category.name }}</a>
