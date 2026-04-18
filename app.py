@@ -614,6 +614,30 @@ def _article_form_data(form):
     }
 
 
+@app.route('/admin/dbcheck')
+@admin_required
+def admin_dbcheck():
+    info = {
+        'HAS_PSYCOPG2': HAS_PSYCOPG2,
+        'DATABASE_URL_SET': bool(DATABASE_URL),
+        'DATABASE_URL_PREFIX': DATABASE_URL[:40] if DATABASE_URL else None,
+    }
+    conn = _pg_conn()
+    if conn:
+        try:
+            with conn.cursor() as cur:
+                cur.execute('SELECT COUNT(*) FROM ipb_drills')
+                info['drill_count'] = cur.fetchone()[0]
+                info['connected'] = True
+        except Exception as e:
+            info['query_error'] = str(e)
+        finally:
+            conn.close()
+    else:
+        info['connected'] = False
+    return jsonify(info)
+
+
 @app.route('/admin/library')
 @admin_required
 def admin_library():
