@@ -143,6 +143,17 @@
             {% if article.pdf_url %}
               <span class="badge badge-pdf">📄 PDF</span>
             {% endif %}
+            {% if article.tags %}
+              {% for tag in article.tags.split(',') %}
+                {% set t = tag.strip() %}
+                {% if t %}
+                <a href="{{ url_for('learn', tag=t) }}"
+                   style="display:inline-flex;align-items:center;padding:.2rem .6rem;border-radius:20px;font-size:.75rem;font-weight:600;border:1px solid rgba(255,255,255,.2);color:var(--gray-400);text-decoration:none;background:rgba(255,255,255,.04);"
+                   onmouseover="this.style.borderColor='rgba(249,115,22,.5)';this.style.color='var(--orange)'"
+                   onmouseout="this.style.borderColor='rgba(255,255,255,.2)';this.style.color='var(--gray-400)'"># {{ t }}</a>
+                {% endif %}
+              {% endfor %}
+            {% endif %}
           </div>
           <h1 style="font-size:clamp(1.5rem,3vw,2rem);font-weight:800;line-height:1.3;margin-bottom:.75rem;">{{ article.title }}</h1>
           {% if article.excerpt %}

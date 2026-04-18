@@ -30,12 +30,28 @@
       </div>
       <div id="invite-result" style="display:none;margin-top:1rem;">
         <label style="font-size:.85rem;color:var(--gray-400);display:block;margin-bottom:.4rem;">招待URL（LINEで送付してください）</label>
-        <div style="display:flex;gap:.5rem;">
+        <div style="display:flex;gap:.5rem;margin-bottom:.75rem;">
           <input id="invite-url" type="text" readonly
                  style="flex:1;background:var(--navy);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;padding:.5rem .75rem;font-size:.85rem;">
-          <button onclick="copyInvite()" class="btn btn-ghost btn-sm">コピー</button>
+          <button onclick="copyInvite()" class="btn btn-ghost btn-sm">📋 コピー</button>
+        </div>
+        <div style="display:flex;align-items:flex-start;gap:1rem;flex-wrap:wrap;">
+          <div>
+            <div style="font-size:.8rem;color:var(--gray-400);margin-bottom:.4rem;">QRコード（印刷・画面共有用）</div>
+            <div style="background:white;padding:8px;border-radius:8px;display:inline-block;">
+              <img id="invite-qr" src="" width="160" height="160" alt="QR Code">
+            </div>
+          </div>
+          <div style="align-self:flex-end;">
+            <a id="invite-qr-dl" href="" download="invite_qr.png" class="btn btn-ghost btn-sm">⬇ QR保存</a>
+          </div>
         </div>
       </div>
+
+    <!-- CSVエクスポートリンク -->
+    <div style="margin-top:.75rem;">
+      <a href="{{ url_for('admin_members_export') }}" class="btn btn-ghost btn-sm">📥 会員リストCSVをダウンロード</a>
+    </div>
     </div>
 
     {# 一括プラン変更パネル #}
@@ -169,6 +185,9 @@ async function generateInvite() {
   const data = await res.json();
   if (data.url) {
     document.getElementById('invite-url').value = data.url;
+    const qrUrl = 'https://api.qrserver.com/v1/create-qr-code/?size=160x160&format=png&data=' + encodeURIComponent(data.url);
+    document.getElementById('invite-qr').src = qrUrl;
+    document.getElementById('invite-qr-dl').href = qrUrl;
     document.getElementById('invite-result').style.display = 'block';
   } else {
     alert('リンクの発行に失敗しました');

@@ -351,6 +351,7 @@
           {% if session.get('role') == 'admin' %}
             <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">管理画面</a>
           {% endif %}
+          <a href="{{ url_for('profile') }}" class="btn btn-ghost btn-sm" title="プロフィール" style="width:32px;height:32px;padding:0;border-radius:50%;background:var(--orange);display:flex;align-items:center;justify-content:center;font-weight:800;font-size:.85rem;flex-shrink:0;">{{ session.get('name', '?')[0] }}</a>
           <a href="{{ url_for('logout') }}" class="btn btn-outline btn-sm">ログアウト</a>
         {% else %}
           <a href="{{ url_for('register') }}" class="btn btn-ghost btn-sm">無料登録</a>
@@ -372,6 +373,7 @@
         {% if session.get('role') == 'admin' %}
           <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost">管理画面</a>
         {% endif %}
+        <a href="{{ url_for('profile') }}" class="btn btn-ghost">👤 プロフィール</a>
         <a href="{{ url_for('logout') }}" class="btn btn-outline">ログアウト</a>
       {% else %}
         <a href="{{ url_for('register') }}" class="btn btn-ghost">無料登録</a>

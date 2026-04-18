@@ -138,8 +138,27 @@
       </div>
     </div>
 
-    <!-- Popular articles + Recent comments -->
-    <div style="display:grid;grid-template-columns:1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+    <!-- View ranking + CSV -->
+    <div style="display:flex;justify-content:flex-end;gap:.5rem;margin-top:1.5rem;flex-wrap:wrap;">
+      <a href="{{ url_for('admin_members_export') }}" class="btn btn-ghost btn-sm">📥 会員CSVエクスポート</a>
+    </div>
+
+    <!-- View ranking + Popular articles + Recent comments -->
+    <div style="display:grid;grid-template-columns:1fr 1fr 1fr;gap:1.5rem;margin-top:1.5rem;">
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">👁 閲覧数ランキング</h3>
+        {% for article in view_ranking %}
+        <div style="display:flex;align-items:center;gap:.75rem;padding:.5rem 0;border-bottom:1px solid rgba(255,255,255,.05);">
+          <span style="font-size:.8rem;color:var(--orange);font-weight:700;width:1.2rem;">{{ loop.index }}</span>
+          <div style="flex:1;min-width:0;">
+            <a href="{{ url_for('learn_detail', slug=article.slug) }}" style="font-size:.85rem;color:var(--white);text-decoration:none;display:block;white-space:nowrap;overflow:hidden;text-overflow:ellipsis;">{{ article.title }}</a>
+          </div>
+          <span style="font-size:.8rem;color:var(--gray-400);">{{ article.view_count or 0 }}回</span>
+        </div>
+        {% else %}
+        <p class="text-gray text-sm">まだ閲覧データがありません</p>
+        {% endfor %}
+      </div>
       <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.5rem;">
         <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">🔥 人気記事TOP5</h3>
         {% for article in popular_articles %}

@@ -188,6 +188,15 @@
             <div class="text-gray text-sm" style="margin-top:.4rem;">YouTubeのURLをそのまま貼り付けでOK</div>
           </div>
 
+          <!-- Tags -->
+          <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;margin-bottom:1rem;">
+            <h4 style="font-size:.85rem;color:var(--gray-400);text-transform:uppercase;margin-bottom:1rem;">🏷 タグ</h4>
+            <input class="form-control" type="text" name="tags"
+                   placeholder="例: バッティング,フォーム,基礎"
+                   value="{{ article.get('tags', '') }}">
+            <div class="text-gray text-sm" style="margin-top:.3rem;">カンマ区切りで複数入力</div>
+          </div>
+
           <!-- PDF -->
           <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;">
             <h4 style="font-size:.85rem;color:var(--gray-400);text-transform:uppercase;margin-bottom:1rem;">📄 PDF</h4>

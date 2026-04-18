@@ -1,0 +1,85 @@
+{% extends 'base.html' %}
+{% block title %}プロフィール | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>👤 プロフィール</h1>
+    <p>アカウント情報の確認・変更</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container" style="max-width:640px;">
+
+    <!-- Account info -->
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.75rem;margin-bottom:1.5rem;">
+      <div style="display:flex;align-items:center;gap:1.25rem;margin-bottom:1.75rem;padding-bottom:1.5rem;border-bottom:1px solid rgba(255,255,255,.08);">
+        <div style="width:64px;height:64px;background:var(--orange);border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:1.75rem;font-weight:800;flex-shrink:0;">
+          {{ user.name[0] if user.name else '?' }}
+        </div>
+        <div>
+          <div style="font-size:1.25rem;font-weight:700;">{{ user.name or '-' }}</div>
+          <div style="color:var(--gray-400);font-size:.875rem;">{{ user.email or '-' }}</div>
+          <div style="margin-top:.4rem;display:flex;gap:.5rem;">
+            {% if user.plan == 'premium' %}
+              <span class="badge badge-premium">⭐ プレミアム</span>
+            {% else %}
+              <span class="badge badge-cat">フリー</span>
+            {% endif %}
+            {% if user.role == 'admin' %}
+              <span class="badge badge-admin">管理者</span>
+            {% endif %}
+          </div>
+        </div>
+      </div>
+
+      <div style="font-size:.8rem;color:var(--gray-400);">
+        登録日: {{ user.created_at[:10] if user.created_at else '-' }}
+      </div>
+    </div>
+
+    <!-- Change name -->
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.75rem;margin-bottom:1.5rem;">
+      <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">名前を変更</h3>
+      <form method="POST" action="{{ url_for('profile') }}">
+        <input type="hidden" name="action" value="name">
+        <div class="form-group">
+          <label class="form-label" for="name">表示名</label>
+          <input class="form-control" type="text" id="name" name="name"
+                 value="{{ user.name or '' }}" required placeholder="表示名を入力">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">更新する</button>
+      </form>
+    </div>
+
+    <!-- Change password -->
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.75rem;margin-bottom:1.5rem;">
+      <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">パスワードを変更</h3>
+      <form method="POST" action="{{ url_for('profile') }}">
+        <input type="hidden" name="action" value="password">
+        <div class="form-group">
+          <label class="form-label" for="current_password">現在のパスワード</label>
+          <input class="form-control" type="password" id="current_password" name="current_password"
+                 placeholder="現在のパスワード" required autocomplete="current-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="new_password">新しいパスワード</label>
+          <input class="form-control" type="password" id="new_password" name="new_password"
+                 placeholder="8文字以上" required minlength="8" autocomplete="new-password">
+        </div>
+        <div class="form-group">
+          <label class="form-label" for="confirm_password">新しいパスワード（確認）</label>
+          <input class="form-control" type="password" id="confirm_password" name="confirm_password"
+                 placeholder="もう一度入力" required minlength="8" autocomplete="new-password">
+        </div>
+        <button type="submit" class="btn btn-primary btn-sm">パスワードを変更</button>
+      </form>
+    </div>
+
+    <div>
+      <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

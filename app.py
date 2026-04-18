@@ -3,11 +3,18 @@ import re
 import base64
 import secrets
 import hashlib
+import hmac
+import time
+import csv
+import smtplib
 import requests as req
 from datetime import datetime, timezone
 from functools import wraps
+from io import StringIO
 from urllib.parse import urlparse, quote_plus
-from flask import Flask, render_template, request, session, redirect, url_for, flash, jsonify
+from email.mime.text import MIMEText
+from email.mime.multipart import MIMEMultipart
+from flask import Flask, render_template, request, session, redirect, url_for, flash, jsonify, Response
 from google.oauth2 import id_token as google_id_token
 from google.auth.transport import requests as google_requests
 from dotenv import load_dotenv
@@ -26,6 +33,8 @@ NOTE_URL = os.getenv('NOTE_URL', '#')
 OG_IMAGE_URL = os.getenv('OG_IMAGE_URL', '')
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
 GA_MEASUREMENT_ID = os.getenv('GA_MEASUREMENT_ID', '')
+SMTP_USER = os.getenv('SMTP_USER', '')
+SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', '')
 
 DRILL_CATEGORIES = [
     'リセット',
@@ -271,6 +280,7 @@ def ensure_tables():
     ''')
     db_execute('ALTER TABLE ipb_users ADD COLUMN IF NOT EXISTS google_id TEXT')
     db_execute('ALTER TABLE ipb_articles ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0')
+    db_execute('ALTER TABLE ipb_articles ADD COLUMN IF NOT EXISTS tags TEXT')
     db_execute('ALTER TABLE ipb_drills ADD COLUMN IF NOT EXISTS difficulty TEXT')
 
 ensure_tables()
@@ -525,19 +535,21 @@ def dashboard():
 def learn():
     is_logged_in = bool(session.get('user_id'))
     cat_slug = request.args.get('category', '')
+    active_tag = request.args.get('tag', '').strip()
     q = request.args.get('q', '').strip()
     sort = request.args.get('sort', 'newest')
+    page = max(1, int(request.args.get('page', 1)))
+    per_page = 9
 
     categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
     cat_map = {c['id']: c for c in categories}
 
     all_articles = sb_get('ipb_articles', {
         'order': 'created_at.desc',
-        'select': 'id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at,published',
+        'select': 'id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at,published,tags',
     }) or []
 
     articles = [a for a in all_articles if a.get('published')]
-    # 未ログインは無料記事のみ
     if not is_logged_in:
         articles = [a for a in articles if a.get('is_free')]
 
@@ -548,6 +560,10 @@ def learn():
             articles = [a for a in articles if str(a.get('category_id')) == str(cat_id)]
         else:
             articles = []
+
+    if active_tag:
+        articles = [a for a in articles if
+                    any(t.strip() == active_tag for t in (a.get('tags') or '').split(','))]
 
     if q:
         ql = q.lower()
@@ -568,8 +584,26 @@ def learn():
     if sort == 'popular':
         articles.sort(key=lambda a: a['like_count'], reverse=True)
 
-    return render_template('learn.html', articles=articles, categories=categories,
-                           active_category=cat_slug, q=q, sort=sort, is_logged_in=is_logged_in)
+    # 全タグ収集
+    all_tags = []
+    seen = set()
+    for a in [x for x in all_articles if x.get('published') and (is_logged_in or x.get('is_free'))]:
+        for t in (a.get('tags') or '').split(','):
+            t = t.strip()
+            if t and t not in seen:
+                all_tags.append(t)
+                seen.add(t)
+
+    # ページネーション
+    total = len(articles)
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    articles_page = articles[(page - 1) * per_page: page * per_page]
+
+    return render_template('learn.html', articles=articles_page, categories=categories,
+                           active_category=cat_slug, active_tag=active_tag,
+                           all_tags=all_tags, q=q, sort=sort, is_logged_in=is_logged_in,
+                           page=page, total_pages=total_pages, total=total, per_page=per_page)
 
 
 @app.route('/learn/<slug>')
@@ -786,9 +820,16 @@ def library():
 
     is_premium = session.get('plan') in ('premium', 'team') or session.get('is_team')
 
-    # 全ドリルを表示（プレミアム限定はロック表示）
-    return render_template('library.html', drills=drills, q=q, cat=cat,
-                           categories=DRILL_CATEGORIES, is_premium=is_premium, is_logged_in=True)
+    per_page = 12
+    page = max(1, int(request.args.get('page', 1)))
+    total = len(drills)
+    total_pages = max(1, (total + per_page - 1) // per_page)
+    page = min(page, total_pages)
+    drills_page = drills[(page - 1) * per_page: page * per_page]
+
+    return render_template('library.html', drills=drills_page, q=q, cat=cat,
+                           categories=DRILL_CATEGORIES, is_premium=is_premium, is_logged_in=True,
+                           page=page, total_pages=total_pages, total=total, per_page=per_page)
 
 
 @app.route('/library/<drill_id>')
@@ -854,11 +895,12 @@ def admin_dashboard():
         like_counts[aid] = like_counts.get(aid, 0) + 1
 
     pub_articles = sb_get('ipb_articles', {
-        'published': 'eq.true', 'select': 'id,title,slug',
+        'published': 'eq.true', 'select': 'id,title,slug,view_count',
     }) or []
     for a in pub_articles:
         a['like_count'] = like_counts.get(str(a.get('id', '')), 0)
     popular_articles = sorted(pub_articles, key=lambda a: a['like_count'], reverse=True)[:5]
+    view_ranking = sorted(pub_articles, key=lambda a: a.get('view_count') or 0, reverse=True)[:5]
 
     # 最新コメント5件
     recent_comments = db_fetchall('''
@@ -881,6 +923,7 @@ def admin_dashboard():
         recent_articles=recent_articles,
         recent_members=recent_members,
         popular_articles=popular_articles,
+        view_ranking=view_ranking,
         recent_comments=recent_comments,
         total_likes=total_likes,
         total_comments=total_comments,
@@ -906,12 +949,12 @@ def admin_articles_new():
         d = _article_form_data(request.form)
         ok = db_execute(
             '''INSERT INTO ipb_articles
-               (title,slug,content,excerpt,category_id,is_free,published,thumbnail_url,video_url,pdf_url,author_id)
-               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
+               (title,slug,content,excerpt,category_id,is_free,published,thumbnail_url,video_url,pdf_url,author_id,tags)
+               VALUES (%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s,%s)''',
             (d['title'], d['slug'], d['content'], d['excerpt'],
              d['category_id'] or None, d['is_free'], d['published'],
              d['thumbnail_url'] or None, d['video_url'] or None, d['pdf_url'] or None,
-             session['user_id'])
+             session['user_id'], d['tags'] or None)
         )
         if ok:
             flash('記事を作成しました', 'success')
@@ -933,12 +976,12 @@ def admin_articles_edit(article_id):
         d = _article_form_data(request.form)
         db_execute(
             '''UPDATE ipb_articles SET title=%s,slug=%s,content=%s,excerpt=%s,category_id=%s,
-               is_free=%s,published=%s,thumbnail_url=%s,video_url=%s,pdf_url=%s
+               is_free=%s,published=%s,thumbnail_url=%s,video_url=%s,pdf_url=%s,tags=%s
                WHERE id=%s''',
             (d['title'], d['slug'], d['content'], d['excerpt'],
              d['category_id'] or None, d['is_free'], d['published'],
              d['thumbnail_url'] or None, d['video_url'] or None, d['pdf_url'] or None,
-             article_id)
+             d['tags'] or None, article_id)
         )
         flash('記事を更新しました', 'success')
         return redirect(url_for('admin_articles'))
@@ -969,6 +1012,7 @@ def _article_form_data(form):
         'video_url':     form.get('video_url', '').strip(),
         'pdf_url':       form.get('pdf_url', '').strip(),
         'pdf_name':      form.get('pdf_name', '').strip(),
+        'tags':          form.get('tags', '').strip(),
     }
 
 
@@ -1160,26 +1204,68 @@ def admin_members_delete(member_id):
     return redirect(url_for('admin_members'))
 
 
+# ── Email helper ──────────────────────────────────────────────────────────────
+
+def send_email(to_email, subject, body_html):
+    if not SMTP_USER or not SMTP_PASSWORD:
+        print(f'[send_email] SMTP未設定 → {to_email}: {subject}', flush=True)
+        return False
+    try:
+        msg = MIMEMultipart('alternative')
+        msg['Subject'] = subject
+        msg['From'] = f'Ignite Potential Base <{SMTP_USER}>'
+        msg['To'] = to_email
+        msg.attach(MIMEText(body_html, 'html', 'utf-8'))
+        with smtplib.SMTP_SSL('smtp.gmail.com', 465) as srv:
+            srv.login(SMTP_USER, SMTP_PASSWORD)
+            srv.sendmail(SMTP_USER, to_email, msg.as_string())
+        return True
+    except Exception as e:
+        print(f'[send_email] error: {e}', flush=True)
+        return False
+
+
+# ── Password reset helpers ────────────────────────────────────────────────────
+
+def _make_reset_token(email, expires_in=3600):
+    expires = int(time.time()) + expires_in
+    payload = f'{email}|{expires}'.encode()
+    sig = hmac.new(app.secret_key.encode(), payload, 'sha256').hexdigest()
+    return base64.urlsafe_b64encode(payload).decode() + '.' + sig
+
+def _verify_reset_token(token):
+    try:
+        data_b64, sig = token.rsplit('.', 1)
+        payload = base64.urlsafe_b64decode(data_b64 + '==')
+        expected = hmac.new(app.secret_key.encode(), payload, 'sha256').hexdigest()
+        if not hmac.compare_digest(sig, expected):
+            return None
+        email, expires_str = payload.decode().rsplit('|', 1)
+        if int(time.time()) > int(expires_str):
+            return None
+        return email
+    except Exception:
+        return None
+
+
 # ── Invite helpers (署名付きトークン、DB不要) ────────────────────────────────
 
-import hmac as _hmac
 import json as _json
-import time as _time
 
 def _invite_sign(payload: dict) -> str:
     data = _json.dumps(payload, separators=(',', ':')).encode()
-    sig = _hmac.new(app.secret_key.encode(), data, 'sha256').hexdigest()
+    sig = hmac.new(app.secret_key.encode(), data, 'sha256').hexdigest()
     return base64.urlsafe_b64encode(data).decode() + '.' + sig
 
 def _invite_verify(token: str):
     try:
         data_b64, sig = token.rsplit('.', 1)
         data = base64.urlsafe_b64decode(data_b64 + '==')
-        expected = _hmac.new(app.secret_key.encode(), data, 'sha256').hexdigest()
-        if not _hmac.compare_digest(sig, expected):
+        expected = hmac.new(app.secret_key.encode(), data, 'sha256').hexdigest()
+        if not hmac.compare_digest(sig, expected):
             return None
         payload = _json.loads(data)
-        if payload.get('exp', 0) < _time.time():
+        if payload.get('exp', 0) < time.time():
             return None
         return payload
     except Exception:
@@ -1194,7 +1280,7 @@ def admin_invites_create():
     plan = data.get('plan', 'premium')
     payload = {
         'plan': plan,
-        'exp': int(_time.time()) + 7 * 24 * 3600,
+        'exp': int(time.time()) + 7 * 24 * 3600,
         'nonce': secrets.token_urlsafe(8),
     }
     token = _invite_sign(payload)
@@ -1240,6 +1326,144 @@ def invite_register(token):
         return redirect(url_for('dashboard'))
 
     return render_template('invite.html', token=token, invite=invite, error=None)
+
+
+# ── Password reset routes ─────────────────────────────────────────────────────
+
+@app.route('/forgot-password', methods=['GET', 'POST'])
+def forgot_password():
+    if request.method == 'POST':
+        email = request.form.get('email', '').strip().lower()
+        users = sb_get('ipb_users', {'email': f'eq.{email}', 'select': 'id,name'}, service=True)
+        if users:
+            token = _make_reset_token(email)
+            reset_url = url_for('reset_password', token=token, _external=True)
+            send_email(email, 'パスワードのリセット | Ignite Potential Base', f'''
+<div style="font-family:sans-serif;max-width:500px;margin:0 auto;background:#0f1923;color:#fff;padding:2rem;border-radius:12px;">
+  <h2 style="color:#f97316;margin-bottom:1rem;">パスワードリセット</h2>
+  <p>こんにちは、{users[0]["name"]}さん。</p>
+  <p>以下のボタンからパスワードをリセットしてください。<br>（有効期限: 1時間）</p>
+  <a href="{reset_url}" style="display:inline-block;margin:1.5rem 0;background:#f97316;color:#fff;padding:.75rem 2rem;border-radius:8px;text-decoration:none;font-weight:700;">パスワードをリセットする →</a>
+  <p style="color:#94a3b8;font-size:.85rem;">このメールに心当たりがない場合は無視してください。</p>
+</div>''')
+        flash('メールアドレスが登録されている場合、リセットリンクを送信しました。', 'success')
+        return redirect(url_for('login'))
+    return render_template('forgot_password.html')
+
+
+@app.route('/reset-password/<token>', methods=['GET', 'POST'])
+def reset_password(token):
+    email = _verify_reset_token(token)
+    if not email:
+        flash('リセットリンクが無効または期限切れです。再度お試しください。', 'error')
+        return redirect(url_for('forgot_password'))
+    if request.method == 'POST':
+        new_pw = request.form.get('password', '')
+        confirm_pw = request.form.get('confirm_password', '')
+        if new_pw != confirm_pw:
+            return render_template('reset_password.html', token=token, error='パスワードが一致しません')
+        if len(new_pw) < 8:
+            return render_template('reset_password.html', token=token, error='パスワードは8文字以上で設定してください')
+        new_hash = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
+        db_execute('UPDATE ipb_users SET password_hash=%s WHERE email=%s', (new_hash, email))
+        flash('パスワードをリセットしました。ログインしてください。', 'success')
+        return redirect(url_for('login'))
+    return render_template('reset_password.html', token=token, error=None)
+
+
+# ── Profile route ─────────────────────────────────────────────────────────────
+
+@app.route('/profile', methods=['GET', 'POST'])
+@login_required
+def profile():
+    user_id = session['user_id']
+    if request.method == 'POST':
+        action = request.form.get('action')
+        if action == 'name':
+            new_name = request.form.get('name', '').strip()
+            if new_name:
+                db_execute('UPDATE ipb_users SET name=%s WHERE id=%s', (new_name, user_id))
+                session['name'] = new_name
+                flash('名前を更新しました', 'success')
+            else:
+                flash('名前を入力してください', 'error')
+        elif action == 'password':
+            current_pw = request.form.get('current_password', '')
+            new_pw = request.form.get('new_password', '')
+            confirm_pw = request.form.get('confirm_password', '')
+            if new_pw != confirm_pw:
+                flash('新しいパスワードが一致しません', 'error')
+            elif len(new_pw) < 8:
+                flash('パスワードは8文字以上で設定してください', 'error')
+            else:
+                users = sb_get('ipb_users', {'id': f'eq.{user_id}', 'select': 'password_hash'}, service=True)
+                if users:
+                    pw_hash = users[0].get('password_hash', '')
+                    valid = False
+                    try:
+                        valid = bool(pw_hash) and bcrypt.checkpw(current_pw.encode(), pw_hash.encode())
+                    except Exception:
+                        pass
+                    if valid:
+                        new_hash = bcrypt.hashpw(new_pw.encode(), bcrypt.gensalt()).decode()
+                        db_execute('UPDATE ipb_users SET password_hash=%s WHERE id=%s', (new_hash, user_id))
+                        flash('パスワードを更新しました', 'success')
+                    else:
+                        flash('現在のパスワードが正しくありません', 'error')
+        return redirect(url_for('profile'))
+    users = sb_get('ipb_users', {'id': f'eq.{user_id}', 'select': 'id,name,email,plan,role,created_at'}, service=True)
+    user = users[0] if users else {}
+    return render_template('profile.html', user=user)
+
+
+# ── Admin: CSV export / Sitemap / Robots ──────────────────────────────────────
+
+@app.route('/admin/members/export')
+@admin_required
+def admin_members_export():
+    members = sb_get('ipb_users', {'order': 'created_at.desc', 'select': '*'}, service=True) or []
+    si = StringIO()
+    writer = csv.writer(si)
+    writer.writerow(['名前', 'メールアドレス', 'プラン', '権限', 'チーム名', '登録日'])
+    for m in members:
+        writer.writerow([
+            m.get('name', ''), m.get('email', ''), m.get('plan', ''),
+            m.get('role', ''), m.get('team_name', ''),
+            (m.get('created_at') or '')[:10],
+        ])
+    return Response(
+        '\ufeff' + si.getvalue(),  # BOM for Excel
+        mimetype='text/csv; charset=utf-8',
+        headers={'Content-Disposition': 'attachment; filename=members.csv'},
+    )
+
+
+@app.route('/sitemap.xml')
+def sitemap():
+    articles = sb_get('ipb_articles', {'published': 'eq.true', 'select': 'slug,created_at'}) or []
+    base = request.host_url.rstrip('/')
+    lines = ['<?xml version="1.0" encoding="UTF-8"?>',
+             '<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">',
+             f'<url><loc>{base}/</loc></url>',
+             f'<url><loc>{base}/learn</loc></url>',
+             f'<url><loc>{base}/library</loc></url>']
+    for a in articles:
+        loc = f'{base}/learn/{a["slug"]}'
+        lastmod = ''
+        if a.get('created_at'):
+            try:
+                lastmod = f'<lastmod>{dtparser.parse(a["created_at"]).strftime("%Y-%m-%d")}</lastmod>'
+            except Exception:
+                pass
+        lines.append(f'<url><loc>{loc}</loc>{lastmod}</url>')
+    lines.append('</urlset>')
+    return '\n'.join(lines), 200, {'Content-Type': 'application/xml'}
+
+
+@app.route('/robots.txt')
+def robots_txt():
+    content = f'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /profile\nSitemap: {request.host_url}sitemap.xml\n'
+    return content, 200, {'Content-Type': 'text/plain'}
 
 
 if __name__ == '__main__':
