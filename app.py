@@ -685,8 +685,18 @@ def admin_members_plan(member_id):
     if new_plan not in ('premium', 'team', 'free'):
         flash('不正なプランです', 'error')
         return redirect(url_for('admin_members'))
-    ok = sb_patch('ipb_users', {'id': f'eq.{member_id}'}, {'plan': new_plan}, service=True)
-    print(f'[plan_change] member={member_id} plan={new_plan} ok={ok}', flush=True)
+    try:
+        r = req.post(
+            f'{SUPABASE_URL}/rest/v1/rpc/ipb_set_user_plan',
+            headers={'apikey': SUPABASE_SERVICE_KEY, 'Authorization': f'Bearer {SUPABASE_SERVICE_KEY}', 'Content-Type': 'application/json'},
+            json={'p_user_id': member_id, 'p_plan': new_plan},
+            timeout=10,
+        )
+        print(f'[plan_change] member={member_id} plan={new_plan} status={r.status_code} body={r.text[:200]}', flush=True)
+        ok = r.ok
+    except Exception as e:
+        print(f'[plan_change] exception: {e}', flush=True)
+        ok = False
     if ok:
         flash('プランを変更しました', 'success')
     else:
