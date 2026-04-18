@@ -86,10 +86,20 @@
               </td>
               <td>
                 {% if member.id != session.get('user_id') %}
-                <form action="{{ url_for('admin_members_delete', member_id=member.id) }}" method="POST"
-                      onsubmit="return confirm('{{ member.name }} を削除しますか？');" style="display:inline;">
-                  <button type="submit" class="btn btn-danger btn-sm">削除</button>
-                </form>
+                <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
+                  <form action="{{ url_for('admin_members_plan', member_id=member.id) }}" method="POST" style="display:flex;gap:.4rem;">
+                    <select name="plan" style="background:var(--navy);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;padding:.3rem .5rem;font-size:.8rem;">
+                      <option value="premium" {% if member.plan == 'premium' %}selected{% endif %}>プレミアム</option>
+                      <option value="team" {% if member.plan == 'team' %}selected{% endif %}>チーム</option>
+                      <option value="free" {% if member.plan == 'free' %}selected{% endif %}>フリー</option>
+                    </select>
+                    <button type="submit" class="btn btn-ghost btn-sm">変更</button>
+                  </form>
+                  <form action="{{ url_for('admin_members_delete', member_id=member.id) }}" method="POST"
+                        onsubmit="return confirm('{{ member.name }} を削除しますか？');">
+                    <button type="submit" class="btn btn-danger btn-sm">削除</button>
+                  </form>
+                </div>
                 {% else %}
                   <span class="text-gray text-sm">自分</span>
                 {% endif %}

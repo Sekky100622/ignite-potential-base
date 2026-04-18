@@ -676,6 +676,18 @@ def admin_members_new():
     return render_template('admin/member_form.html')
 
 
+@app.route('/admin/members/<member_id>/plan', methods=['POST'])
+@admin_required
+def admin_members_plan(member_id):
+    new_plan = request.form.get('plan', 'free')
+    if new_plan not in ('premium', 'team', 'free'):
+        flash('不正なプランです', 'error')
+        return redirect(url_for('admin_members'))
+    sb_patch('ipb_users', {'id': f'eq.{member_id}'}, {'plan': new_plan}, service=True)
+    flash('プランを変更しました', 'success')
+    return redirect(url_for('admin_members'))
+
+
 @app.route('/admin/members/<member_id>/delete', methods=['POST'])
 @admin_required
 def admin_members_delete(member_id):
