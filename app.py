@@ -10,11 +10,12 @@ from dotenv import load_dotenv
 import bcrypt
 import markdown as md
 from dateutil import parser as dtparser
+from urllib.parse import urlparse as _urlparse
 try:
-    import psycopg2
-    import psycopg2.extras
+    import pg8000.dbapi as _pg8000
     HAS_PSYCOPG2 = True
 except ImportError:
+    _pg8000 = None
     HAS_PSYCOPG2 = False
 
 load_dotenv()
@@ -109,10 +110,24 @@ def _pg_conn():
     if not HAS_PSYCOPG2 or not DATABASE_URL:
         return None
     try:
-        return psycopg2.connect(DATABASE_URL)
+        p = _urlparse(DATABASE_URL)
+        db = p.path.lstrip('/')
+        return _pg8000.connect(
+            host=p.hostname,
+            port=p.port or 5432,
+            database=db,
+            user=p.username,
+            password=p.password,
+            ssl_context=True,
+        )
     except Exception as e:
         print(f'[pg] connect error: {e}')
         return None
+
+
+def _rows_to_dicts(cur):
+    cols = [d[0] for d in cur.description]
+    return [dict(zip(cols, row)) for row in cur.fetchall()]
 
 
 def pg_drills(where_clause='', params=None):
@@ -127,10 +142,9 @@ def pg_drills(where_clause='', params=None):
         ORDER BY created_at DESC
     """
     try:
-        with conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                cur.execute(sql, params)
-                return [dict(r) for r in cur.fetchall()]
+        cur = conn.cursor()
+        cur.execute(sql, params or ())
+        return _rows_to_dicts(cur)
     except Exception as e:
         print(f'[pg_drills] {e}')
         return []
@@ -144,31 +158,32 @@ def pg_drill_save(data, drill_id=None):
     if not conn:
         return None
     try:
-        with conn:
-            with conn.cursor(cursor_factory=psycopg2.extras.RealDictCursor) as cur:
-                if drill_id:
-                    cur.execute("""
-                        UPDATE ipb_drills
-                        SET name=%s, purpose=%s, video_url=%s, method=%s,
-                            points=%s, is_free=%s, category=%s
-                        WHERE id=%s
-                        RETURNING *
-                    """, (data['name'], data['purpose'], data['video_url'],
-                          data['method'], data['points'], data['is_free'],
-                          data.get('category'), drill_id))
-                else:
-                    cur.execute("""
-                        INSERT INTO ipb_drills
-                            (name, purpose, video_url, method, points, is_free, category)
-                        VALUES (%s, %s, %s, %s, %s, %s, %s)
-                        RETURNING *
-                    """, (data['name'], data['purpose'], data['video_url'],
-                          data['method'], data['points'], data['is_free'],
-                          data.get('category')))
-                row = cur.fetchone()
-                return dict(row) if row else None
+        cur = conn.cursor()
+        if drill_id:
+            cur.execute("""
+                UPDATE ipb_drills
+                SET name=%s, purpose=%s, video_url=%s, method=%s,
+                    points=%s, is_free=%s, category=%s
+                WHERE id=%s
+                RETURNING *
+            """, (data['name'], data['purpose'], data['video_url'],
+                  data['method'], data['points'], data['is_free'],
+                  data.get('category'), drill_id))
+        else:
+            cur.execute("""
+                INSERT INTO ipb_drills
+                    (name, purpose, video_url, method, points, is_free, category)
+                VALUES (%s, %s, %s, %s, %s, %s, %s)
+                RETURNING *
+            """, (data['name'], data['purpose'], data['video_url'],
+                  data['method'], data['points'], data['is_free'],
+                  data.get('category')))
+        rows = _rows_to_dicts(cur)
+        conn.commit()
+        return rows[0] if rows else None
     except Exception as e:
         print(f'[pg_drill_save] {e}')
+        conn.rollback()
         return None
     finally:
         conn.close()
@@ -661,16 +676,17 @@ def admin_library_bulk_category():
         flash('DB接続エラー', 'error')
         return redirect(url_for('admin_library'))
     try:
-        with conn:
-            with conn.cursor() as cur:
-                placeholders = ','.join(['%s'] * len(ids))
-                cur.execute(
-                    f'UPDATE ipb_drills SET category = %s WHERE id::text IN ({placeholders})',
-                    [category] + ids
-                )
+        cur = conn.cursor()
+        placeholders = ','.join(['%s'] * len(ids))
+        cur.execute(
+            f'UPDATE ipb_drills SET category = %s WHERE id::text IN ({placeholders})',
+            [category] + ids
+        )
+        conn.commit()
         flash(f'{len(ids)} 件のカテゴリを更新しました', 'success')
     except Exception as e:
         print(f'[bulk_category] {e}')
+        conn.rollback()
         flash('更新に失敗しました', 'error')
     finally:
         conn.close()
