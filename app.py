@@ -639,9 +639,10 @@ def admin_library_bulk_category():
     try:
         with conn:
             with conn.cursor() as cur:
+                placeholders = ','.join(['%s'] * len(ids))
                 cur.execute(
-                    'UPDATE ipb_drills SET category = %s WHERE id = ANY(%s)',
-                    (category, ids)
+                    f'UPDATE ipb_drills SET category = %s WHERE id::text IN ({placeholders})',
+                    [category] + ids
                 )
         flash(f'{len(ids)} 件のカテゴリを更新しました', 'success')
     except Exception as e:
