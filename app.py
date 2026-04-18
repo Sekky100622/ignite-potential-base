@@ -25,6 +25,7 @@ app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
 NOTE_URL = os.getenv('NOTE_URL', '#')
 OG_IMAGE_URL = os.getenv('OG_IMAGE_URL', '')
 GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
+GA_MEASUREMENT_ID = os.getenv('GA_MEASUREMENT_ID', '')
 
 DRILL_CATEGORIES = [
     'リセット',
@@ -161,7 +162,7 @@ def sb_rpc(func_name, data, service=False):
 
 # ── Drill helpers (Supabase REST API) ─────────────────────────────────────────
 
-_DRILL_SELECT = 'id,name,purpose,video_url,method,points,is_free,created_at,category'
+_DRILL_SELECT = 'id,name,purpose,video_url,method,points,is_free,created_at,category,difficulty'
 
 
 def pg_drills(**filters):
@@ -269,6 +270,8 @@ def ensure_tables():
         )
     ''')
     db_execute('ALTER TABLE ipb_users ADD COLUMN IF NOT EXISTS google_id TEXT')
+    db_execute('ALTER TABLE ipb_articles ADD COLUMN IF NOT EXISTS view_count INTEGER DEFAULT 0')
+    db_execute('ALTER TABLE ipb_drills ADD COLUMN IF NOT EXISTS difficulty TEXT')
 
 ensure_tables()
 
@@ -282,6 +285,7 @@ def inject_globals():
         'og_image_url': OG_IMAGE_URL,
         'current_year': datetime.now().year,
         'google_client_id': GOOGLE_CLIENT_ID,
+        'ga_measurement_id': GA_MEASUREMENT_ID,
     }
 
 
@@ -296,7 +300,10 @@ def index():
         'limit': 3,
         'select': 'id,title,slug,excerpt,created_at',
     }) or []
-    return render_template('index.html', free_articles=free_articles)
+    article_count = len(sb_get('ipb_articles', {'published': 'eq.true', 'select': 'id'}) or [])
+    drill_count = len(pg_drills())
+    return render_template('index.html', free_articles=free_articles,
+                           article_count=article_count, drill_count=drill_count)
 
 
 @app.route('/register', methods=['GET', 'POST'])
@@ -501,6 +508,8 @@ def dashboard():
         WHERE b.user_id = %s ORDER BY b.created_at DESC LIMIT 5
     ''', (user_id,)) or []
 
+    recently_viewed = session.get('recently_viewed', [])
+
     return render_template('dashboard.html', user=user,
                            recent_articles=recent_articles,
                            drill_count=len(available_drills),
@@ -508,7 +517,8 @@ def dashboard():
                            cat_counts=cat_counts,
                            is_premium=is_premium,
                            notices=notices,
-                           bookmarks=bookmarks)
+                           bookmarks=bookmarks,
+                           recently_viewed=recently_viewed)
 
 
 @app.route('/learn')
@@ -597,6 +607,21 @@ def learn_detail(slug):
         embed_url = video_url
     article['video_embed_url'] = embed_url
 
+    # 読了時間（日本語400文字/分）
+    content_text = re.sub(r'<[^>]+>', '', article.get('content_html', ''))
+    reading_time = max(1, len(content_text) // 400) if len(content_text) > 100 else None
+
+    # 閲覧数カウント
+    db_execute('UPDATE ipb_articles SET view_count = COALESCE(view_count, 0) + 1 WHERE id=%s',
+               (article_id,))
+
+    # 最近閲覧した記事（セッション保存）
+    rv = session.get('recently_viewed', [])
+    rv = [r for r in rv if r.get('slug') != slug]
+    rv.insert(0, {'slug': article['slug'], 'title': article['title']})
+    session['recently_viewed'] = rv[:5]
+    session.modified = True
+
     # related articles (same category)
     related = []
     if article.get('category_id'):
@@ -637,7 +662,8 @@ def learn_detail(slug):
     return render_template('article.html', article=article, related=related, can_view=True,
                            like_count=like_count, user_liked=user_liked,
                            user_bookmarked=user_bookmarked,
-                           comments=comments or [], user_id=user_id)
+                           comments=comments or [], user_id=user_id,
+                           reading_time=reading_time)
 
 
 @app.route('/learn/<slug>/like', methods=['POST'])
@@ -709,6 +735,33 @@ def article_bookmark(slug):
                    (user_id, article_id))
         bookmarked = True
     return jsonify({'bookmarked': bookmarked})
+
+
+@app.route('/search')
+def search():
+    q = request.args.get('q', '').strip()
+    article_results = []
+    drill_results = []
+    if q:
+        ql = q.lower()
+        is_logged_in = bool(session.get('user_id'))
+        all_articles = sb_get('ipb_articles', {
+            'published': 'eq.true',
+            'select': 'id,title,slug,excerpt,is_free',
+        }) or []
+        if not is_logged_in:
+            all_articles = [a for a in all_articles if a.get('is_free')]
+        article_results = [a for a in all_articles if
+                           ql in (a.get('title') or '').lower() or
+                           ql in (a.get('excerpt') or '').lower()]
+        if is_logged_in:
+            drills = pg_drills()
+            drill_results = [d for d in drills if
+                             ql in (d.get('name') or '').lower() or
+                             ql in (d.get('purpose') or '').lower() or
+                             ql in (d.get('points') or '').lower()]
+    return render_template('search.html', q=q,
+                           article_results=article_results, drill_results=drill_results)
 
 
 # ── Library routes ────────────────────────────────────────────────────────────
@@ -977,13 +1030,14 @@ def admin_library_bulk_category():
 def admin_library_new():
     if request.method == 'POST':
         data = {
-            'name':      request.form.get('name', '').strip(),
-            'purpose':   request.form.get('purpose', '').strip(),
-            'video_url': request.form.get('video_url', '').strip(),
-            'method':    request.form.get('method', '').strip(),
-            'points':    request.form.get('points', '').strip(),
-            'is_free':   'is_free' in request.form,
-            'category':  request.form.get('category', '').strip() or None,
+            'name':       request.form.get('name', '').strip(),
+            'purpose':    request.form.get('purpose', '').strip(),
+            'video_url':  request.form.get('video_url', '').strip(),
+            'method':     request.form.get('method', '').strip(),
+            'points':     request.form.get('points', '').strip(),
+            'is_free':    'is_free' in request.form,
+            'category':   request.form.get('category', '').strip() or None,
+            'difficulty': request.form.get('difficulty', '').strip() or None,
         }
         result = pg_drill_save(data)
         if result:
@@ -1002,13 +1056,14 @@ def admin_library_edit(drill_id):
     drill = rows[0]
     if request.method == 'POST':
         data = {
-            'name':      request.form.get('name', '').strip(),
-            'purpose':   request.form.get('purpose', '').strip(),
-            'video_url': request.form.get('video_url', '').strip(),
-            'method':    request.form.get('method', '').strip(),
-            'points':    request.form.get('points', '').strip(),
-            'is_free':   'is_free' in request.form,
-            'category':  request.form.get('category', '').strip() or None,
+            'name':       request.form.get('name', '').strip(),
+            'purpose':    request.form.get('purpose', '').strip(),
+            'video_url':  request.form.get('video_url', '').strip(),
+            'method':     request.form.get('method', '').strip(),
+            'points':     request.form.get('points', '').strip(),
+            'is_free':    'is_free' in request.form,
+            'category':   request.form.get('category', '').strip() or None,
+            'difficulty': request.form.get('difficulty', '').strip() or None,
         }
         result = pg_drill_save(data, drill_id=drill_id)
         if result:

@@ -42,6 +42,15 @@
           <textarea class="form-control" name="points" rows="4" placeholder="実施時のポイント・注意点など">{{ drill.points or '' }}</textarea>
         </div>
         <div class="form-group">
+          <label class="form-label">難易度</label>
+          <select class="form-control" name="difficulty">
+            <option value="">-- 設定しない --</option>
+            <option value="初級" {% if drill.difficulty == '初級' %}selected{% endif %}>初級</option>
+            <option value="中級" {% if drill.difficulty == '中級' %}selected{% endif %}>中級</option>
+            <option value="上級" {% if drill.difficulty == '上級' %}selected{% endif %}>上級</option>
+          </select>
+        </div>
+        <div class="form-group">
           <label class="form-check">
             <input type="checkbox" name="is_free" {% if drill.is_free %}checked{% endif %}>
             無料公開（未ログインでも閲覧可）

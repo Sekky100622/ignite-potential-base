@@ -1,0 +1,96 @@
+{% extends 'base.html' %}
+{% block title %}{% if q %}「{{ q }}」の検索結果{% else %}検索{% endif %} | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>🔍 検索</h1>
+    <p>記事・ドリルを横断検索</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container" style="max-width:800px;">
+
+    <form method="GET" action="{{ url_for('search') }}" style="margin-bottom:2rem;">
+      <div style="display:flex;gap:.5rem;">
+        <input type="text" name="q" value="{{ q or '' }}"
+               placeholder="記事・ドリルを検索..."
+               style="flex:1;background:var(--navy-light);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;padding:.6rem 1rem;font-size:.95rem;"
+               autofocus>
+        <button type="submit" class="btn btn-primary">検索</button>
+        {% if q %}
+        <a href="{{ url_for('search') }}" class="btn btn-ghost">✕</a>
+        {% endif %}
+      </div>
+    </form>
+
+    {% if q %}
+    <p style="color:var(--gray-400);font-size:.875rem;margin-bottom:1.5rem;">
+      「{{ q }}」の検索結果 — 記事 {{ article_results|length }}件、ドリル {{ drill_results|length }}件
+    </p>
+
+    {% if article_results %}
+    <h3 style="font-size:.9rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;">📄 記事</h3>
+    <div style="margin-bottom:2rem;">
+      {% for a in article_results %}
+      <a href="{{ url_for('learn_detail', slug=a.slug) }}"
+         style="display:block;background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:1rem 1.25rem;margin-bottom:.5rem;text-decoration:none;color:inherit;transition:border-color .2s;"
+         onmouseover="this.style.borderColor='rgba(249,115,22,.4)'"
+         onmouseout="this.style.borderColor='rgba(255,255,255,.08)'">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem;">
+          <span style="font-weight:600;font-size:.95rem;">{{ a.title }}</span>
+          {% if a.is_free %}<span class="badge badge-free">無料</span>{% endif %}
+        </div>
+        {% if a.excerpt %}
+        <div style="color:var(--gray-400);font-size:.825rem;line-height:1.5;">{{ a.excerpt[:100] }}{% if a.excerpt|length > 100 %}…{% endif %}</div>
+        {% endif %}
+        <div style="margin-top:.4rem;color:var(--orange);font-size:.8rem;font-weight:600;">読む →</div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if drill_results %}
+    <h3 style="font-size:.9rem;font-weight:700;color:var(--gray-400);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;">⚡ ドリル</h3>
+    <div>
+      {% for d in drill_results %}
+      <a href="{{ url_for('drill_detail', drill_id=d.id) }}"
+         style="display:block;background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:1rem 1.25rem;margin-bottom:.5rem;text-decoration:none;color:inherit;transition:border-color .2s;"
+         onmouseover="this.style.borderColor='rgba(249,115,22,.4)'"
+         onmouseout="this.style.borderColor='rgba(255,255,255,.08)'">
+        <div style="display:flex;align-items:center;gap:.5rem;margin-bottom:.35rem;">
+          <span style="font-weight:600;font-size:.95rem;">{{ d.name }}</span>
+          {% if d.difficulty %}<span class="badge" style="background:rgba(99,102,241,.15);color:#a5b4fc;">{{ d.difficulty }}</span>{% endif %}
+          {% if d.is_free %}<span class="badge badge-free">無料</span>{% else %}<span class="badge badge-premium">会員限定</span>{% endif %}
+        </div>
+        {% if d.category %}
+        <div style="font-size:.75rem;color:var(--orange);margin-bottom:.25rem;">{{ d.category }}</div>
+        {% endif %}
+        {% if d.purpose %}
+        <div style="color:var(--gray-400);font-size:.825rem;line-height:1.5;">{{ d.purpose[:100] }}{% if d.purpose|length > 100 %}…{% endif %}</div>
+        {% endif %}
+        <div style="margin-top:.4rem;color:var(--orange);font-size:.8rem;font-weight:600;">詳しく見る →</div>
+      </a>
+      {% endfor %}
+    </div>
+    {% endif %}
+
+    {% if not article_results and not drill_results %}
+    <div style="text-align:center;padding:3rem 0;color:var(--gray-400);">
+      <div style="font-size:2.5rem;margin-bottom:.75rem;">🔍</div>
+      <p>「{{ q }}」に一致するコンテンツが見つかりませんでした。</p>
+      <p style="font-size:.85rem;margin-top:.5rem;">別のキーワードでお試しください。</p>
+    </div>
+    {% endif %}
+
+    {% else %}
+    <div style="text-align:center;padding:3rem 0;color:var(--gray-400);">
+      <div style="font-size:2.5rem;margin-bottom:.75rem;">🔍</div>
+      <p>キーワードを入力して、記事とドリルをまとめて検索できます。</p>
+    </div>
+    {% endif %}
+
+  </div>
+</section>
+{% endblock %}

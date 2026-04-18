@@ -74,7 +74,7 @@
         {% if article.thumbnail_url %}
           <img class="card-img" src="{{ article.thumbnail_url }}" alt="{{ article.title }}">
         {% else %}
-          <div class="card-img-placeholder">
+          <div class="card-img-placeholder" style="{% if article.category %}{% if article.category.slug == 'skill' %}background:linear-gradient(135deg,rgba(249,115,22,.25) 0%,rgba(249,115,22,.08) 100%);{% elif article.category.slug == 'physical' %}background:linear-gradient(135deg,rgba(99,102,241,.25) 0%,rgba(99,102,241,.08) 100%);{% elif article.category.slug == 'mind' %}background:linear-gradient(135deg,rgba(34,197,94,.25) 0%,rgba(34,197,94,.08) 100%);{% endif %}{% endif %}">
             {% if article.category %}
               {% if article.category.slug == 'skill' %}🏏
               {% elif article.category.slug == 'physical' %}💪

@@ -325,6 +325,15 @@
     .mb-2 { margin-bottom: 1rem; }
   </style>
   {% block extra_head %}{% endblock %}
+  {% if ga_measurement_id %}
+  <script async src="https://www.googletagmanager.com/gtag/js?id={{ ga_measurement_id }}"></script>
+  <script>
+    window.dataLayer = window.dataLayer || [];
+    function gtag(){dataLayer.push(arguments);}
+    gtag('js', new Date());
+    gtag('config', '{{ ga_measurement_id }}');
+  </script>
+  {% endif %}
 </head>
 <body>
   <!-- Navbar -->
@@ -335,6 +344,7 @@
       </a>
       <div class="navbar-actions">
         <a href="{{ url_for('library') if session.get('user_id') else url_for('register') }}" class="btn btn-ghost btn-sm">ライブラリ</a>
+        <a href="{{ url_for('search') }}" class="btn btn-ghost btn-sm" title="検索">🔍</a>
         {% if session.get('user_id') %}
           <a href="{{ url_for('learn') }}" class="btn btn-ghost btn-sm">記事</a>
           <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">ダッシュボード</a>
@@ -355,6 +365,7 @@
   <div class="mobile-menu" id="mobileMenu">
     <div class="mobile-actions">
       <a href="{{ url_for('library') if session.get('user_id') else url_for('register') }}" class="btn btn-ghost">ライブラリ</a>
+      <a href="{{ url_for('search') }}" class="btn btn-ghost">🔍 検索</a>
       {% if session.get('user_id') %}
         <a href="{{ url_for('learn') }}" class="btn btn-ghost">記事</a>
         <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">ダッシュボード</a>
