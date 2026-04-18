@@ -621,7 +621,7 @@ def invite_register(token):
             'plan': invite['plan'],
         }, service=True)
 
-        if not user:
+        if not user or not isinstance(user, dict):
             return render_template('invite.html', error='登録に失敗しました（メールアドレスが重複している可能性があります）', token=token, invite=invite)
 
         sb_patch('ipb_invites', {'token': f'eq.{token}'}, {'used': True}, service=True)
