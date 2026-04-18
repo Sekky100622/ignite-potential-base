@@ -69,6 +69,21 @@ def db_fetchone(sql, params=None):
         return None
 
 
+def db_fetchall(sql, params=None):
+    """直接SQLで全行取得（PostgRESTを経由しない）"""
+    if not DATABASE_URL:
+        print('[db_fetchall] DATABASE_URL not set', flush=True)
+        return []
+    try:
+        with psycopg.connect(DATABASE_URL, row_factory=dict_row) as conn:
+            with conn.cursor() as cur:
+                cur.execute(sql, params)
+                return [dict(r) for r in cur.fetchall()]
+    except Exception as e:
+        print(f'[db_fetchall] error: {e}', flush=True)
+        return []
+
+
 # ── Supabase helpers ──────────────────────────────────────────────────────────
 
 def supabase_headers(service=False):
@@ -684,7 +699,9 @@ def admin_library_delete(drill_id):
 @app.route('/admin/members')
 @admin_required
 def admin_members():
-    members = sb_get('ipb_users', {'order': 'created_at.desc', 'select': '*'}, service=True) or []
+    members = db_fetchall(
+        "SELECT id, name, email, role, plan, is_team, team_name, created_at FROM ipb_users ORDER BY created_at DESC"
+    )
     return render_template('admin/members.html', members=members)
 
 
