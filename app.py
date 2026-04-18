@@ -694,11 +694,14 @@ def admin_invites_create():
     data = request.get_json() or {}
     plan = data.get('plan', 'premium')
     token = secrets.token_urlsafe(24)
-    result = sb_post('ipb_invites', {
+    payload = {
         'token': token,
         'plan': plan,
         'created_by': session['user_id'],
-    }, service=True)
+    }
+    print(f'[invite] posting to ipb_invites: {payload}')
+    result = sb_post('ipb_invites', payload, service=True)
+    print(f'[invite] result: {result}')
     if result:
         invite_url = url_for('invite_register', token=token, _external=True)
         return jsonify({'url': invite_url})
