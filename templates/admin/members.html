@@ -75,7 +75,7 @@
                 {% endif %}
               </td>
               <td>
-                {% if member.plan == 'team' %}
+                {% if member.team_name %}
                   <span class="badge badge-premium">🤝 チーム</span>
                 {% elif member.plan == 'premium' %}
                   <span class="badge badge-premium">⭐ プレミアム</span>
@@ -91,8 +91,8 @@
                 <div style="display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;">
                   <form action="{{ url_for('admin_members_plan', member_id=member.id) }}" method="POST" style="display:flex;gap:.4rem;">
                     <select name="plan" style="background:var(--navy);border:1px solid rgba(255,255,255,.15);border-radius:6px;color:#fff;padding:.3rem .5rem;font-size:.8rem;">
-                      <option value="premium" {% if member.plan == 'premium' %}selected{% endif %}>プレミアム</option>
-                      <option value="team" {% if member.plan == 'team' %}selected{% endif %}>チーム</option>
+                      <option value="premium" {% if member.plan == 'premium' and not member.team_name %}selected{% endif %}>プレミアム</option>
+                      <option value="team" {% if member.team_name %}selected{% endif %}>チーム</option>
                       <option value="free" {% if member.plan == 'free' %}selected{% endif %}>フリー</option>
                     </select>
                     <button type="submit" class="btn btn-ghost btn-sm">変更</button>

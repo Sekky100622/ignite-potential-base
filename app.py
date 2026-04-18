@@ -736,9 +736,15 @@ def admin_members_plan(member_id):
         flash('不正なプランです', 'error')
         return redirect(url_for('admin_members'))
 
-    # RPC関数経由でUPDATE（PostgRESTキャッシュ・RLSを完全バイパス）
-    result = sb_rpc('admin_set_plan', {'uid': member_id, 'new_plan': new_plan}, service=True)
-    ok = result is not None
+    # plan='team'は制約違反になるため、premium+team_nameで識別
+    if new_plan == 'team':
+        patch_data = {'plan': 'premium', 'team_name': 'チームプラン'}
+    elif new_plan == 'premium':
+        patch_data = {'plan': 'premium', 'team_name': None}
+    else:
+        patch_data = {'plan': 'free', 'team_name': None}
+
+    ok = sb_patch('ipb_users', {'id': f'eq.{member_id}'}, patch_data, service=True)
 
     print(f'[plan_change] member={member_id} plan={new_plan} ok={ok}', flush=True)
     if ok:
