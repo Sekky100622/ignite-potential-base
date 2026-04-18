@@ -383,15 +383,29 @@ def auth_google():
         _set_session(user)
         return redirect(url_for('dashboard'))
 
-    # 新規登録
+    # 新規登録（google_idはINSERT後にUPDATEで設定）
     new_user = sb_post('ipb_users', {
-        'name': name, 'email': email, 'google_id': google_id,
+        'name': name, 'email': email,
         'password_hash': '', 'role': 'member', 'plan': 'free',
     }, service=True)
     if new_user and isinstance(new_user, dict):
+        # google_idを直接SQLでセット（PostgRESTキャッシュ問題を回避）
+        if google_id:
+            db_execute('UPDATE ipb_users SET google_id=%s WHERE id=%s',
+                       (google_id, new_user['id']))
         _set_session(new_user)
         flash('Googleアカウントで登録が完了しました！', 'success')
         return redirect(url_for('library'))
+
+    # sb_postが失敗＝メール重複の可能性 → 再度検索してログイン
+    users2 = sb_get('ipb_users', {'email': f'eq.{email}', 'select': '*'}, service=True)
+    if users2:
+        user = users2[0]
+        if google_id:
+            db_execute('UPDATE ipb_users SET google_id=%s WHERE id=%s AND (google_id IS NULL OR google_id=\'\')',
+                       (google_id, user['id']))
+        _set_session(user)
+        return redirect(url_for('dashboard'))
 
     flash('登録に失敗しました。時間をおいて再度お試しください。', 'error')
     return redirect(url_for('register'))
