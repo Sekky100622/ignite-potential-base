@@ -618,7 +618,38 @@ def _article_form_data(form):
 @admin_required
 def admin_library():
     drills = pg_drills()
-    return render_template('admin/library.html', drills=drills)
+    return render_template('admin/library.html', drills=drills, categories=DRILL_CATEGORIES)
+
+
+@app.route('/admin/library/bulk-category', methods=['POST'])
+@admin_required
+def admin_library_bulk_category():
+    ids = request.form.getlist('ids')
+    cat_raw = request.form.get('category', '').strip()
+    if not ids:
+        flash('ドリルが選択されていません', 'error')
+        return redirect(url_for('admin_library'))
+
+    category = None if cat_raw == '__clear__' else (cat_raw or None)
+
+    conn = _pg_conn()
+    if not conn:
+        flash('DB接続エラー', 'error')
+        return redirect(url_for('admin_library'))
+    try:
+        with conn:
+            with conn.cursor() as cur:
+                cur.execute(
+                    'UPDATE ipb_drills SET category = %s WHERE id = ANY(%s)',
+                    (category, ids)
+                )
+        flash(f'{len(ids)} 件のカテゴリを更新しました', 'success')
+    except Exception as e:
+        print(f'[bulk_category] {e}')
+        flash('更新に失敗しました', 'error')
+    finally:
+        conn.close()
+    return redirect(url_for('admin_library'))
 
 
 @app.route('/admin/library/new', methods=['GET', 'POST'])
