@@ -314,9 +314,9 @@ def learn_detail(slug):
             'select': 'id,title,slug,is_free',
         }) or []
 
-    can_view = article.get('is_free') or bool(session.get('user_id'))
+    can_view = article.get('is_free') or session.get('plan') == 'premium'
     if not can_view:
-        return redirect(url_for('login'))
+        return redirect(url_for('register'))
     return render_template('article.html', article=article, related=related, can_view=True)
 
 
@@ -334,12 +334,17 @@ def library():
                   or ql in (d.get('purpose') or '').lower()
                   or ql in (d.get('points') or '').lower()]
 
-    # プレミアム以外は無料ドリルのみ
     is_premium = session.get('plan') == 'premium'
+    is_logged_in = bool(session.get('user_id'))
+
     if not is_premium:
         drills = [d for d in drills if d.get('is_free')]
+        if not is_logged_in:
+            drills = drills[:10]   # 未ログイン: 10本まで
+        else:
+            drills = drills[:20]   # フリー会員: 20本まで
 
-    return render_template('library.html', drills=drills, q=q, is_premium=is_premium)
+    return render_template('library.html', drills=drills, q=q, is_premium=is_premium, is_logged_in=is_logged_in)
 
 
 @app.route('/library/<drill_id>')
