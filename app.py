@@ -378,7 +378,7 @@ def learn():
         'order': 'created_at.desc',
         'select': 'id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at',
     }
-    categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
+    categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}, service=True) or []
     cat_map = {c['id']: c for c in categories}
 
     if cat_slug:
@@ -386,7 +386,7 @@ def learn():
         if matching:
             params['category_id'] = f'eq.{matching[0]["id"]}'
 
-    articles = sb_get('ipb_articles', params) or []
+    articles = sb_get('ipb_articles', params, service=True) or []
     for a in articles:
         a['category'] = cat_map.get(a.get('category_id'))
 
@@ -399,7 +399,7 @@ def learn_detail(slug):
         'slug': f'eq.{slug}',
         'published': 'eq.true',
         'select': '*',
-    })
+    }, service=True)
     if not articles:
         return redirect(url_for('learn'))
 
@@ -407,7 +407,7 @@ def learn_detail(slug):
 
     # attach category
     if article.get('category_id'):
-        cats = sb_get('ipb_categories', {'id': f'eq.{article["category_id"]}', 'select': '*'})
+        cats = sb_get('ipb_categories', {'id': f'eq.{article["category_id"]}', 'select': '*'}, service=True)
         article['category'] = cats[0] if cats else None
     else:
         article['category'] = None
@@ -441,7 +441,7 @@ def learn_detail(slug):
             'id': f'neq.{article["id"]}',
             'limit': 4,
             'select': 'id,title,slug,is_free',
-        }) or []
+        }, service=True) or []
 
     can_view = article.get('is_free') or session.get('plan') in ('premium', 'team') or session.get('is_team')
     if not can_view:
