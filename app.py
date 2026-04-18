@@ -387,11 +387,14 @@ def learn():
     categories = sb_get('ipb_categories', {'order': 'sort_order.asc', 'select': '*'}) or []
     cat_map = {c['id']: c for c in categories}
 
-    # 全記事取得（管理ダッシュボードと同じ方式）→ Python側でフィルタ
+    # 全記事取得（contentは除外してレスポンスを軽量化）→ Python側でフィルタ
     all_articles = sb_get('ipb_articles', {
         'order': 'created_at.desc',
-        'select': 'id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at,published,content',
+        'select': 'id,title,slug,excerpt,is_free,thumbnail_url,video_url,pdf_url,category_id,created_at,published',
     }) or []
+    print(f'[learn] all_articles={len(all_articles)} cat_slug={cat_slug!r} q={q!r}', flush=True)
+    for a in all_articles:
+        print(f'  article: {a.get("title")!r} published={a.get("published")!r}', flush=True)
 
     articles = [a for a in all_articles if a.get('published')]
 
@@ -407,8 +410,7 @@ def learn():
         ql = q.lower()
         articles = [a for a in articles if
                     ql in (a.get('title') or '').lower() or
-                    ql in (a.get('excerpt') or '').lower() or
-                    ql in (a.get('content') or '').lower()]
+                    ql in (a.get('excerpt') or '').lower()]
 
     for a in articles:
         a['category'] = cat_map.get(a.get('category_id'))
