@@ -1,70 +1,36 @@
-name: Keep Alive & Backup
+name: Keep Alive
 
 on:
   schedule:
-    - cron: '0 0 */4 * *'   # 4日ごと UTC 0時（JST 9時）
+    - cron: '0 0 */4 * *'
   workflow_dispatch:
 
 jobs:
-  ping-and-backup:
+  ping:
     runs-on: ubuntu-latest
     steps:
+      - uses: actions/checkout@v4
+
       - name: Ping site
         run: |
           STATUS=$(curl -s -o /dev/null -w "%{http_code}" https://ignite-potential-base.onrender.com)
           echo "HTTP status: $STATUS"
-          if [ "$STATUS" != "200" ]; then
-            echo "::warning::サイトが応答しませんでした (HTTP $STATUS)"
+          if [ "$STATUS" = "200" ]; then
+            echo "OK - site is alive"
           else
-            echo "✅ サイト正常稼働"
+            echo "::warning::Site returned HTTP $STATUS"
           fi
 
-      - name: Backup DB to artifact
+      - name: Backup DB
         run: |
           pip install psycopg[binary] -q
-          python3 - <<'EOF'
-import json, os
-from datetime import datetime
-from urllib.parse import urlparse, quote_plus
-import psycopg
-from psycopg.rows import dict_row
-
-url = os.environ['DATABASE_URL']
-p = urlparse(url)
-if p.password:
-    url = url.replace(f':{p.password}@', f':{quote_plus(p.password)}@', 1)
-
-TABLES = ['ipb_drills','ipb_articles','ipb_categories','ipb_users','ipb_notices','ipb_comments']
-data = {'timestamp': datetime.now().isoformat(), 'tables': {}}
-total = 0
-
-for table in TABLES:
-    try:
-        with psycopg.connect(url, row_factory=dict_row) as conn:
-            with conn.cursor() as cur:
-                cur.execute(f"SELECT column_name FROM information_schema.columns WHERE table_name='{table}' AND column_name='created_at'")
-                order = 'ORDER BY created_at DESC' if cur.fetchone() else ''
-                cur.execute(f'SELECT * FROM {table} {order}')
-                rows = [{k: str(v) if v is not None and not isinstance(v,(str,int,float,bool)) else v for k,v in dict(r).items()} for r in cur.fetchall()]
-                data['tables'][table] = rows
-                total += len(rows)
-                print(f'{table}: {len(rows)} 件')
-    except Exception as e:
-        print(f'{table}: スキップ ({e})')
-        data['tables'][table] = []
-
-os.makedirs('backup', exist_ok=True)
-path = f'backup/backup_{datetime.now().strftime("%Y%m%d_%H%M%S")}.json'
-with open(path, 'w', encoding='utf-8') as f:
-    json.dump(data, f, ensure_ascii=False, indent=2)
-print(f'\n✅ バックアップ完了: {path} ({total} 件)')
-EOF
+          python3 .github/scripts/backup.py
         env:
           DATABASE_URL: ${{ secrets.DATABASE_URL }}
 
-      - name: Upload backup artifact
+      - name: Upload backup
         uses: actions/upload-artifact@v4
         with:
           name: ipb-backup-${{ github.run_number }}
-          path: backup/
+          path: backup_*.json
           retention-days: 90
