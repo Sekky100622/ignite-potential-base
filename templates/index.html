@@ -393,11 +393,14 @@
     </p>
     <div class="hero-btns">
       <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg">Noteメンバーシップへ →</a>
-      <a href="https://lin.ee/WjYZqJz" target="_blank" rel="noopener" class="btn btn-line btn-lg">LINEで相談する</a>
+      <a href="https://lin.ee/WjYZqJz" target="_blank" rel="noopener" class="btn btn-line btn-lg">LINEで個別相談</a>
     </div>
-    <div style="margin-top:1.5rem;">
+    <div style="margin-top:1.5rem;display:flex;gap:1.5rem;flex-wrap:wrap;">
+      <a href="{{ url_for('register') }}" style="color:var(--gray-400);font-size:.875rem;border-bottom:1px solid rgba(148,163,184,.3);padding-bottom:.1rem;">
+        まずは無料登録（ドリルライブラリを見る）→
+      </a>
       <a href="{{ url_for('login') }}" style="color:var(--gray-400);font-size:.875rem;border-bottom:1px solid rgba(148,163,184,.3);padding-bottom:.1rem;">
-        会員の方・セッション受講者の方はこちら →
+        ログイン
       </a>
     </div>
   </div>
@@ -472,7 +475,7 @@
   </div>
 </section>
 
-<!-- 2つのサービス -->
+<!-- 2つのサービス + 無料ライブラリ -->
 <section class="section" style="background:var(--navy-mid);">
   <div class="container">
     <div class="text-center">
@@ -503,6 +506,15 @@
         </a>
       </div>
     </div>
+    <!-- 無料ライブラリ案内 -->
+    <div style="margin-top:1.5rem;background:rgba(255,255,255,.03);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem 1.5rem;display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+      <div style="font-size:1.5rem;">📚</div>
+      <div style="flex:1;">
+        <div style="font-weight:700;font-size:.925rem;margin-bottom:.2rem;">まずは無料登録でドリルライブラリをお試しください</div>
+        <div style="color:var(--gray-400);font-size:.825rem;">実際の指導で使っているドリル・エクササイズを0円で閲覧できます</div>
+      </div>
+      <a href="{{ url_for('register') }}" class="btn btn-ghost btn-sm" style="flex-shrink:0;">無料登録 →</a>
+    </div>
   </div>
 </section>
 
@@ -511,7 +523,7 @@
   <div class="container">
     <div class="text-center">
       <h2 class="section-title">無料で読めるコンテンツ</h2>
-      <p class="section-sub">まずはこちらから。登録なしで読めます。</p>
+      <p class="section-sub">登録なしでも読めます。気に入ったら無料登録でライブラリも解放。</p>
     </div>
     {% if free_articles %}
     <div class="grid grid-3">
@@ -528,17 +540,14 @@
       </a>
       {% endfor %}
     </div>
-    <div style="text-align:center;margin-top:2rem;">
-      <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary">Noteメンバーシップ登録ですべて読む →</a>
-    </div>
-    {% else %}
-    <div style="text-align:center;padding:3rem;color:var(--gray-400);">
-      <p>コンテンツを準備中です。もうしばらくお待ちください。</p>
-      <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary" style="margin-top:1.5rem;">
-        Noteメンバーシップでコンテンツを見る →
-      </a>
-    </div>
     {% endif %}
+    <div style="margin-top:2rem;background:rgba(249,115,22,.07);border:1px solid rgba(249,115,22,.2);border-radius:14px;padding:1.5rem 2rem;display:flex;align-items:center;justify-content:space-between;gap:1rem;flex-wrap:wrap;">
+      <div>
+        <div style="font-weight:700;margin-bottom:.35rem;">⚡ 無料登録でドリルライブラリが解放されます</div>
+        <div style="color:var(--gray-400);font-size:.875rem;">実際の指導で使っているドリル・エクササイズを0円で閲覧できます</div>
+      </div>
+      <a href="{{ url_for('register') }}" class="btn btn-primary" style="flex-shrink:0;">無料登録する →</a>
+    </div>
   </div>
 </section>
 
@@ -798,11 +807,17 @@
     <h2>本気で変わりたいなら、<br><span class="text-orange">まずヒアリングから。</span></h2>
     <p>答えを押し付けない。あなたの現状を聞いてから、最適なアプローチを一緒に考えます。</p>
     <div style="display:flex;gap:1rem;justify-content:center;flex-wrap:wrap;">
+      <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-lg" style="font-size:1rem;padding:.85rem 2.25rem;">
+        Noteメンバーシップへ →
+      </a>
       <a href="https://lin.ee/WjYZqJz" target="_blank" rel="noopener" class="btn btn-line btn-lg" style="font-size:1rem;padding:.85rem 2.25rem;">
         LINEでヒアリングを申し込む →
       </a>
     </div>
-    <p style="color:var(--gray-400);font-size:.85rem;margin-top:1rem;">提案を受けてから検討していただいて構いません</p>
+    <p style="color:var(--gray-400);font-size:.85rem;margin-top:1rem;">
+      提案を受けてから検討していただいて構いません ·
+      <a href="{{ url_for('register') }}" style="color:var(--gray-400);border-bottom:1px solid rgba(148,163,184,.3);">まずは無料登録</a>
+    </p>
   </div>
 </section>
 {% endblock %}
