@@ -1,0 +1,15 @@
+name: Hourly Ping
+
+on:
+  schedule:
+    - cron: '*/30 * * * *'
+  workflow_dispatch:
+
+jobs:
+  ping:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Ping site
+        run: |
+          STATUS=$(curl -s -o /dev/null -w "%{http_code}" --max-time 60 https://ignite-potential-base.onrender.com)
+          echo "HTTP status: $STATUS"
