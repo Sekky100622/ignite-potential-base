@@ -13,16 +13,12 @@
   <div class="container">
 
     <!-- カテゴリフィルター -->
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:1.25rem;">
+    <div class="filter-pills" style="margin-bottom:1.25rem;">
       <a href="{{ url_for('library', q=q) }}"
-         style="padding:.35rem .9rem;border-radius:20px;font-size:.825rem;font-weight:600;text-decoration:none;border:1px solid {% if not cat %}rgba(249,115,22,.6);background:rgba(249,115,22,.2);color:var(--orange){% else %}rgba(255,255,255,.15);background:transparent;color:var(--gray-400){% endif %};">
-        すべて
-      </a>
+         class="filter-pill{% if not cat %} active{% endif %}">すべて</a>
       {% for c in categories %}
       <a href="{{ url_for('library', cat=c, q=q) }}"
-         style="padding:.35rem .9rem;border-radius:20px;font-size:.825rem;font-weight:600;text-decoration:none;border:1px solid {% if cat == c %}rgba(249,115,22,.6);background:rgba(249,115,22,.2);color:var(--orange){% else %}rgba(255,255,255,.15);background:transparent;color:var(--gray-400){% endif %};">
-        {{ c }}
-      </a>
+         class="filter-pill{% if cat == c %} active{% endif %}">{{ c }}</a>
       {% endfor %}
     </div>
 

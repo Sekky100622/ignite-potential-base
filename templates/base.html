@@ -313,6 +313,36 @@
       padding-right: 1.5rem;
     }
 
+    /* ── Filter pills ── */
+    .filter-pills { display:flex; gap:.5rem; flex-wrap:wrap; }
+    .filter-pill {
+      padding:.35rem .9rem;
+      border-radius:20px;
+      font-size:.825rem;
+      font-weight:600;
+      text-decoration:none;
+      border:1px solid rgba(255,255,255,.15);
+      color:var(--gray-400);
+      background:transparent;
+      transition:all .2s;
+      cursor:pointer;
+    }
+    .filter-pill:hover { border-color:rgba(249,115,22,.4); color:var(--orange); }
+    .filter-pill.active { border-color:rgba(249,115,22,.6); background:rgba(249,115,22,.2); color:var(--orange); }
+
+    /* ── Dashboard grids ── */
+    .dash-stats { display:grid; grid-template-columns:repeat(3,1fr); gap:1rem; margin-bottom:1.5rem; }
+    .dash-layout { display:grid; grid-template-columns:1fr 300px; gap:2rem; }
+    @media (max-width:900px) {
+      .dash-layout { grid-template-columns:1fr; }
+    }
+    @media (max-width:600px) {
+      .dash-stats { grid-template-columns:1fr 1fr; }
+    }
+    @media (max-width:400px) {
+      .dash-stats { grid-template-columns:1fr; }
+    }
+
     /* ── Utility ── */
     .text-orange { color: var(--orange); }
     .text-gray   { color: var(--gray-400); }
@@ -410,9 +440,11 @@
       </div>
       <div class="footer-links">
         {% if session.get('user_id') %}
+          <a href="{{ url_for('library') }}">ライブラリ</a>
           <a href="{{ url_for('learn') }}">記事一覧</a>
           <a href="{{ url_for('dashboard') }}">ダッシュボード</a>
         {% else %}
+          <a href="{{ url_for('library') }}">ライブラリ</a>
           <a href="{{ note_url }}" target="_blank" rel="noopener">Noteメンバーシップ</a>
         {% endif %}
       </div>

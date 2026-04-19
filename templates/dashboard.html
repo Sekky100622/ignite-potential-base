@@ -13,7 +13,7 @@
   <div class="container">
 
     <!-- Stats row -->
-    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:1rem;margin-bottom:1.5rem;">
+    <div class="dash-stats">
       <a href="{{ url_for('library') }}" style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:1.25rem;text-decoration:none;color:inherit;transition:border-color .2s;" onmouseover="this.style.borderColor='rgba(249,115,22,.4)'" onmouseout="this.style.borderColor='rgba(255,255,255,.08)'">
         <div style="font-size:2rem;font-weight:800;color:var(--orange);">{{ drill_count }}</div>
         <div style="font-size:.8rem;color:var(--gray-400);margin-top:.25rem;">閲覧可能なドリル</div>
@@ -30,7 +30,7 @@
       </div>
     </div>
 
-    <div style="display:grid;grid-template-columns:1fr 300px;gap:2rem;">
+    <div class="dash-layout">
 
       <!-- Left column -->
       <div>
@@ -177,13 +177,4 @@
   </div>
 </section>
 
-<style>
-  @media (max-width: 768px) {
-    .container > div[style*="grid-template-columns:1fr 300px"] { grid-template-columns: 1fr !important; }
-    .container > div[style*="grid-template-columns:repeat(3"] { grid-template-columns: 1fr 1fr !important; }
-  }
-  @media (max-width: 480px) {
-    .container > div[style*="grid-template-columns:repeat(3"] { grid-template-columns: 1fr !important; }
-  }
-</style>
 {% endblock %}

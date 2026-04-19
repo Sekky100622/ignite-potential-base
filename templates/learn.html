@@ -24,9 +24,8 @@
       <input type="hidden" name="category" value="{{ active_category }}">
       {% endif %}
       <div style="display:flex;gap:.5rem;">
-        <input type="text" name="q" value="{{ q or '' }}"
-               placeholder="記事を検索..."
-               style="flex:1;background:var(--navy-light);border:1px solid rgba(255,255,255,.15);border-radius:8px;color:#fff;padding:.55rem 1rem;font-size:.9rem;">
+        <input class="form-control" type="text" name="q" value="{{ q or '' }}"
+               placeholder="記事を検索..." style="flex:1;min-width:0;">
         <button type="submit" class="btn btn-primary btn-sm">検索</button>
         {% if q %}
         <a href="{{ url_for('learn', category=active_category) }}" class="btn btn-ghost btn-sm">✕ クリア</a>
@@ -35,46 +34,38 @@
     </form>
 
     <!-- Category filter -->
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:.75rem;">
+    <div class="filter-pills" style="margin-bottom:.75rem;">
       <a href="{{ url_for('learn', sort=sort) }}"
-         class="btn btn-sm {% if not active_category %}btn-primary{% else %}btn-ghost{% endif %}">
-        全て
-      </a>
+         class="filter-pill{% if not active_category %} active{% endif %}">全て</a>
       {% for cat in categories %}
       <a href="{{ url_for('learn', category=cat.slug, sort=sort) }}"
-         class="btn btn-sm {% if active_category == cat.slug %}btn-primary{% else %}btn-ghost{% endif %}">
-        {{ cat.name }}
-      </a>
+         class="filter-pill{% if active_category == cat.slug %} active{% endif %}">{{ cat.name }}</a>
       {% endfor %}
     </div>
 
     <!-- Tag filter -->
     {% if all_tags %}
-    <div style="display:flex;gap:.4rem;flex-wrap:wrap;margin-bottom:.75rem;align-items:center;">
+    <div class="filter-pills" style="margin-bottom:.75rem;align-items:center;">
       <span style="color:var(--gray-400);font-size:.75rem;">🏷</span>
       {% if active_tag %}
       <a href="{{ url_for('learn', category=active_category, q=q, sort=sort) }}"
-         class="btn btn-sm btn-ghost" style="font-size:.75rem;">✕ タグをクリア</a>
+         class="filter-pill" style="font-size:.75rem;">✕ タグをクリア</a>
       {% endif %}
       {% for tag in all_tags %}
       <a href="{{ url_for('learn', category=active_category, q=q, sort=sort, tag=tag) }}"
-         class="btn btn-sm {% if active_tag == tag %}btn-primary{% else %}btn-ghost{% endif %}"
+         class="filter-pill{% if active_tag == tag %} active{% endif %}"
          style="font-size:.75rem;">{{ tag }}</a>
       {% endfor %}
     </div>
     {% endif %}
 
     <!-- Sort -->
-    <div style="display:flex;gap:.5rem;flex-wrap:wrap;margin-bottom:2rem;align-items:center;">
+    <div class="filter-pills" style="margin-bottom:2rem;align-items:center;">
       <span style="color:var(--gray-400);font-size:.8rem;">並び替え：</span>
       <a href="{{ url_for('learn', category=active_category, q=q, sort='newest', tag=active_tag) }}"
-         class="btn btn-sm {% if sort == 'newest' %}btn-primary{% else %}btn-ghost{% endif %}">
-        最新
-      </a>
+         class="filter-pill{% if sort == 'newest' %} active{% endif %}">最新</a>
       <a href="{{ url_for('learn', category=active_category, q=q, sort='popular', tag=active_tag) }}"
-         class="btn btn-sm {% if sort == 'popular' %}btn-primary{% else %}btn-ghost{% endif %}">
-        人気
-      </a>
+         class="filter-pill{% if sort == 'popular' %} active{% endif %}">人気</a>
     </div>
 
     {% if q %}

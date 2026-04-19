@@ -12,12 +12,15 @@
     {% if drill.category %}
     <div style="font-size:.8rem;color:var(--orange);font-weight:600;margin-bottom:.4rem;">{{ drill.category }}</div>
     {% endif %}
-    <div style="display:flex;align-items:center;gap:.75rem;">
+    <div style="display:flex;align-items:center;gap:.75rem;flex-wrap:wrap;">
       <h1 style="font-size:1.6rem;">{{ drill.name }}</h1>
       {% if drill.is_free %}
       <span class="badge badge-free">無料</span>
       {% else %}
       <span class="badge badge-premium">会員限定</span>
+      {% endif %}
+      {% if drill.difficulty %}
+      <span class="badge" style="background:rgba(99,102,241,.15);color:#a5b4fc;">{{ drill.difficulty }}</span>
       {% endif %}
     </div>
   </div>
