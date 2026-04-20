@@ -33,12 +33,23 @@ import cloudinary.uploader
 load_dotenv()
 
 app = Flask(__name__)
-app.secret_key = os.getenv('SECRET_KEY', 'dev-secret-key')
+
+# SECRET_KEY: 本番(Render)では環境変数必須、未設定なら起動エラー
+_IS_PRODUCTION = bool(os.getenv('RENDER'))
+_secret_key = os.getenv('SECRET_KEY')
+if not _secret_key:
+    if _IS_PRODUCTION:
+        raise RuntimeError('SECRET_KEY 環境変数が設定されていません。Renderの環境変数に追加してください。')
+    _secret_key = 'dev-secret-key-local-only'
+app.secret_key = _secret_key
+
+# ファイルアップロード上限 5MB
+app.config['MAX_CONTENT_LENGTH'] = 5 * 1024 * 1024
 
 # セキュリティ設定
 app.config['SESSION_COOKIE_HTTPONLY'] = True
 app.config['SESSION_COOKIE_SAMESITE'] = 'Lax'
-app.config['SESSION_COOKIE_SECURE'] = os.getenv('FLASK_ENV') == 'production'
+app.config['SESSION_COOKIE_SECURE'] = _IS_PRODUCTION  # Renderは RENDER=true を自動設定
 app.config['WTF_CSRF_TIME_LIMIT'] = 3600
 
 csrf = CSRFProtect(app)
@@ -239,13 +250,27 @@ def pg_drills(drill_id=None, is_free=None, category=None, q=None):
     return db_fetchall(sql, params) or []
 
 
+_ALLOWED_IMAGE_EXTENSIONS = {'jpg', 'jpeg', 'png', 'webp', 'gif'}
+_ALLOWED_IMAGE_MIMETYPES = {'image/jpeg', 'image/png', 'image/webp', 'image/gif'}
+
 def upload_drill_image(file_obj):
     """Cloudinaryにドリル画像をアップロードしてURLを返す。失敗時はNone。"""
+    # 拡張子チェック
+    filename = file_obj.filename or ''
+    ext = filename.rsplit('.', 1)[-1].lower() if '.' in filename else ''
+    if ext not in _ALLOWED_IMAGE_EXTENSIONS:
+        print(f'[upload] 許可されていない拡張子: {ext}')
+        return None
+    # MIMEタイプチェック
+    if file_obj.content_type not in _ALLOWED_IMAGE_MIMETYPES:
+        print(f'[upload] 許可されていないMIMEタイプ: {file_obj.content_type}')
+        return None
     try:
         result = cloudinary.uploader.upload(
             file_obj,
             folder='ipb_drills',
-            transformation=[{'width': 800, 'height': 600, 'crop': 'fill', 'quality': 'auto'}]
+            resource_type='image',
+            transformation=[{'width': 800, 'height': 600, 'crop': 'fill', 'quality': 'auto', 'fetch_format': 'auto'}]
         )
         return result.get('secure_url')
     except Exception as e:
@@ -421,7 +446,15 @@ def set_security_headers(resp):
     resp.headers['X-Frame-Options'] = 'SAMEORIGIN'
     resp.headers['X-Content-Type-Options'] = 'nosniff'
     resp.headers['Referrer-Policy'] = 'strict-origin-when-cross-origin'
+    if _IS_PRODUCTION:
+        resp.headers['Strict-Transport-Security'] = 'max-age=31536000; includeSubDomains'
     return resp
+
+
+@app.errorhandler(413)
+def request_entity_too_large(e):
+    flash('ファイルサイズが大きすぎます（上限5MB）', 'error')
+    return redirect(request.referrer or url_for('admin_library'))
 
 
 # ── Context processor ─────────────────────────────────────────────────────────
@@ -1523,8 +1556,8 @@ def invite_register(token):
         password = request.form.get('password', '')
         team_name = request.form.get('team_name', '').strip()
 
-        if not name or not email or len(password) < 6:
-            return render_template('invite.html', error='すべての項目を入力してください（パスワードは6文字以上）', token=token, invite=invite)
+        if not name or not email or len(password) < 8:
+            return render_template('invite.html', error='すべての項目を入力してください（パスワードは8文字以上）', token=token, invite=invite)
         if invite['plan'] == 'team' and not team_name:
             return render_template('invite.html', error='チーム名を入力してください', token=token, invite=invite)
 
