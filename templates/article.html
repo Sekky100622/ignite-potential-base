@@ -16,8 +16,8 @@
   "headline": "{{ article.title | e }}",
   "description": "{{ (article.excerpt or article.title) | e }}",
   "url": "{{ request.url }}",
-  "datePublished": "{{ article.created_at[:10] if article.created_at else '' }}",
-  "dateModified": "{{ article.updated_at[:10] if article.get('updated_at') else (article.created_at[:10] if article.created_at else '') }}",
+  "datePublished": "{{ article.created_at.strftime('%Y-%m-%d') if article.created_at else '' }}",
+  "dateModified": "{{ article.updated_at.strftime('%Y-%m-%d') if article.get('updated_at') else (article.created_at.strftime('%Y-%m-%d') if article.created_at else '') }}",
   "author": {
     "@type": "Person",
     "name": "積山大輝"

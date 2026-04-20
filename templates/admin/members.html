@@ -122,7 +122,7 @@
                   {% endif %}
                 </td>
                 <td style="color:var(--gray-400);font-size:.85rem;">
-                  {{ member.created_at[:10] if member.created_at else '-' }}
+                  {{ member.created_at.strftime('%Y-%m-%d') if member.created_at else '-' }}
                 </td>
                 <td>
                   {% if member.id != session.get('user_id') %}
