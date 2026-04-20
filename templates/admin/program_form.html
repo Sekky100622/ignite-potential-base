@@ -95,9 +95,21 @@
                  value="{{ program.get('title','') }}" placeholder="例：バッティング基礎プログラム">
         </div>
         <div class="form-group">
-          <label class="form-label">対象選手</label>
-          <input class="form-control" type="text" name="target"
-                 value="{{ program.get('target','') }}" placeholder="例：バッティングを改善したい選手">
+          <label class="form-label">対象選手（複数選択可）</label>
+          {% set selected_levels = program.get('target','').split(',') if program.get('target') else [] %}
+          <div style="display:flex;flex-wrap:wrap;gap:.6rem .75rem;margin-top:.4rem;">
+            {% for lv in player_levels %}
+            <label style="display:flex;align-items:center;gap:.4rem;cursor:pointer;background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.1);border-radius:8px;padding:.4rem .85rem;font-size:.875rem;transition:border-color .15s;"
+                   onmouseover="this.style.borderColor='rgba(249,115,22,.4)'"
+                   onmouseout="this.style.borderColor=this.querySelector('input').checked?'rgba(249,115,22,.6)':'rgba(255,255,255,.1)'">
+              <input type="checkbox" name="target_levels" value="{{ lv }}"
+                     {% if lv in selected_levels %}checked{% endif %}
+                     style="accent-color:var(--orange);"
+                     onchange="this.closest('label').style.borderColor=this.checked?'rgba(249,115,22,.6)':'rgba(255,255,255,.1)'">
+              {{ lv }}
+            </label>
+            {% endfor %}
+          </div>
         </div>
         <div class="form-group">
           <label class="form-label">説明・概要</label>

@@ -70,8 +70,12 @@
     <a href="{{ url_for('programs') }}" style="color:var(--gray-400);font-size:.875rem;display:inline-block;margin-bottom:.5rem;">← プログラム一覧</a>
     <h1>{{ program.title }}</h1>
     {% if program.target %}
-    <div style="margin-top:.5rem;">
-      <span style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--orange);padding:.3rem 1rem;border-radius:20px;font-size:.85rem;font-weight:600;">👤 {{ program.target }}</span>
+    <div style="display:flex;flex-wrap:wrap;gap:.4rem;margin-top:.5rem;">
+      {% for lv in program.target.split(',') %}
+      {% if lv.strip() %}
+      <span style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--orange);padding:.25rem .85rem;border-radius:20px;font-size:.82rem;font-weight:600;">{{ lv.strip() }}</span>
+      {% endif %}
+      {% endfor %}
     </div>
     {% endif %}
     {% if program.description %}

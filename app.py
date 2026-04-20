@@ -58,6 +58,7 @@ DRILL_CATEGORIES = [
     'プライオメトリクス',
     'スキル（アトラクターベース）',
 ]
+PLAYER_LEVELS = ['小学生', '中学生', '高校生', '大学生', '社会人', 'プロ', 'メジャーリーガー']
 SUPABASE_URL = os.getenv('SUPABASE_URL')
 SUPABASE_KEY = os.getenv('SUPABASE_ANON_KEY')
 SUPABASE_SERVICE_KEY = os.getenv('SUPABASE_SERVICE_KEY')
@@ -1781,11 +1782,11 @@ def admin_programs_new():
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
-        target = request.form.get('target', '').strip()
+        target = ','.join(request.form.getlist('target_levels'))
         is_published = request.form.get('is_published') == '1'
         if not title:
             return render_template('admin/program_form.html', program={}, edit=False,
-                                   all_drills=all_drills, error='タイトルを入力してください')
+                                   all_drills=all_drills, player_levels=PLAYER_LEVELS, error='タイトルを入力してください')
         prog = db_fetchone(
             'INSERT INTO ipb_programs (title, description, target, is_published) VALUES (%s,%s,%s,%s) RETURNING *',
             (title, description, target, is_published)
@@ -1795,7 +1796,8 @@ def admin_programs_new():
             flash('プログラムを作成しました', 'success')
             return redirect(url_for('admin_programs'))
         flash('作成に失敗しました', 'error')
-    return render_template('admin/program_form.html', program={}, edit=False, all_drills=all_drills, error=None)
+    return render_template('admin/program_form.html', program={}, edit=False,
+                           all_drills=all_drills, player_levels=PLAYER_LEVELS, error=None)
 
 
 @app.route('/admin/programs/<program_id>/edit', methods=['GET', 'POST'])
@@ -1815,11 +1817,12 @@ def admin_programs_edit(program_id):
     if request.method == 'POST':
         title = request.form.get('title', '').strip()
         description = request.form.get('description', '').strip()
-        target = request.form.get('target', '').strip()
+        target = ','.join(request.form.getlist('target_levels'))
         is_published = request.form.get('is_published') == '1'
         if not title:
             return render_template('admin/program_form.html', program=prog, edit=True,
-                                   all_drills=all_drills, existing_steps=existing_steps, error='タイトルを入力してください')
+                                   all_drills=all_drills, existing_steps=existing_steps,
+                                   player_levels=PLAYER_LEVELS, error='タイトルを入力してください')
         db_execute(
             'UPDATE ipb_programs SET title=%s, description=%s, target=%s, is_published=%s WHERE id=%s',
             (title, description, target, is_published, program_id)
@@ -1828,7 +1831,8 @@ def admin_programs_edit(program_id):
         flash('更新しました', 'success')
         return redirect(url_for('admin_programs'))
     return render_template('admin/program_form.html', program=prog, edit=True,
-                           all_drills=all_drills, existing_steps=existing_steps, error=None)
+                           all_drills=all_drills, existing_steps=existing_steps,
+                           player_levels=PLAYER_LEVELS, error=None)
 
 
 @app.route('/admin/programs/<program_id>/delete', methods=['POST'])
