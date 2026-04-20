@@ -1128,12 +1128,22 @@ def admin_notices_delete(notice_id):
 @app.route('/admin/library')
 @admin_required
 def admin_library():
-    # まず sort_order で並び替えを試みる。列が未作成なら created_at にフォールバック
-    drills = db_fetchall(
-        'SELECT id,name,purpose,video_url,method,points,is_free,created_at,category '
-        'FROM ipb_drills ORDER BY created_at DESC'
-    ) or []
-    return render_template('admin/library.html', drills=drills, categories=DRILL_CATEGORIES)
+    q = request.args.get('q', '').strip()
+    cat = request.args.get('cat', '').strip()
+    sql = ('SELECT id,name,purpose,video_url,method,points,is_free,created_at,category '
+           'FROM ipb_drills')
+    conditions, params = [], []
+    if q:
+        conditions.append('(name ILIKE %s OR purpose ILIKE %s OR points ILIKE %s)')
+        params.extend([f'%{q}%', f'%{q}%', f'%{q}%'])
+    if cat:
+        conditions.append('category=%s')
+        params.append(cat)
+    if conditions:
+        sql += ' WHERE ' + ' AND '.join(conditions)
+    sql += ' ORDER BY sort_order ASC, created_at DESC'
+    drills = db_fetchall(sql, params) or []
+    return render_template('admin/library.html', drills=drills, categories=DRILL_CATEGORIES, q=q, cat=cat)
 
 
 @app.route('/admin/library/bulk-category', methods=['POST'])

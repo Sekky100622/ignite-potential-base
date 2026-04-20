@@ -7,10 +7,26 @@
     <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
       <div>
         <h1>⚡ ドリルライブラリ管理</h1>
-        <p>全 {{ drills|length }} 件</p>
+        <p>{{ drills|length }} 件{% if q or cat %} （絞り込み中）{% endif %}</p>
       </div>
       <a href="{{ url_for('admin_library_new') }}" class="btn btn-primary">+ ドリルを追加</a>
     </div>
+
+    <!-- 検索 & フィルター -->
+    <form method="GET" action="{{ url_for('admin_library') }}" style="margin-top:1rem;display:flex;gap:.75rem;flex-wrap:wrap;align-items:center;">
+      <input class="form-control" type="text" name="q" value="{{ q }}"
+             placeholder="種目名・目的・ポイントで検索..." style="flex:1;min-width:200px;max-width:360px;">
+      <select name="cat" class="form-control" style="width:auto;min-width:180px;">
+        <option value="">すべてのカテゴリ</option>
+        {% for c in categories %}
+        <option value="{{ c }}"{% if cat == c %} selected{% endif %}>{{ c }}</option>
+        {% endfor %}
+      </select>
+      <button type="submit" class="btn btn-primary btn-sm">検索</button>
+      {% if q or cat %}
+      <a href="{{ url_for('admin_library') }}" class="btn btn-ghost btn-sm">クリア</a>
+      {% endif %}
+    </form>
   </div>
 </div>
 
