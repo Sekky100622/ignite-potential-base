@@ -189,8 +189,8 @@
 
             {% if locked %}<div class="locked-overlay">🔒 会員限定</div>{% endif %}
 
-            {# サムネイル #}
-            {% set thumb = drill.video_url | yt_thumb %}
+            {# サムネイル: アップロード画像 > YTサムネ > プレースホルダー #}
+            {% set thumb = drill.image_url or (drill.video_url | yt_thumb) %}
             {% if thumb %}
             <img class="drill-thumb" src="{{ thumb }}" alt="{{ drill.name }}" loading="lazy"
                  onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">
@@ -241,7 +241,7 @@
 
           {% if locked %}<div class="locked-overlay">🔒 会員限定</div>{% endif %}
 
-          {% set thumb = drill.video_url | yt_thumb %}
+          {% set thumb = drill.image_url or (drill.video_url | yt_thumb) %}
           {% if thumb %}
           <img class="drill-thumb" src="{{ thumb }}" alt="{{ drill.name }}" loading="lazy"
                onerror="this.style.display='none';this.nextElementSibling.style.display='flex'">

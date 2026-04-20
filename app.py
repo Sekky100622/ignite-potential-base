@@ -27,6 +27,8 @@ import bleach
 from dateutil import parser as dtparser
 import psycopg
 from psycopg.rows import dict_row
+import cloudinary
+import cloudinary.uploader
 
 load_dotenv()
 
@@ -48,6 +50,12 @@ GOOGLE_CLIENT_ID = os.getenv('GOOGLE_CLIENT_ID', '')
 GA_MEASUREMENT_ID = os.getenv('GA_MEASUREMENT_ID', '')
 SMTP_USER = os.getenv('SMTP_USER', '')
 SMTP_PASSWORD = os.getenv('SMTP_PASSWORD', '')
+
+cloudinary.config(
+    cloud_name=os.getenv('CLOUDINARY_CLOUD_NAME'),
+    api_key=os.getenv('CLOUDINARY_API_KEY'),
+    api_secret=os.getenv('CLOUDINARY_API_SECRET'),
+)
 
 DRILL_CATEGORIES = [
     'リセット',
@@ -209,7 +217,7 @@ def sb_rpc(func_name, data, service=False):
 
 def pg_drills(drill_id=None, is_free=None, category=None, q=None):
     """Get drills via direct SQL."""
-    sql = ('SELECT id,name,purpose,video_url,method,points,is_free,created_at,category,difficulty '
+    sql = ('SELECT id,name,purpose,video_url,image_url,method,points,is_free,created_at,category,difficulty '
            'FROM ipb_drills')
     conditions = []
     params = []
@@ -231,9 +239,23 @@ def pg_drills(drill_id=None, is_free=None, category=None, q=None):
     return db_fetchall(sql, params) or []
 
 
+def upload_drill_image(file_obj):
+    """Cloudinaryにドリル画像をアップロードしてURLを返す。失敗時はNone。"""
+    try:
+        result = cloudinary.uploader.upload(
+            file_obj,
+            folder='ipb_drills',
+            transformation=[{'width': 800, 'height': 600, 'crop': 'fill', 'quality': 'auto'}]
+        )
+        return result.get('secure_url')
+    except Exception as e:
+        print(f'[cloudinary] upload error: {e}')
+        return None
+
+
 def pg_drill_save(data, drill_id=None):
     """Insert or update a drill via direct SQL (bypasses PostgREST schema cache)."""
-    _FIELDS = ['name', 'purpose', 'video_url', 'method', 'points', 'is_free', 'category', 'difficulty']
+    _FIELDS = ['name', 'purpose', 'video_url', 'image_url', 'method', 'points', 'is_free', 'category', 'difficulty']
     present = [f for f in _FIELDS if f in data]
     if drill_id:
         set_clauses = ', '.join(f'{f}=%s' for f in present)
@@ -351,6 +373,7 @@ def ensure_tables():
     db_execute('ALTER TABLE ipb_articles ADD COLUMN IF NOT EXISTS tags TEXT')
     db_execute('ALTER TABLE ipb_drills ADD COLUMN IF NOT EXISTS difficulty TEXT')
     db_execute('ALTER TABLE ipb_drills ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 9999')
+    db_execute('ALTER TABLE ipb_drills ADD COLUMN IF NOT EXISTS image_url TEXT')
     db_execute('''
         CREATE TABLE IF NOT EXISTS ipb_programs (
             id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
@@ -1214,6 +1237,10 @@ def admin_library_bulk_category():
 @admin_required
 def admin_library_new():
     if request.method == 'POST':
+        image_url = None
+        f = request.files.get('image')
+        if f and f.filename:
+            image_url = upload_drill_image(f)
         data = {
             'name':       request.form.get('name', '').strip(),
             'purpose':    request.form.get('purpose', '').strip(),
@@ -1224,6 +1251,8 @@ def admin_library_new():
             'category':   request.form.get('category', '').strip() or None,
             'difficulty': request.form.get('difficulty', '').strip() or None,
         }
+        if image_url:
+            data['image_url'] = image_url
         result = pg_drill_save(data)
         if result:
             flash('ドリルを追加しました', 'success')
@@ -1250,6 +1279,11 @@ def admin_library_edit(drill_id):
             'category':   request.form.get('category', '').strip() or None,
             'difficulty': request.form.get('difficulty', '').strip() or None,
         }
+        f = request.files.get('image')
+        if f and f.filename:
+            new_url = upload_drill_image(f)
+            if new_url:
+                data['image_url'] = new_url
         result = pg_drill_save(data, drill_id=drill_id)
         if result:
             flash('更新しました', 'success')

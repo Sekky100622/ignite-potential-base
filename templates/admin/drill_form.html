@@ -11,7 +11,7 @@
 <section class="section-sm">
   <div class="container" style="max-width:700px;">
     <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;padding:2rem;">
-      <form method="POST">
+      <form method="POST" enctype="multipart/form-data">
         <div class="form-group">
           <label class="form-label">種目名 *</label>
           <input class="form-control" type="text" name="name" value="{{ drill.name or '' }}" required placeholder="例：ヒップストレッチ">
@@ -28,6 +28,19 @@
         <div class="form-group">
           <label class="form-label">目的</label>
           <textarea class="form-control" name="purpose" rows="3" placeholder="例：股関節後方可動性の向上">{{ drill.purpose or '' }}</textarea>
+        </div>
+        <div class="form-group">
+          <label class="form-label">サムネイル画像</label>
+          {% if drill.image_url %}
+          <div style="margin-bottom:.75rem;">
+            <img src="{{ drill.image_url }}" alt="現在の画像"
+                 style="width:100%;max-width:320px;height:180px;object-fit:cover;border-radius:8px;border:1px solid rgba(255,255,255,.1);">
+            <p style="font-size:.75rem;color:var(--gray-400);margin-top:.3rem;">現在の画像。新しいファイルを選ぶと上書きされます。</p>
+          </div>
+          {% endif %}
+          <input type="file" name="image" accept="image/*"
+                 style="display:block;color:var(--white);font-size:.875rem;padding:.4rem 0;">
+          <p style="font-size:.75rem;color:var(--gray-400);margin-top:.25rem;">JPG / PNG / WebP 推奨。動画URLがある場合は画像が優先表示されます。</p>
         </div>
         <div class="form-group">
           <label class="form-label">動画URL（YouTube等）</label>

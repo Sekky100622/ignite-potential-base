@@ -29,6 +29,14 @@
 <section class="section-sm">
   <div class="container" style="max-width:800px;">
 
+    <!-- アップロード画像 -->
+    {% if drill.image_url %}
+    <div style="margin-bottom:2rem;">
+      <img src="{{ drill.image_url }}" alt="{{ drill.name }}"
+           style="width:100%;max-height:420px;object-fit:cover;border-radius:12px;border:1px solid rgba(255,255,255,.08);">
+    </div>
+    {% endif %}
+
     <!-- 動画 -->
     {% if drill.video_embed_url %}
     <div style="position:relative;padding-bottom:56.25%;height:0;overflow:hidden;border-radius:12px;margin-bottom:2rem;background:#000;">
