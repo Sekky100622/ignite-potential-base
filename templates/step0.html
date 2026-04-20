@@ -1,0 +1,1040 @@
+{% extends 'base.html' %}
+{% block title %}Step 0: ビジョン・目標設計 | Ignite Potential Base{% endblock %}
+
+{% block extra_head %}
+<style>
+  /* ── Step 0 CSS Variables ── */
+  :root {
+    --s0-being: #9b7cff;
+    --s0-doing: #38d9c0;
+    --s0-relationship: #f0a040;
+    --s0-goal: #4f7cff;
+    --s0-rpm-r: #9b7cff;
+    --s0-rpm-p: #38d9c0;
+    --s0-rpm-m: #f0a040;
+    --s0-bg2: #141720;
+    --s0-bg3: #1c2030;
+    --s0-card: #1a1e2e;
+    --s0-border: rgba(255,255,255,0.07);
+    --s0-text2: #8b90a8;
+    --s0-accent: #4f7cff;
+  }
+
+  /* ── Layout ── */
+  .s0-page { max-width: 860px; margin: 0 auto; padding: 0 1.5rem 4rem; }
+
+  /* ── Progress bar ── */
+  .s0-progress {
+    position: sticky;
+    top: 64px;
+    z-index: 100;
+    background: rgba(13,15,18,.95);
+    backdrop-filter: blur(10px);
+    border-bottom: 1px solid var(--s0-border);
+    padding: .6rem 1.5rem;
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+  }
+  .s0-progress-label { font-size: .78rem; color: var(--s0-text2); white-space: nowrap; }
+  .s0-progress-bar { flex: 1; height: 4px; background: rgba(255,255,255,.08); border-radius: 2px; overflow: hidden; }
+  .s0-progress-fill { height: 100%; background: linear-gradient(90deg, var(--s0-being), var(--s0-accent)); border-radius: 2px; transition: width .4s; }
+
+  /* ── Mode toggle ── */
+  .s0-mode-toggle {
+    display: flex;
+    gap: .5rem;
+    background: rgba(255,255,255,.05);
+    border: 1px solid var(--s0-border);
+    border-radius: 10px;
+    padding: .35rem;
+    margin-bottom: 2rem;
+    width: fit-content;
+  }
+  .s0-mode-btn {
+    padding: .4rem 1.1rem;
+    border-radius: 7px;
+    border: none;
+    cursor: pointer;
+    font-size: .85rem;
+    font-weight: 600;
+    background: transparent;
+    color: var(--s0-text2);
+    transition: all .2s;
+  }
+  .s0-mode-btn.active { background: var(--s0-accent); color: #fff; }
+
+  /* ── Age tabs ── */
+  .age-tabs {
+    display: flex;
+    gap: .4rem;
+    flex-wrap: wrap;
+    margin-bottom: 1.25rem;
+  }
+  .age-tab {
+    padding: .35rem 1rem;
+    border-radius: 20px;
+    border: 1px solid var(--s0-border);
+    background: transparent;
+    color: var(--s0-text2);
+    font-size: .8rem;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all .2s;
+  }
+  .age-tab.active { border-color: var(--s0-accent); background: rgba(79,124,255,.15); color: var(--s0-accent); }
+  .age-panel { display: none; }
+  .age-panel.active { display: block; }
+
+  /* ── Section ── */
+  .s0-section {
+    background: var(--s0-card);
+    border: 1px solid var(--s0-border);
+    border-radius: 16px;
+    padding: 2rem;
+    margin-bottom: 1.5rem;
+  }
+  .s0-section-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 28px;
+    height: 28px;
+    border-radius: 50%;
+    background: var(--s0-accent);
+    color: #fff;
+    font-size: .78rem;
+    font-weight: 800;
+    margin-bottom: .75rem;
+  }
+  .s0-section-title {
+    font-size: 1.3rem;
+    font-weight: 800;
+    margin-bottom: .75rem;
+    line-height: 1.3;
+  }
+  .s0-section-desc {
+    color: var(--s0-text2);
+    font-size: .9rem;
+    line-height: 1.8;
+    margin-bottom: 1.5rem;
+  }
+
+  /* ── Worksheet inputs ── */
+  .ws-label {
+    display: block;
+    font-size: .8rem;
+    font-weight: 700;
+    color: var(--s0-text2);
+    text-transform: uppercase;
+    letter-spacing: .05em;
+    margin-bottom: .4rem;
+    margin-top: 1rem;
+  }
+  .ws-input {
+    width: 100%;
+    background: rgba(255,255,255,.04);
+    border: 1.5px solid var(--s0-border);
+    border-radius: 8px;
+    padding: .65rem 1rem;
+    color: #fff;
+    font-size: .9rem;
+    outline: none;
+    transition: border-color .2s;
+    font-family: inherit;
+  }
+  .ws-input:focus { border-color: var(--s0-accent); }
+  .ws-textarea {
+    width: 100%;
+    background: rgba(255,255,255,.04);
+    border: 1.5px solid var(--s0-border);
+    border-radius: 8px;
+    padding: .75rem 1rem;
+    color: #fff;
+    font-size: .9rem;
+    outline: none;
+    transition: border-color .2s;
+    resize: vertical;
+    min-height: 90px;
+    font-family: inherit;
+    line-height: 1.6;
+  }
+  .ws-textarea:focus { border-color: var(--s0-accent); }
+  .ws-input::placeholder, .ws-textarea::placeholder { color: rgba(255,255,255,.25); }
+  input[type="date"].ws-input { color-scheme: dark; }
+
+  /* ── Vision cards (Being / Doing / Relationship) ── */
+  .vision-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+    margin-bottom: 1rem;
+  }
+  @media (max-width: 768px) { .vision-cards { grid-template-columns: 1fr; } }
+  .vision-card {
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--s0-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .card-being   { border-left: 3px solid var(--s0-being); }
+  .card-doing   { border-left: 3px solid var(--s0-doing); }
+  .card-relationship { border-left: 3px solid var(--s0-relationship); }
+  .vision-card-label {
+    font-size: .72rem;
+    font-weight: 800;
+    text-transform: uppercase;
+    letter-spacing: .07em;
+    margin-bottom: .3rem;
+  }
+  .lbl-being        { color: var(--s0-being); }
+  .lbl-doing        { color: var(--s0-doing); }
+  .lbl-relationship { color: var(--s0-relationship); }
+  .vision-card-q { font-size: .88rem; font-weight: 700; margin-bottom: .35rem; }
+  .vision-card-hint { font-size: .78rem; color: var(--s0-text2); margin-bottom: .75rem; line-height: 1.5; }
+
+  /* ── RPM cards ── */
+  .rpm-cards {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 1rem;
+  }
+  @media (max-width: 768px) { .rpm-cards { grid-template-columns: 1fr; } }
+  .rpm-card {
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--s0-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+  }
+  .rpm-r { border-top: 3px solid var(--s0-rpm-r); }
+  .rpm-p { border-top: 3px solid var(--s0-rpm-p); }
+  .rpm-m { border-top: 3px solid var(--s0-rpm-m); }
+  .rpm-label { font-size: .72rem; font-weight: 800; text-transform: uppercase; letter-spacing: .07em; margin-bottom: .25rem; }
+  .rpm-label-r { color: var(--s0-rpm-r); }
+  .rpm-label-p { color: var(--s0-rpm-p); }
+  .rpm-label-m { color: var(--s0-rpm-m); }
+  .rpm-title { font-size: .9rem; font-weight: 700; margin-bottom: .35rem; }
+  .rpm-hint  { font-size: .78rem; color: var(--s0-text2); margin-bottom: .75rem; line-height: 1.5; }
+
+  /* ── Daily 5 cards ── */
+  .daily5-grid {
+    display: grid;
+    grid-template-columns: repeat(2, 1fr);
+    gap: .75rem;
+  }
+  @media (max-width: 600px) { .daily5-grid { grid-template-columns: 1fr; } }
+  .daily5-card {
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--s0-border);
+    border-radius: 10px;
+    padding: 1rem;
+  }
+  .daily5-num {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 22px;
+    height: 22px;
+    border-radius: 50%;
+    background: var(--s0-accent);
+    color: #fff;
+    font-size: .7rem;
+    font-weight: 800;
+    margin-bottom: .5rem;
+  }
+  .daily5-cat { font-size: .72rem; font-weight: 700; color: var(--s0-text2); text-transform: uppercase; letter-spacing: .05em; margin-bottom: .25rem; }
+  .daily5-q   { font-size: .85rem; font-weight: 600; margin-bottom: .5rem; }
+
+  /* ── Vision preview ── */
+  .vision-preview {
+    background: linear-gradient(135deg, rgba(79,124,255,.1), rgba(155,124,255,.1));
+    border: 1px solid rgba(79,124,255,.3);
+    border-radius: 12px;
+    padding: 1.5rem 2rem;
+    margin-top: 1.25rem;
+    font-size: 1.05rem;
+    line-height: 1.9;
+    font-style: italic;
+    color: #d0d5f0;
+    min-height: 80px;
+    word-break: break-all;
+  }
+
+  /* ── Misc ── */
+  .s0-warn {
+    background: rgba(240,160,64,.08);
+    border: 1px solid rgba(240,160,64,.25);
+    border-radius: 8px;
+    padding: .75rem 1rem;
+    font-size: .82rem;
+    color: #f0a040;
+    margin-top: .75rem;
+  }
+  .s0-theory {
+    background: rgba(255,255,255,.03);
+    border: 1px solid var(--s0-border);
+    border-radius: 8px;
+    overflow: hidden;
+    margin-bottom: 1.25rem;
+  }
+  .s0-theory-toggle {
+    width: 100%;
+    background: none;
+    border: none;
+    color: var(--s0-text2);
+    font-size: .85rem;
+    font-weight: 600;
+    padding: .85rem 1.1rem;
+    text-align: left;
+    cursor: pointer;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    font-family: inherit;
+  }
+  .s0-theory-body { display: none; padding: 0 1.1rem 1rem; font-size: .85rem; color: var(--s0-text2); line-height: 1.8; }
+  .s0-theory.open .s0-theory-body { display: block; }
+  .s0-theory.open .theory-arrow { transform: rotate(180deg); }
+  .theory-arrow { transition: transform .3s; }
+  .copy-btn {
+    margin-top: .75rem;
+    background: rgba(79,124,255,.15);
+    border: 1px solid rgba(79,124,255,.3);
+    border-radius: 8px;
+    color: #7aabff;
+    font-size: .82rem;
+    font-weight: 600;
+    padding: .5rem 1rem;
+    cursor: pointer;
+    font-family: inherit;
+    transition: background .2s;
+  }
+  .copy-btn:hover { background: rgba(79,124,255,.25); }
+  .step-num-badge {
+    display: inline-flex;
+    align-items: center;
+    gap: .5rem;
+    background: rgba(255,255,255,.04);
+    border: 1px solid var(--s0-border);
+    border-radius: 20px;
+    padding: .3rem .9rem;
+    font-size: .78rem;
+    font-weight: 700;
+    color: var(--s0-text2);
+    margin-bottom: .75rem;
+  }
+  .goal-step {
+    border: 1px solid var(--s0-border);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+    background: rgba(255,255,255,.02);
+  }
+  .goal-step-title { font-size: .9rem; font-weight: 800; margin-bottom: .75rem; display: flex; align-items: center; gap: .5rem; }
+  .daily2-card {
+    background: rgba(240,160,64,.06);
+    border: 1px solid rgba(240,160,64,.2);
+    border-radius: 10px;
+    padding: 1rem;
+    margin-top: 1rem;
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<!-- Progress bar -->
+<div class="s0-progress">
+  <div class="s0-progress-label" id="progressLabel">0 / 7 セクション完了</div>
+  <div class="s0-progress-bar">
+    <div class="s0-progress-fill" id="progressFill" style="width:0%"></div>
+  </div>
+</div>
+
+<div class="container">
+  <div class="s0-page">
+
+    <!-- Hero -->
+    <div style="padding: 2.5rem 0 1rem;">
+      <div style="font-size:.8rem;font-weight:700;color:var(--s0-accent);text-transform:uppercase;letter-spacing:.08em;margin-bottom:.75rem;">Step 0</div>
+      <h1 style="font-size:clamp(1.6rem,4vw,2.4rem);font-weight:900;line-height:1.2;margin-bottom:.75rem;">ビジョン・目標設計</h1>
+      <p style="color:var(--s0-text2);font-size:.95rem;line-height:1.7;max-width:540px;">数字より先に「在り方」を決める。ゴールより先にビジョンを描く。このワークシートが、あなたの羅針盤になる。</p>
+    </div>
+
+    <!-- Mode toggle -->
+    <div class="s0-mode-toggle">
+      <button class="s0-mode-btn active" id="btn-player" onclick="setMode('player')">⚾ 選手モード</button>
+      <button class="s0-mode-btn" id="btn-coach" onclick="setMode('coach')">📋 指導者モード</button>
+    </div>
+
+    <!-- Age tabs -->
+    <div class="age-tabs">
+      <button class="age-tab" onclick="setAge('elementary')">小学生</button>
+      <button class="age-tab" onclick="setAge('middle')">中学生</button>
+      <button class="age-tab active" onclick="setAge('high')">高校生〜大学生</button>
+      <button class="age-tab" onclick="setAge('adult')">社会人・大人</button>
+    </div>
+
+    <!-- ─────────────────────────────────────────── -->
+    <!-- [1] イントロ／問いかけ -->
+    <!-- ─────────────────────────────────────────── -->
+    <div class="s0-section" data-section="1">
+      <div class="s0-section-num">1</div>
+      <div class="s0-section-title">ゴールより先に、ビジョンを考える。</div>
+
+      <div class="s0-section-desc" id="intro-desc-player">
+        「バットスピードを上げたい」「球速を上げたい」——<br>
+        その前に、もっと大切なことがある。<br><br>
+        どんな状態でプレーしていたいか。どんな感情の中で野球をしていたいか。<br>
+        ビジョンが明確になると、ゴールは自然に生まれる。
+      </div>
+      <div class="s0-section-desc" id="intro-desc-coach" style="display:none;">
+        「練習メニューを変えたい」「試合に勝ちたい」——<br>
+        その前に、もっと大切なことがある。<br><br>
+        どんな指導者でいたいか。選手にどんな影響を与えたいか。<br>
+        ビジョンが明確になると、指導の軸が定まる。
+      </div>
+
+      <!-- 年代別Q1 -->
+      <div class="age-panel active" data-age="high,adult,middle">
+        <label class="ws-label" for="intro-q1">Q1: 最近、一番「やりきった」瞬間はいつ？</label>
+        <input class="ws-input" type="text" id="intro-q1"
+               placeholder="例：あの試合でホームランを打ったとき / あの練習で全部出し切ったとき">
+      </div>
+      <div class="age-panel" data-age="elementary">
+        <label class="ws-label" for="intro-q1-el">Q1: 最近、野球で一番楽しかったのはいつ？</label>
+        <input class="ws-input" type="text" id="intro-q1-el"
+               placeholder="例：ヒットを打ったとき / 友達と練習したとき">
+      </div>
+
+      <label class="ws-label" for="intro-q2">Q2: そのとき、どんな自分でいた？どんな感情だった？</label>
+      <textarea class="ws-textarea" id="intro-q2"
+                placeholder="例：自信満々だった / チームのために戦えた感じがした / 無心でプレーできた"></textarea>
+    </div>
+
+    <!-- ─────────────────────────────────────────── -->
+    <!-- [2] ビジョンを形作る3つの問い -->
+    <!-- ─────────────────────────────────────────── -->
+    <div class="s0-section" data-section="2">
+      <div class="s0-section-num">2</div>
+      <div class="s0-section-title">ビジョンを形作る3つの問い</div>
+      <div class="s0-section-desc">
+        「どんな選手になりたいか」ではなく、「どんな状態で野球をしていたいか」を考える。<br>
+        数字目標ではなく、在り方・行動・関係性から考えると、本物のビジョンが生まれる。
+      </div>
+
+      <!-- 小学生: シンプル版 -->
+      <div class="age-panel" data-age="elementary">
+        <label class="ws-label" for="being-el">どんな選手でいたい？（好きな選手みたいになりたい？）</label>
+        <textarea class="ws-textarea" id="being-el"
+                  placeholder="例：いつも元気で、チームを明るくできる選手でいたい"></textarea>
+      </div>
+
+      <!-- 中学生: Being + Doing -->
+      <div class="age-panel" data-age="middle">
+        <div class="vision-cards" style="grid-template-columns:1fr 1fr;">
+          <div class="vision-card card-being">
+            <div class="vision-card-label lbl-being">Being</div>
+            <div class="vision-card-q">3年後、どんな選手になっていたい？</div>
+            <div class="vision-card-hint">在り方・状態で答える</div>
+            <textarea class="ws-textarea" id="being-middle" rows="3"
+                      placeholder="例：どんな場面でも堂々とプレーできる選手"></textarea>
+          </div>
+          <div class="vision-card card-doing">
+            <div class="vision-card-label lbl-doing">Doing</div>
+            <div class="vision-card-q">チームにどんな貢献がしたい？</div>
+            <div class="vision-card-hint">行動・影響で答える</div>
+            <textarea class="ws-textarea" id="doing-middle" rows="3"
+                      placeholder="例：苦しい場面で打点を挙げられる存在になりたい"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 高校生〜 / 社会人: フル版 -->
+      <div class="age-panel active" data-age="high">
+        <div class="vision-cards">
+          <div class="vision-card card-being">
+            <div class="vision-card-label lbl-being">Being</div>
+            <div class="vision-card-q player-text">どんな状態で野球をしていたいか？</div>
+            <div class="vision-card-q coach-text" style="display:none;">どんな指導者でいたいか？</div>
+            <div class="vision-card-hint">肩書きや結果ではなく「在り方」として定義する</div>
+            <textarea class="ws-textarea" id="being-input" rows="3"
+                      placeholder="例：どんな状況でも自分のスイングを信じて打席に立てる選手でいたい"></textarea>
+          </div>
+          <div class="vision-card card-doing">
+            <div class="vision-card-label lbl-doing">Doing</div>
+            <div class="vision-card-q player-text">どんな意味ある成果を生みたいか？</div>
+            <div class="vision-card-q coach-text" style="display:none;">選手にどんな影響を与えたいか？</div>
+            <div class="vision-card-hint">自分の行動が周囲にどんな影響を与えたいかを考える</div>
+            <textarea class="ws-textarea" id="doing-input" rows="3"
+                      placeholder="例：チームが苦しいときに、自分のプレーで流れを変えられる存在になりたい"></textarea>
+          </div>
+          <div class="vision-card card-relationship">
+            <div class="vision-card-label lbl-relationship">Relationship</div>
+            <div class="vision-card-q">誰とどんな関係を築いていたいか？</div>
+            <div class="vision-card-hint">チームメイト・指導者・家族との関係の在り方</div>
+            <textarea class="ws-textarea" id="relationship-input" rows="3"
+                      placeholder="例：互いに高め合える仲間と、本気で戦いたい"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <div class="age-panel" data-age="adult">
+        <div class="vision-cards">
+          <div class="vision-card card-being">
+            <div class="vision-card-label lbl-being">Being</div>
+            <div class="vision-card-q player-text">野球と仕事、両方でどんな自分でいたいか？</div>
+            <div class="vision-card-q coach-text" style="display:none;">どんな指導者・大人でいたいか？</div>
+            <div class="vision-card-hint">在り方・状態で定義する</div>
+            <textarea class="ws-textarea" id="being-adult" rows="3"
+                      placeholder="例：仕事でもグラウンドでも、本気でいられる自分でいたい"></textarea>
+          </div>
+          <div class="vision-card card-doing">
+            <div class="vision-card-label lbl-doing">Doing</div>
+            <div class="vision-card-q">どんな成果・影響を生みたいか？</div>
+            <div class="vision-card-hint">行動・影響で考える</div>
+            <textarea class="ws-textarea" id="doing-adult" rows="3"
+                      placeholder="例：若い選手に「野球っておもしろい」と感じさせる存在になりたい"></textarea>
+          </div>
+          <div class="vision-card card-relationship">
+            <div class="vision-card-label lbl-relationship">Relationship</div>
+            <div class="vision-card-q">誰とどんな関係を築いていたいか？</div>
+            <div class="vision-card-hint">仕事・家族・チーム全体で考える</div>
+            <textarea class="ws-textarea" id="relationship-adult" rows="3"
+                      placeholder="例：家族に「野球をやっていてよかった」と思える姿を見せたい"></textarea>
+          </div>
+        </div>
+        <!-- Not-To-Do (社会人追加) -->
+        <label class="ws-label" for="not-todo">Not-To-Do（やらないこと3つ）</label>
+        <textarea class="ws-textarea" id="not-todo" rows="3"
+                  placeholder="例：夜中のスマホ / 体に悪い食事を続ける / 言い訳を考える時間"></textarea>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────── -->
+    <!-- [3] アイデンティティの言語化 -->
+    <!-- ─────────────────────────────────────────── -->
+    <div class="s0-section" data-section="3">
+      <div class="s0-section-num">3</div>
+      <div class="s0-section-title">アイデンティティを言語化する</div>
+      <div class="s0-section-desc">
+        「今の立場」ではなく「存在（Being）」から自分を定義すること。<br>
+        肩書きを外して、「自分は何者であるか」を自分で決める。
+      </div>
+
+      <!-- 小学生: なし（シンプルメッセージのみ） -->
+      <div class="age-panel" data-age="elementary">
+        <div style="background:rgba(79,124,255,.08);border:1px solid rgba(79,124,255,.2);border-radius:10px;padding:1rem 1.25rem;font-size:.9rem;color:#8ab4f8;">
+          「どんな選手でいたい？」の答えが、きみのアイデンティティ。さっき書いたことを大切にしよう！
+        </div>
+      </div>
+
+      <!-- 中学生〜: フル版 -->
+      <div class="age-panel active" data-age="middle,high,adult">
+        <label class="ws-label" for="identity-title">今の「肩書き」を書いてみよう（ポジション・学年など）</label>
+        <input class="ws-input" type="text" id="identity-title"
+               placeholder="例：高校2年生のセンター / 中学野球部の監督">
+
+        <label class="ws-label" for="identity-being">その肩書きを「外して」、Being として定義し直す</label>
+        <div style="font-size:.8rem;color:var(--s0-text2);margin-bottom:.5rem;">「〇〇という結果を出せる人」ではなく「〇〇な状態でいる人」として書く</div>
+        <textarea class="ws-textarea" id="identity-being"
+                  placeholder="例：どんな場面でも平常心でいられる選手 / 選手の言葉に本気で向き合う指導者"></textarea>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────── -->
+    <!-- [4] ビジョンを一文にまとめる -->
+    <!-- ─────────────────────────────────────────── -->
+    <div class="s0-section" data-section="4">
+      <div class="s0-section-num">4</div>
+      <div class="s0-section-title">ビジョンを一文にまとめる</div>
+      <div class="s0-section-desc">
+        ここまで考えてきた Being・Doing・Relationship を、1つの文にまとめる。<br>
+        これがあなたのアイデンティティ宣言になる。スランプのとき、迷ったとき、この一文に立ち返る。
+      </div>
+
+      <!-- 小学生: なし -->
+      <div class="age-panel" data-age="elementary">
+        <label class="ws-label" for="vision-simple-el">「ぼく（わたし）は〇〇な選手だ！」を書いてみよう</label>
+        <input class="ws-input" type="text" id="vision-simple-el" placeholder="例：ぼくはチームを元気にできる選手だ！">
+        <div class="vision-preview" id="preview-el"></div>
+      </div>
+
+      <!-- 中学生: Being のみ -->
+      <div class="age-panel" data-age="middle">
+        <label class="ws-label" for="vision-middle">在り方宣言を1文で書く</label>
+        <textarea class="ws-textarea" id="vision-middle" rows="2"
+                  placeholder="例：私は、どんな場面でも堂々とプレーできる選手である。"></textarea>
+        <div class="vision-preview" id="preview-middle"></div>
+        <button class="copy-btn" onclick="copyText('vision-middle')">📋 コピーする</button>
+      </div>
+
+      <!-- 高校生〜: フルテンプレート -->
+      <div class="age-panel active" data-age="high,adult">
+        <div style="background:rgba(255,255,255,.03);border:1px solid var(--s0-border);border-radius:12px;padding:1.25rem;line-height:2.2;font-size:.95rem;">
+          「私は、
+          <input class="ws-input" type="text" id="vision-being" style="display:inline;width:auto;min-width:180px;margin:0 .4rem;"
+                 placeholder="Being（在り方）">
+          で、
+          <input class="ws-input" type="text" id="vision-doing" style="display:inline;width:auto;min-width:180px;margin:0 .4rem;"
+                 placeholder="Doing（成果・行動）">
+          を通じて、
+          <input class="ws-input" type="text" id="vision-relationship" style="display:inline;width:auto;min-width:180px;margin:0 .4rem;"
+                 placeholder="Relationship（関係性）">
+          を築く<span class="player-text">選手</span><span class="coach-text" style="display:none;">指導者</span>である。」
+        </div>
+        <div class="vision-preview" id="preview-full" style="margin-top:1rem;"></div>
+        <button class="copy-btn" onclick="copyVision()">📋 コピーする</button>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────── -->
+    <!-- [5] ゴール設計 -->
+    <!-- ─────────────────────────────────────────── -->
+    <div class="s0-section" data-section="5">
+      <div class="s0-section-num">5</div>
+      <div class="s0-section-title">ビジョンを実現可能な形にする</div>
+      <div class="s0-section-desc">
+        ビジョンが描けたら、次はそれを「いつまでに・どんな状態になるか」に落とし込む。
+      </div>
+
+      <!-- 小学生: 今週チャレンジ -->
+      <div class="age-panel" data-age="elementary">
+        <label class="ws-label" for="goal-el">今週のチャレンジを1つ決めよう！</label>
+        <input class="ws-input" type="text" id="goal-el" placeholder="例：毎日素振り30回する">
+      </div>
+
+      <!-- 中学生〜共通: 90日ゴール -->
+      <div class="age-panel active" data-age="middle,high,adult">
+
+        <!-- ステップ① 1年後 -->
+        <div class="age-panel active" data-age="high,adult">
+          <div class="goal-step">
+            <div class="goal-step-title">
+              <span style="background:var(--s0-goal);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;">①</span>
+              1年後の理想の状態（1年ゴール）
+            </div>
+            <label class="ws-label" for="goal-1y-state">1年後、どんな状態で野球をしていたい？</label>
+            <textarea class="ws-textarea" id="goal-1y-state" rows="2"
+                      placeholder="例：自分のスイングに完全に自信を持って打席に立っている"></textarea>
+            <label class="ws-label" for="goal-1y-num">その状態を数値で表すとしたら？（任意）</label>
+            <input class="ws-input" type="text" id="goal-1y-num"
+                   placeholder="例：打率.330 / バットスピード 120km/h / 球速 140km/h">
+          </div>
+        </div>
+
+        <!-- ステップ② 90日ゴール -->
+        <div class="goal-step">
+          <div class="goal-step-title">
+            <span style="background:var(--s0-goal);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;">②</span>
+            最初の到達点（90日ゴール）
+          </div>
+          <div style="font-size:.82rem;color:var(--s0-text2);margin-bottom:.75rem;line-height:1.6;">90日（約13週）は、習慣化に必要な66日を超える最小単位。【日付＋数値＋状態】の3セットで設定する。</div>
+
+          <label class="ws-label" for="goal-date">90日後の日付</label>
+          <input class="ws-input" type="date" id="goal-date">
+
+          <label class="ws-label" for="goal-90-num">数値目標</label>
+          <input class="ws-input" type="text" id="goal-90-num"
+                 placeholder="例：バットスピード ＋6km/h / 球速 ＋5km/h">
+
+          <label class="ws-label" for="goal-90-state">状態目標</label>
+          <textarea class="ws-textarea" id="goal-90-state" rows="2"
+                    placeholder="例：自分のフォームに迷いなく取り組める状態"></textarea>
+          <div class="s0-warn">⚠️ 「上手くなる」「頑張る」はNGです。測定できる形で書きましょう。</div>
+        </div>
+
+        <!-- ステップ③ プロジェクト -->
+        <div class="goal-step">
+          <div class="goal-step-title">
+            <span style="background:var(--s0-goal);color:#fff;border-radius:50%;width:22px;height:22px;display:inline-flex;align-items:center;justify-content:center;font-size:.72rem;font-weight:800;">③</span>
+            ゴールを実現するための「意味あるプロジェクト」
+          </div>
+          <div style="font-size:.82rem;color:var(--s0-text2);margin-bottom:.75rem;">1〜3つに絞る。多すぎると全部が中途半端になる。</div>
+          <label class="ws-label" for="proj-1">プロジェクト1</label>
+          <input class="ws-input" type="text" id="proj-1" placeholder="例：毎週RDLを3回やり続ける">
+          <label class="ws-label" for="proj-2">プロジェクト2</label>
+          <input class="ws-input" type="text" id="proj-2" placeholder="例：週1回Blast Motionで数値を記録する">
+          <label class="ws-label" for="proj-3">プロジェクト3（任意）</label>
+          <input class="ws-input" type="text" id="proj-3" placeholder="">
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────── -->
+    <!-- [6] RPMフレームワーク -->
+    <!-- ─────────────────────────────────────────── -->
+    <div class="s0-section" data-section="6">
+      <div class="s0-section-num">6</div>
+      <div class="s0-section-title">実現するための行動設計（RPM）</div>
+      <div class="s0-section-desc">意志力に頼らず「構造」で動ける状態をつくる。</div>
+
+      <!-- 理論折りたたみ -->
+      <div class="s0-theory">
+        <button class="s0-theory-toggle" onclick="this.closest('.s0-theory').classList.toggle('open')">
+          ▶ なぜ「やる気」に頼るのは危険か？
+          <span class="theory-arrow">▼</span>
+        </button>
+        <div class="s0-theory-body">
+          意志力は有限（Baumeister & Tierney）。消耗するほど判断力が落ちる。<br>
+          「やる気が出たらやる」設計は必ず崩れる。だから行動を「構造」に変換する必要がある。<br>
+          RPMとは、Result（結果）・Purpose（目的）・Map（行動計画）の3つで設計する手法。
+        </div>
+      </div>
+
+      <!-- 小学生: 今週チャレンジ1つ -->
+      <div class="age-panel" data-age="elementary">
+        <label class="ws-label" for="rpm-el">今週チャレンジすること（1つ）</label>
+        <input class="ws-input" type="text" id="rpm-el" placeholder="例：毎日キャッチボールを20回する">
+      </div>
+
+      <!-- 中学生: R + M のみ -->
+      <div class="age-panel" data-age="middle">
+        <div class="rpm-cards" style="grid-template-columns:1fr 1fr;">
+          <div class="rpm-card rpm-r">
+            <div class="rpm-label rpm-label-r">R — Result</div>
+            <div class="rpm-title">得たい結果（数値で）</div>
+            <textarea class="ws-textarea" id="rpm-r-middle" rows="3"
+                      placeholder="例：90日でバットスピード ＋5km/h"></textarea>
+          </div>
+          <div class="rpm-card rpm-m">
+            <div class="rpm-label rpm-label-m">M — Map</div>
+            <div class="rpm-title">毎週やること（具体的行動）</div>
+            <textarea class="ws-textarea" id="rpm-m-middle" rows="3"
+                      placeholder="例：週3回RDL（月水金）"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 高校生〜大学生: RPM フル -->
+      <div class="age-panel active" data-age="high">
+        <div class="rpm-cards">
+          <div class="rpm-card rpm-r">
+            <div class="rpm-label rpm-label-r">R — Result</div>
+            <div class="rpm-title">得たい結果</div>
+            <div class="rpm-hint">90日で手に入れたい結果を数値で</div>
+            <textarea class="ws-textarea" id="rpm-r-high" rows="3"
+                      placeholder="例：バットスピード ＋6km/h（90日後の〇月〇日までに）"></textarea>
+          </div>
+          <div class="rpm-card rpm-p">
+            <div class="rpm-label rpm-label-p">P — Purpose</div>
+            <div class="rpm-title">なぜそれが重要か</div>
+            <div class="rpm-hint">Purposeが明確なほど困難なときも動き続けられる</div>
+            <textarea class="ws-textarea" id="rpm-p-high" rows="3"
+                      placeholder="例：長打力がOPSを決定するから / チームの4番として貢献したいから"></textarea>
+          </div>
+          <div class="rpm-card rpm-m">
+            <div class="rpm-label rpm-label-m">M — Map</div>
+            <div class="rpm-title">毎週やること（具体的行動）</div>
+            <div class="rpm-hint">「頑張る」はMapではない。具体的な曜日・回数で書く</div>
+            <textarea class="ws-textarea" id="rpm-m-high" rows="3"
+                      placeholder="例：週3回RDL（月水金）、週1回BLAST測定（土曜朝）"></textarea>
+          </div>
+        </div>
+      </div>
+
+      <!-- 社会人: RPM + Not-To-Do -->
+      <div class="age-panel" data-age="adult">
+        <div class="rpm-cards">
+          <div class="rpm-card rpm-r">
+            <div class="rpm-label rpm-label-r">R — Result</div>
+            <div class="rpm-title">得たい結果（数値で）</div>
+            <textarea class="ws-textarea" id="rpm-r-adult" rows="3"
+                      placeholder="例：バットスピード ＋6km/h（90日後までに）"></textarea>
+          </div>
+          <div class="rpm-card rpm-p">
+            <div class="rpm-label rpm-label-p">P — Purpose</div>
+            <div class="rpm-title">なぜそれが重要か</div>
+            <textarea class="ws-textarea" id="rpm-p-adult" rows="3"
+                      placeholder="例：子供に本気でやり続ける姿を見せたいから"></textarea>
+          </div>
+          <div class="rpm-card rpm-m">
+            <div class="rpm-label rpm-label-m">M — Map</div>
+            <div class="rpm-title">毎週やること（具体的行動）</div>
+            <textarea class="ws-textarea" id="rpm-m-adult" rows="3"
+                      placeholder="例：週2回RDL（火・木の朝）、週1回フォーム動画確認"></textarea>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <!-- ─────────────────────────────────────────── -->
+    <!-- [7] Daily 5 × MIT -->
+    <!-- ─────────────────────────────────────────── -->
+    <div class="s0-section" data-section="7">
+      <div class="s0-section-num">7</div>
+      <div class="s0-section-title">今日の行動設計（Daily 5 × MIT）</div>
+      <div class="s0-section-desc">
+        ゴールを「今日の行動」に翻訳する。5つに絞って、MIT（最重要タスク）を朝一番に置く。
+      </div>
+
+      <!-- 小学生: 今週チャレンジ1つ -->
+      <div class="age-panel" data-age="elementary">
+        <label class="ws-label" for="daily-el">今日、一番やること（1つ）</label>
+        <input class="ws-input" type="text" id="daily-el" placeholder="例：ティーバッティング10分">
+      </div>
+
+      <!-- 中学生: Daily 2〜3 -->
+      <div class="age-panel" data-age="middle">
+        <label class="ws-label" for="mit-middle">今日のMIT（いちばん重要な1つ）</label>
+        <input class="ws-input" type="text" id="mit-middle" placeholder="例：スクワット3セット">
+        <label class="ws-label" for="daily2-middle">今日の技術練習</label>
+        <input class="ws-input" type="text" id="daily2-middle" placeholder="例：素振り50回">
+        <label class="ws-label" for="daily3-middle">今日の回復</label>
+        <input class="ws-input" type="text" id="daily3-middle" placeholder="例：22時に寝る">
+      </div>
+
+      <!-- 高校生〜大学生 / 社会人: Daily 5 フル -->
+      <div class="age-panel active" data-age="high,adult">
+        <!-- MIT -->
+        <div style="background:rgba(79,124,255,.08);border:1px solid rgba(79,124,255,.25);border-radius:10px;padding:1.25rem;margin-bottom:1rem;">
+          <div style="font-size:.78rem;font-weight:800;color:var(--s0-accent);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.35rem;">MIT — Most Important Task</div>
+          <div style="font-size:.85rem;color:var(--s0-text2);margin-bottom:.75rem;">今日、いちばん重要な「1つだけ」を決める。これが完了すれば今日は合格。朝一番に置くこと。</div>
+          <label class="ws-label" for="mit-high">今日のMIT</label>
+          <input class="ws-input" type="text" id="mit-high"
+                 placeholder="例：朝練の最初20分でティーバッティングのインパクトの形を固める">
+        </div>
+
+        <!-- Daily 5 -->
+        <div class="daily5-grid">
+          <div class="daily5-card">
+            <div class="daily5-num">1</div>
+            <div class="daily5-cat">技術・スキル</div>
+            <div class="daily5-q">今日の技術練習</div>
+            <textarea class="ws-textarea" id="d5-skill" rows="2"
+                      placeholder="例：ティーバッティング20分"></textarea>
+          </div>
+          <div class="daily5-card">
+            <div class="daily5-num">2</div>
+            <div class="daily5-cat">フィジカル</div>
+            <div class="daily5-q">今日のフィジカル</div>
+            <textarea class="ws-textarea" id="d5-physical" rows="2"
+                      placeholder="例：RDL 3セット"></textarea>
+          </div>
+          <div class="daily5-card">
+            <div class="daily5-num">3</div>
+            <div class="daily5-cat">身体・回復</div>
+            <div class="daily5-q">睡眠・食事・回復</div>
+            <textarea class="ws-textarea" id="d5-body" rows="2"
+                      placeholder="例：22時就寝、プロテイン摂取"></textarea>
+          </div>
+          <div class="daily5-card">
+            <div class="daily5-num">4</div>
+            <div class="daily5-cat">人間関係</div>
+            <div class="daily5-q">今日の関係性行動</div>
+            <textarea class="ws-textarea" id="d5-relation" rows="2"
+                      placeholder="例：先輩に感謝を伝える"></textarea>
+          </div>
+          <div class="daily5-card" style="grid-column: span 2;">
+            <div class="daily5-num">5</div>
+            <div class="daily5-cat">精神・振り返り</div>
+            <div class="daily5-q">振り返り・セルフトーク</div>
+            <textarea class="ws-textarea" id="d5-mind" rows="2"
+                      placeholder="例：練習後に「良かった1つ・直す1つ」を書く"></textarea>
+          </div>
+        </div>
+
+        <!-- Daily 2 -->
+        <div class="daily2-card">
+          <div style="font-size:.82rem;font-weight:700;color:#f0a040;margin-bottom:.6rem;">今日はきつい…という日は Daily 2 だけでOK。</div>
+          <label class="ws-label" for="d2-must">今日絶対やること</label>
+          <input class="ws-input" type="text" id="d2-must" placeholder="例：素振り10分だけ">
+          <label class="ws-label" for="d2-recover">今日の回復（睡眠・栄養）</label>
+          <input class="ws-input" type="text" id="d2-recover" placeholder="例：22時就寝、しっかり食べる">
+        </div>
+
+        <!-- プレビュー -->
+        <div style="margin-top:1.5rem;background:rgba(255,255,255,.03);border:1px solid var(--s0-border);border-radius:10px;padding:1.25rem;">
+          <div style="font-size:.8rem;font-weight:700;color:var(--s0-text2);text-transform:uppercase;letter-spacing:.05em;margin-bottom:.75rem;">📋 今日の行動計画プレビュー</div>
+          <div id="daily-preview" style="font-size:.85rem;line-height:2;color:#d0d5f0;white-space:pre-wrap;min-height:40px;"></div>
+          <button class="copy-btn" onclick="copyDaily()">📋 コピーする</button>
+        </div>
+      </div>
+    </div>
+
+    <!-- Back to dashboard -->
+    <div style="margin-top:1rem;">
+      <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
+    </div>
+
+  </div><!-- /s0-page -->
+</div><!-- /container -->
+
+<script>
+// ── Mode (player / coach) ──
+let currentMode = 'player';
+function setMode(mode) {
+  currentMode = mode;
+  document.getElementById('btn-player').classList.toggle('active', mode === 'player');
+  document.getElementById('btn-coach').classList.toggle('active', mode === 'coach');
+  document.querySelectorAll('.player-text').forEach(el => el.style.display = mode === 'player' ? '' : 'none');
+  document.querySelectorAll('.coach-text').forEach(el => el.style.display = mode === 'coach' ? '' : 'none');
+  document.getElementById('intro-desc-player').style.display = mode === 'player' ? '' : 'none';
+  document.getElementById('intro-desc-coach').style.display = mode === 'coach' ? '' : 'none';
+  saveInput('mode', mode);
+  updateVisionPreview();
+}
+
+// ── Age tabs ──
+let currentAge = 'high';
+const AGE_MAP = { elementary: ['elementary'], middle: ['middle'], high: ['high'], adult: ['adult'] };
+
+function setAge(age) {
+  currentAge = age;
+  document.querySelectorAll('.age-tab').forEach(t => t.classList.remove('active'));
+  event.target.classList.add('active');
+
+  document.querySelectorAll('.age-panel').forEach(panel => {
+    const ages = panel.dataset.age ? panel.dataset.age.split(',').map(s => s.trim()) : [];
+    panel.classList.toggle('active', ages.includes(age));
+  });
+  saveInput('age', age);
+}
+
+// ── Auto-fill: [2] → [4] ──
+function wire(srcId, dstId) {
+  const src = document.getElementById(srcId);
+  const dst = document.getElementById(dstId);
+  if (!src || !dst) return;
+  src.addEventListener('input', () => { dst.value = src.value; updateVisionPreview(); });
+}
+wire('being-input', 'vision-being');
+wire('doing-input', 'vision-doing');
+wire('relationship-input', 'vision-relationship');
+
+// ── Vision preview ──
+function updateVisionPreview() {
+  const b = (document.getElementById('vision-being') || {}).value || '';
+  const d = (document.getElementById('vision-doing') || {}).value || '';
+  const r = (document.getElementById('vision-relationship') || {}).value || '';
+  const role = currentMode === 'coach' ? '指導者' : '選手';
+  const preview = document.getElementById('preview-full');
+  if (preview) {
+    if (b || d || r) {
+      preview.textContent = `「私は、${b || '___'}で、${d || '___'}を通じて、${r || '___'}を築く${role}である。」`;
+    } else {
+      preview.textContent = '';
+    }
+  }
+  // 中学生プレビュー
+  const m = (document.getElementById('vision-middle') || {}).value || '';
+  const pm = document.getElementById('preview-middle');
+  if (pm && m) pm.textContent = m;
+  // 小学生プレビュー
+  const el = (document.getElementById('vision-simple-el') || {}).value || '';
+  const pel = document.getElementById('preview-el');
+  if (pel && el) pel.textContent = el;
+}
+
+// 各インプットにリスナー
+['vision-being','vision-doing','vision-relationship','vision-middle','vision-simple-el'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updateVisionPreview);
+});
+
+// ── 90日後の日付自動計算 ──
+(function() {
+  const dateInput = document.getElementById('goal-date');
+  if (!dateInput) return;
+  const saved = loadInput('goal-date');
+  if (saved) {
+    dateInput.value = saved;
+  } else {
+    const today = new Date();
+    today.setDate(today.getDate() + 90);
+    dateInput.valueAsDate = today;
+  }
+})();
+
+// ── Daily preview ──
+function updateDailyPreview() {
+  const mit = (document.getElementById('mit-high') || {}).value || '';
+  const skill = (document.getElementById('d5-skill') || {}).value || '';
+  const physical = (document.getElementById('d5-physical') || {}).value || '';
+  const body = (document.getElementById('d5-body') || {}).value || '';
+  const relation = (document.getElementById('d5-relation') || {}).value || '';
+  const mind = (document.getElementById('d5-mind') || {}).value || '';
+  const preview = document.getElementById('daily-preview');
+  if (!preview) return;
+  let text = '';
+  if (mit) text += `【MIT】${mit}\n`;
+  if (skill) text += `1. 技術: ${skill}\n`;
+  if (physical) text += `2. フィジカル: ${physical}\n`;
+  if (body) text += `3. 回復: ${body}\n`;
+  if (relation) text += `4. 関係性: ${relation}\n`;
+  if (mind) text += `5. 振り返り: ${mind}`;
+  preview.textContent = text;
+}
+['mit-high','d5-skill','d5-physical','d5-body','d5-relation','d5-mind'].forEach(id => {
+  const el = document.getElementById(id);
+  if (el) el.addEventListener('input', updateDailyPreview);
+});
+
+// ── Copy functions ──
+function copyText(id) {
+  const el = document.getElementById(id);
+  if (el) { navigator.clipboard.writeText(el.value).then(() => alert('コピーしました！')); }
+}
+function copyVision() {
+  const preview = document.getElementById('preview-full');
+  if (preview && preview.textContent) {
+    navigator.clipboard.writeText(preview.textContent).then(() => alert('コピーしました！'));
+  }
+}
+function copyDaily() {
+  const preview = document.getElementById('daily-preview');
+  if (preview && preview.textContent) {
+    navigator.clipboard.writeText(preview.textContent).then(() => alert('コピーしました！'));
+  }
+}
+
+// ── localStorage ──
+function saveInput(key, value) { try { localStorage.setItem('ipb_step0_' + key, value); } catch(e) {} }
+function loadInput(key) { try { return localStorage.getItem('ipb_step0_' + key) || ''; } catch(e) { return ''; } }
+
+function initStorage() {
+  document.querySelectorAll('textarea, input[type="text"], input[type="date"]').forEach(el => {
+    if (!el.id) return;
+    const saved = loadInput(el.id);
+    if (saved) el.value = saved;
+    el.addEventListener('input', () => saveInput(el.id, el.value));
+  });
+  // モード・年代の復元
+  const savedMode = loadInput('mode');
+  if (savedMode === 'coach') setMode('coach');
+  const savedAge = loadInput('age');
+  if (savedAge && savedAge !== 'high') {
+    const tab = document.querySelector(`.age-tab[onclick="setAge('${savedAge}')"]`);
+    if (tab) tab.click();
+  }
+  updateVisionPreview();
+  updateDailyPreview();
+}
+
+// ── Progress indicator ──
+function updateProgress() {
+  const sections = document.querySelectorAll('.s0-section[data-section]');
+  let completed = 0;
+  sections.forEach(sec => {
+    const inputs = sec.querySelectorAll('textarea, input[type="text"]');
+    let hasInput = false;
+    inputs.forEach(inp => { if (inp.value.trim()) hasInput = true; });
+    if (hasInput) completed++;
+  });
+  const pct = Math.round((completed / sections.length) * 100);
+  const fill = document.getElementById('progressFill');
+  const label = document.getElementById('progressLabel');
+  if (fill) fill.style.width = pct + '%';
+  if (label) label.textContent = `${completed} / ${sections.length} セクション完了`;
+}
+
+document.querySelectorAll('textarea, input[type="text"]').forEach(el => {
+  el.addEventListener('input', updateProgress);
+});
+
+// ── Init ──
+document.addEventListener('DOMContentLoaded', () => {
+  initStorage();
+  updateProgress();
+});
+</script>
+{% endblock %}

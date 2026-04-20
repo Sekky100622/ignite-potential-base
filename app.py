@@ -1837,6 +1837,12 @@ def _save_program_drills(program_id, form):
         )
 
 
+@app.route('/step0')
+@login_required
+def step0():
+    return render_template('step0.html')
+
+
 if __name__ == '__main__':
     port = int(os.getenv('PORT', 5001))
     app.run(host='0.0.0.0', port=port, debug=os.getenv('FLASK_DEBUG', 'false').lower() == 'true')
