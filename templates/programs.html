@@ -1,0 +1,49 @@
+{% extends 'base.html' %}
+{% block title %}トレーニングプログラム | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>🗺 トレーニングプログラム</h1>
+    <p>目的別のドリルロードマップ。自分に合ったプログラムを選んで取り組もう。</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+    {% if programs %}
+    <div class="grid grid-3">
+      {% for prog in programs %}
+      <a href="{{ url_for('program_detail', program_id=prog.id) }}"
+         style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.75rem;display:block;text-decoration:none;color:inherit;transition:border-color .2s,transform .2s;"
+         onmouseover="this.style.borderColor='rgba(249,115,22,.4)';this.style.transform='translateY(-3px)'"
+         onmouseout="this.style.borderColor='rgba(255,255,255,.08)';this.style.transform='none'">
+        <div style="font-size:2.5rem;margin-bottom:.75rem;">🗺</div>
+        <div style="font-weight:800;font-size:1.05rem;margin-bottom:.5rem;line-height:1.4;">{{ prog.title }}</div>
+        {% if prog.target %}
+        <div style="display:inline-flex;align-items:center;gap:.35rem;background:rgba(249,115,22,.12);border:1px solid rgba(249,115,22,.25);color:var(--orange);padding:.25rem .75rem;border-radius:20px;font-size:.78rem;font-weight:600;margin-bottom:.75rem;">
+          👤 {{ prog.target }}
+        </div>
+        {% endif %}
+        {% if prog.description %}
+        <p style="color:var(--gray-400);font-size:.85rem;line-height:1.7;margin-top:.5rem;">
+          {{ prog.description[:100] }}{% if prog.description|length > 100 %}…{% endif %}
+        </p>
+        {% endif %}
+        <div style="margin-top:1.25rem;color:var(--orange);font-size:.8rem;font-weight:600;">プログラムを見る →</div>
+      </a>
+      {% endfor %}
+    </div>
+    {% else %}
+    <div style="text-align:center;padding:5rem 0;color:var(--gray-400);">
+      <div style="font-size:3rem;margin-bottom:1rem;">🗺</div>
+      <p>プログラムを準備中です。</p>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:2rem;">
+      <a href="{{ url_for('library') }}" class="btn btn-ghost btn-sm">← ドリルライブラリへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

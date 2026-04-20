@@ -1,0 +1,252 @@
+{% extends 'base.html' %}
+{% block title %}{% if edit %}プログラム編集{% else %}プログラム作成{% endif %} | Ignite Potential Base{% endblock %}
+
+{% block extra_head %}
+<style>
+  .drill-picker { display: grid; grid-template-columns: 1fr 1fr; gap: 1.5rem; }
+  @media (max-width: 768px) { .drill-picker { grid-template-columns: 1fr; } }
+  .drill-pool, .drill-selected {
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 10px;
+    padding: 1rem;
+    min-height: 300px;
+    max-height: 480px;
+    overflow-y: auto;
+  }
+  .drill-item {
+    display: flex;
+    align-items: center;
+    gap: .6rem;
+    padding: .5rem .75rem;
+    border-radius: 8px;
+    font-size: .875rem;
+    cursor: pointer;
+    border: 1px solid transparent;
+    margin-bottom: .3rem;
+    background: rgba(255,255,255,.03);
+    transition: background .15s;
+    user-select: none;
+  }
+  .drill-item:hover { background: rgba(249,115,22,.1); border-color: rgba(249,115,22,.25); }
+  .drill-item .cat { font-size: .7rem; color: var(--orange); }
+  .selected-item {
+    background: rgba(249,115,22,.08);
+    border: 1px solid rgba(249,115,22,.2);
+    border-radius: 10px;
+    padding: .75rem;
+    margin-bottom: .5rem;
+    cursor: grab;
+  }
+  .selected-item:active { cursor: grabbing; }
+  .selected-item.drag-over { border-color: var(--orange); background: rgba(249,115,22,.15); }
+  .selected-item input[type="hidden"] { display: none; }
+  .note-input {
+    width: 100%;
+    background: rgba(255,255,255,.06);
+    border: 1px solid rgba(255,255,255,.1);
+    border-radius: 6px;
+    color: var(--white);
+    font-size: .8rem;
+    padding: .4rem .6rem;
+    margin-top: .5rem;
+    resize: vertical;
+    outline: none;
+  }
+  .note-input:focus { border-color: var(--orange); }
+  .remove-btn {
+    background: none;
+    border: none;
+    color: var(--gray-400);
+    cursor: pointer;
+    font-size: .8rem;
+    padding: 0 .25rem;
+    margin-left: auto;
+    flex-shrink: 0;
+  }
+  .remove-btn:hover { color: #f87171; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>{% if edit %}✏️ プログラムを編集{% else %}➕ プログラムを作成{% endif %}</h1>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container" style="max-width:900px;">
+
+    {% if error %}
+    <div style="background:rgba(239,68,68,.1);border:1px solid rgba(239,68,68,.3);border-radius:8px;padding:.75rem 1rem;margin-bottom:1.25rem;color:#f87171;font-size:.875rem;">
+      {{ error }}
+    </div>
+    {% endif %}
+
+    <form method="POST" id="programForm">
+
+      <!-- 基本情報 -->
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.75rem;margin-bottom:1.5rem;">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:1.25rem;">基本情報</h3>
+        <div class="form-group">
+          <label class="form-label">タイトル *</label>
+          <input class="form-control" type="text" name="title" required
+                 value="{{ program.get('title','') }}" placeholder="例：バッティング基礎プログラム">
+        </div>
+        <div class="form-group">
+          <label class="form-label">対象選手</label>
+          <input class="form-control" type="text" name="target"
+                 value="{{ program.get('target','') }}" placeholder="例：バッティングを改善したい選手">
+        </div>
+        <div class="form-group">
+          <label class="form-label">説明・概要</label>
+          <textarea class="form-control" name="description" rows="3"
+                    placeholder="このプログラムの目的・内容を簡単に説明...">{{ program.get('description','') }}</textarea>
+        </div>
+        <div class="form-check">
+          <input type="checkbox" name="is_published" value="1" id="is_published"
+                 {% if program.get('is_published', True) %}checked{% endif %}>
+          <label for="is_published" style="cursor:pointer;">公開する</label>
+        </div>
+      </div>
+
+      <!-- ドリル選択 -->
+      <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.75rem;margin-bottom:1.5rem;">
+        <h3 style="font-size:1rem;font-weight:700;margin-bottom:.5rem;">ドリルの選択・並び替え</h3>
+        <p style="font-size:.8rem;color:var(--gray-400);margin-bottom:1rem;">左から追加 → 右でドラッグ並び替え。コーチメモも入力できます。</p>
+
+        <div class="drill-picker">
+          <!-- 左: 追加可能なドリル一覧 -->
+          <div>
+            <div style="font-size:.8rem;font-weight:700;color:var(--gray-400);margin-bottom:.5rem;">追加可能なドリル</div>
+            <input type="text" id="drillSearch" placeholder="ドリルを検索..."
+                   style="width:100%;background:rgba(255,255,255,.06);border:1px solid rgba(255,255,255,.12);border-radius:6px;color:var(--white);padding:.45rem .75rem;font-size:.8rem;outline:none;margin-bottom:.5rem;">
+            <div class="drill-pool" id="drillPool">
+              {% for d in all_drills %}
+              <div class="drill-item" data-id="{{ d.id }}" data-name="{{ d.name }}" data-cat="{{ d.category or '' }}"
+                   onclick="addDrill(this)">
+                <span style="flex:1;">{{ d.name }}</span>
+                {% if d.category %}<span class="cat">{{ d.category }}</span>{% endif %}
+                <span style="color:var(--orange);font-size:.8rem;">+</span>
+              </div>
+              {% endfor %}
+            </div>
+          </div>
+
+          <!-- 右: 選択済みドリル（並び替え可能） -->
+          <div>
+            <div style="font-size:.8rem;font-weight:700;color:var(--gray-400);margin-bottom:.5rem;">選択済み（ドラッグで順番変更）</div>
+            <div class="drill-selected" id="selectedList">
+              <!-- JS で動的に追加 -->
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- hidden inputs は JS が submit 時に生成 -->
+      <div id="hiddenInputs"></div>
+
+      <div style="display:flex;gap:.75rem;flex-wrap:wrap;">
+        <button type="submit" class="btn btn-primary">{% if edit %}更新する{% else %}作成する{% endif %}</button>
+        <a href="{{ url_for('admin_programs') }}" class="btn btn-ghost">キャンセル</a>
+      </div>
+    </form>
+  </div>
+</section>
+
+<script>
+// 既存ステップデータ（編集時）
+const existingSteps = {{ existing_steps | tojson if existing_steps is defined else '[]' }};
+
+const selectedList = document.getElementById('selectedList');
+const hiddenInputs = document.getElementById('hiddenInputs');
+
+// ── Drag & Drop ──
+let dragging = null;
+function setupDrag(el) {
+  el.setAttribute('draggable', 'true');
+  el.addEventListener('dragstart', e => { dragging = el; el.style.opacity = '.4'; });
+  el.addEventListener('dragend', e => { el.style.opacity = '1'; dragging = null; });
+  el.addEventListener('dragover', e => {
+    e.preventDefault();
+    if (!dragging || dragging === el) return;
+    el.classList.add('drag-over');
+  });
+  el.addEventListener('dragleave', () => el.classList.remove('drag-over'));
+  el.addEventListener('drop', e => {
+    e.preventDefault();
+    el.classList.remove('drag-over');
+    if (dragging && dragging !== el) {
+      const rect = el.getBoundingClientRect();
+      const after = e.clientY > rect.top + rect.height / 2;
+      selectedList.insertBefore(dragging, after ? el.nextSibling : el);
+    }
+  });
+}
+
+function addDrill(poolItem) {
+  const id = poolItem.dataset.id;
+  // すでに追加済みならスキップ
+  if (selectedList.querySelector(`[data-drill-id="${id}"]`)) return;
+
+  const name = poolItem.dataset.name;
+  const cat = poolItem.dataset.cat;
+  const item = document.createElement('div');
+  item.className = 'selected-item';
+  item.dataset.drillId = id;
+  item.innerHTML = `
+    <div style="display:flex;align-items:center;gap:.5rem;">
+      <span style="color:var(--gray-400);font-size:.9rem;cursor:grab;">⠿</span>
+      <div style="flex:1;min-width:0;">
+        <div style="font-size:.875rem;font-weight:600;">${name}</div>
+        ${cat ? `<div style="font-size:.7rem;color:var(--orange);">${cat}</div>` : ''}
+      </div>
+      <button type="button" class="remove-btn" onclick="removeDrill(this)">✕</button>
+    </div>
+    <textarea class="note-input" rows="2" placeholder="コーチメモ（任意）" data-note-for="${id}"></textarea>
+  `;
+  setupDrag(item);
+  selectedList.appendChild(item);
+}
+
+function removeDrill(btn) {
+  btn.closest('.selected-item').remove();
+}
+
+// フォーム送信時に hidden inputs を生成
+document.getElementById('programForm').addEventListener('submit', function() {
+  hiddenInputs.innerHTML = '';
+  selectedList.querySelectorAll('.selected-item').forEach(item => {
+    const id = item.dataset.drillId;
+    const inp = document.createElement('input');
+    inp.type = 'hidden'; inp.name = 'drill_ids'; inp.value = id;
+    hiddenInputs.appendChild(inp);
+    const note = item.querySelector(`[data-note-for="${id}"]`).value;
+    const ni = document.createElement('input');
+    ni.type = 'hidden'; ni.name = `note_${id}`; ni.value = note;
+    hiddenInputs.appendChild(ni);
+  });
+});
+
+// 検索フィルター
+document.getElementById('drillSearch').addEventListener('input', function() {
+  const q = this.value.toLowerCase();
+  document.querySelectorAll('#drillPool .drill-item').forEach(item => {
+    const match = item.dataset.name.toLowerCase().includes(q) || item.dataset.cat.toLowerCase().includes(q);
+    item.style.display = match ? '' : 'none';
+  });
+});
+
+// 編集時: 既存ステップを復元
+existingSteps.forEach(step => {
+  const poolItem = document.querySelector(`#drillPool [data-id="${step.drill_id}"]`);
+  if (poolItem) {
+    addDrill(poolItem);
+    // ノートを設定
+    const noteTA = selectedList.querySelector(`[data-note-for="${step.drill_id}"]`);
+    if (noteTA) noteTA.value = step.note || '';
+  }
+});
+</script>
+{% endblock %}

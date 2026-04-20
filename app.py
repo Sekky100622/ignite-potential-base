@@ -350,6 +350,27 @@ def ensure_tables():
     db_execute('ALTER TABLE ipb_articles ADD COLUMN IF NOT EXISTS tags TEXT')
     db_execute('ALTER TABLE ipb_drills ADD COLUMN IF NOT EXISTS difficulty TEXT')
     db_execute('ALTER TABLE ipb_drills ADD COLUMN IF NOT EXISTS sort_order INTEGER DEFAULT 9999')
+    db_execute('''
+        CREATE TABLE IF NOT EXISTS ipb_programs (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            title TEXT NOT NULL,
+            description TEXT DEFAULT '',
+            target TEXT DEFAULT '',
+            is_published BOOLEAN DEFAULT TRUE,
+            sort_order INTEGER DEFAULT 9999,
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+    ''')
+    db_execute('''
+        CREATE TABLE IF NOT EXISTS ipb_program_drills (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            program_id UUID REFERENCES ipb_programs(id) ON DELETE CASCADE,
+            drill_id UUID REFERENCES ipb_drills(id) ON DELETE CASCADE,
+            step_number INTEGER DEFAULT 1,
+            note TEXT DEFAULT '',
+            created_at TIMESTAMPTZ DEFAULT NOW()
+        )
+    ''')
     db_execute('ALTER TABLE ipb_comments ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT TRUE')
 
 ensure_tables()
@@ -1655,6 +1676,143 @@ def admin_debug_db():
 def robots_txt():
     content = f'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /profile\nSitemap: {request.host_url}sitemap.xml\n'
     return content, 200, {'Content-Type': 'text/plain'}
+
+
+# ── Programs (Roadmap) ────────────────────────────────────────────────────────
+
+def _make_embed_url(video_url):
+    """YouTube URLを埋め込みURLに変換する"""
+    video_url = video_url or ''
+    if 'youtube.com/watch' in video_url:
+        import re as _re
+        m = _re.search(r'v=([^&]+)', video_url)
+        if m:
+            return f'https://www.youtube.com/embed/{m.group(1)}'
+    elif 'youtu.be/' in video_url:
+        vid = video_url.split('youtu.be/')[-1].split('?')[0]
+        return f'https://www.youtube.com/embed/{vid}'
+    elif 'youtube.com/shorts/' in video_url:
+        vid = video_url.split('shorts/')[-1].split('?')[0]
+        return f'https://www.youtube.com/embed/{vid}'
+    return video_url
+
+
+@app.route('/programs')
+@login_required
+def programs():
+    progs = db_fetchall(
+        'SELECT * FROM ipb_programs WHERE is_published=TRUE ORDER BY sort_order ASC, created_at DESC'
+    ) or []
+    return render_template('programs.html', programs=progs)
+
+
+@app.route('/programs/<program_id>')
+@login_required
+def program_detail(program_id):
+    prog = db_fetchone('SELECT * FROM ipb_programs WHERE id=%s AND is_published=TRUE', (program_id,))
+    if not prog:
+        return redirect(url_for('programs'))
+    steps = db_fetchall('''
+        SELECT pd.step_number, pd.note,
+               d.id as drill_id, d.name, d.purpose, d.video_url, d.category, d.is_free, d.difficulty
+        FROM ipb_program_drills pd
+        JOIN ipb_drills d ON d.id = pd.drill_id
+        WHERE pd.program_id = %s
+        ORDER BY pd.step_number ASC
+    ''', (program_id,)) or []
+    for s in steps:
+        s['video_embed_url'] = _make_embed_url(s.get('video_url', ''))
+    is_premium = session.get('plan') == 'premium'
+    return render_template('program.html', program=prog, steps=steps, is_premium=is_premium)
+
+
+@app.route('/admin/programs')
+@admin_required
+def admin_programs():
+    progs = db_fetchall(
+        'SELECT p.*, (SELECT COUNT(*) FROM ipb_program_drills WHERE program_id=p.id) as drill_count '
+        'FROM ipb_programs p ORDER BY p.sort_order ASC, p.created_at DESC'
+    ) or []
+    return render_template('admin/programs.html', programs=progs)
+
+
+@app.route('/admin/programs/new', methods=['GET', 'POST'])
+@admin_required
+def admin_programs_new():
+    all_drills = db_fetchall(
+        'SELECT id, name, category FROM ipb_drills ORDER BY sort_order ASC, created_at DESC'
+    ) or []
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        target = request.form.get('target', '').strip()
+        is_published = request.form.get('is_published') == '1'
+        if not title:
+            return render_template('admin/program_form.html', program={}, edit=False,
+                                   all_drills=all_drills, error='タイトルを入力してください')
+        prog = db_fetchone(
+            'INSERT INTO ipb_programs (title, description, target, is_published) VALUES (%s,%s,%s,%s) RETURNING *',
+            (title, description, target, is_published)
+        )
+        if prog:
+            _save_program_drills(prog['id'], request.form)
+            flash('プログラムを作成しました', 'success')
+            return redirect(url_for('admin_programs'))
+        flash('作成に失敗しました', 'error')
+    return render_template('admin/program_form.html', program={}, edit=False, all_drills=all_drills, error=None)
+
+
+@app.route('/admin/programs/<program_id>/edit', methods=['GET', 'POST'])
+@admin_required
+def admin_programs_edit(program_id):
+    prog = db_fetchone('SELECT * FROM ipb_programs WHERE id=%s', (program_id,))
+    if not prog:
+        return redirect(url_for('admin_programs'))
+    all_drills = db_fetchall(
+        'SELECT id, name, category FROM ipb_drills ORDER BY sort_order ASC, created_at DESC'
+    ) or []
+    existing_steps = db_fetchall(
+        'SELECT pd.*, d.name as drill_name, d.category FROM ipb_program_drills pd '
+        'JOIN ipb_drills d ON d.id=pd.drill_id WHERE pd.program_id=%s ORDER BY pd.step_number ASC',
+        (program_id,)
+    ) or []
+    if request.method == 'POST':
+        title = request.form.get('title', '').strip()
+        description = request.form.get('description', '').strip()
+        target = request.form.get('target', '').strip()
+        is_published = request.form.get('is_published') == '1'
+        if not title:
+            return render_template('admin/program_form.html', program=prog, edit=True,
+                                   all_drills=all_drills, existing_steps=existing_steps, error='タイトルを入力してください')
+        db_execute(
+            'UPDATE ipb_programs SET title=%s, description=%s, target=%s, is_published=%s WHERE id=%s',
+            (title, description, target, is_published, program_id)
+        )
+        _save_program_drills(program_id, request.form)
+        flash('更新しました', 'success')
+        return redirect(url_for('admin_programs'))
+    return render_template('admin/program_form.html', program=prog, edit=True,
+                           all_drills=all_drills, existing_steps=existing_steps, error=None)
+
+
+@app.route('/admin/programs/<program_id>/delete', methods=['POST'])
+@admin_required
+def admin_programs_delete(program_id):
+    db_execute('DELETE FROM ipb_programs WHERE id=%s', (program_id,))
+    flash('削除しました', 'success')
+    return redirect(url_for('admin_programs'))
+
+
+def _save_program_drills(program_id, form):
+    """フォームからドリル一覧を保存（既存レコードを置き換え）"""
+    db_execute('DELETE FROM ipb_program_drills WHERE program_id=%s', (program_id,))
+    drill_ids = form.getlist('drill_ids')
+    for i, drill_id in enumerate(drill_ids):
+        note = form.get(f'note_{drill_id}', '').strip()
+        db_execute(
+            'INSERT INTO ipb_program_drills (program_id, drill_id, step_number, note) VALUES (%s,%s,%s,%s)',
+            (program_id, drill_id, i + 1, note)
+        )
 
 
 if __name__ == '__main__':

@@ -1,0 +1,156 @@
+{% extends 'base.html' %}
+{% block title %}{{ program.title }} | プログラム | Ignite Potential Base{% endblock %}
+
+{% block extra_head %}
+<style>
+  .step-card {
+    background: var(--navy-light);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 1.5rem;
+  }
+  .step-header {
+    display: flex;
+    align-items: center;
+    gap: 1rem;
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    cursor: pointer;
+  }
+  .step-num {
+    width: 36px;
+    height: 36px;
+    border-radius: 50%;
+    background: var(--orange);
+    color: #fff;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .85rem;
+    font-weight: 800;
+    flex-shrink: 0;
+  }
+  .step-body { padding: 1.5rem; }
+  .step-video {
+    position: relative;
+    padding-bottom: 56.25%;
+    height: 0;
+    overflow: hidden;
+    border-radius: 10px;
+    background: #000;
+    margin-bottom: 1.25rem;
+  }
+  .step-video iframe {
+    position: absolute;
+    top: 0; left: 0;
+    width: 100%; height: 100%;
+    border: none;
+  }
+  .step-note {
+    background: rgba(249,115,22,.06);
+    border-left: 3px solid var(--orange);
+    padding: .75rem 1rem;
+    border-radius: 0 8px 8px 0;
+    font-size: .875rem;
+    color: var(--gray-200);
+    line-height: 1.7;
+    margin-top: 1rem;
+  }
+  .step-toggle { margin-left: auto; color: var(--gray-400); font-size: .85rem; transition: transform .3s; }
+  .step-body { display: none; }
+  .step-card.open .step-body { display: block; }
+  .step-card.open .step-toggle { transform: rotate(180deg); }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <a href="{{ url_for('programs') }}" style="color:var(--gray-400);font-size:.875rem;display:inline-block;margin-bottom:.5rem;">← プログラム一覧</a>
+    <h1>{{ program.title }}</h1>
+    {% if program.target %}
+    <div style="margin-top:.5rem;">
+      <span style="background:rgba(249,115,22,.15);border:1px solid rgba(249,115,22,.3);color:var(--orange);padding:.3rem 1rem;border-radius:20px;font-size:.85rem;font-weight:600;">👤 {{ program.target }}</span>
+    </div>
+    {% endif %}
+    {% if program.description %}
+    <p style="color:var(--gray-400);margin-top:.75rem;max-width:640px;line-height:1.7;font-size:.95rem;">{{ program.description }}</p>
+    {% endif %}
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container" style="max-width:800px;">
+    {% if steps %}
+      <p style="color:var(--gray-400);font-size:.875rem;margin-bottom:1.5rem;">全 {{ steps|length }} ステップ　※クリックで展開</p>
+      {% for step in steps %}
+      {% set locked = not is_premium and not step.is_free %}
+      <div class="step-card{% if loop.first %} open{% endif %}" id="step-{{ loop.index }}">
+        <div class="step-header" onclick="toggleStep(this.closest('.step-card'))">
+          <div class="step-num">{{ step.step_number }}</div>
+          <div style="flex:1;min-width:0;">
+            <div style="font-weight:700;font-size:.975rem;">{{ step.name }}</div>
+            <div style="display:flex;gap:.5rem;margin-top:.25rem;flex-wrap:wrap;">
+              {% if step.category %}
+              <span style="font-size:.75rem;color:var(--orange);">{{ step.category }}</span>
+              {% endif %}
+              {% if step.difficulty %}
+              <span style="font-size:.75rem;color:#a5b4fc;">{{ step.difficulty }}</span>
+              {% endif %}
+              {% if locked %}
+              <span class="badge badge-premium">会員限定</span>
+              {% else %}
+              <span class="badge badge-free" style="font-size:.65rem;">閲覧可</span>
+              {% endif %}
+            </div>
+          </div>
+          <span class="step-toggle">▼</span>
+        </div>
+        <div class="step-body">
+          {% if locked %}
+          <div style="text-align:center;padding:2rem;color:var(--gray-400);">
+            <div style="font-size:2rem;margin-bottom:.75rem;">🔒</div>
+            <p style="font-size:.9rem;margin-bottom:1rem;">このドリルはプレミアム会員限定です</p>
+            <a href="{{ note_url }}" target="_blank" rel="noopener" class="btn btn-primary btn-sm">Noteメンバーシップで見る →</a>
+          </div>
+          {% else %}
+            {% if step.video_embed_url %}
+            <div class="step-video">
+              <iframe src="{{ step.video_embed_url }}" allowfullscreen loading="lazy"></iframe>
+            </div>
+            {% endif %}
+            {% if step.purpose %}
+            <div style="color:var(--gray-200);font-size:.9rem;line-height:1.8;white-space:pre-wrap;margin-bottom:.75rem;">{{ step.purpose }}</div>
+            {% endif %}
+            {% if step.note %}
+            <div class="step-note">
+              <div style="font-size:.75rem;font-weight:700;color:var(--orange);margin-bottom:.35rem;">コーチメモ</div>
+              {{ step.note }}
+            </div>
+            {% endif %}
+            <div style="margin-top:1.25rem;">
+              <a href="{{ url_for('drill_detail', drill_id=step.drill_id) }}" class="btn btn-ghost btn-sm">詳しく見る →</a>
+            </div>
+          {% endif %}
+        </div>
+      </div>
+      {% endfor %}
+    {% else %}
+    <div style="text-align:center;padding:4rem 0;color:var(--gray-400);">
+      <p>ドリルを準備中です。</p>
+    </div>
+    {% endif %}
+
+    <div style="margin-top:1.5rem;">
+      <a href="{{ url_for('programs') }}" class="btn btn-ghost btn-sm">← プログラム一覧へ</a>
+    </div>
+  </div>
+</section>
+
+<script>
+function toggleStep(card) {
+  card.classList.toggle('open');
+}
+</script>
+{% endblock %}

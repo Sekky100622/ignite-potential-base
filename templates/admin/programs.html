@@ -1,0 +1,71 @@
+{% extends 'base.html' %}
+{% block title %}プログラム管理 | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1>🗺 プログラム管理</h1>
+        <p>全 {{ programs|length }} 件</p>
+      </div>
+      <a href="{{ url_for('admin_programs_new') }}" class="btn btn-primary">+ プログラムを追加</a>
+    </div>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:12px;overflow:hidden;">
+      <div class="table-wrap">
+        <table>
+          <thead>
+            <tr>
+              <th>タイトル</th>
+              <th>対象選手</th>
+              <th>ドリル数</th>
+              <th>公開</th>
+              <th>操作</th>
+            </tr>
+          </thead>
+          <tbody>
+            {% for prog in programs %}
+            <tr>
+              <td style="font-weight:600;">
+                <a href="{{ url_for('program_detail', program_id=prog.id) }}" style="color:var(--white);">{{ prog.title }}</a>
+              </td>
+              <td style="color:var(--gray-400);font-size:.85rem;">{{ prog.target or '-' }}</td>
+              <td style="color:var(--orange);font-weight:600;">{{ prog.drill_count }}</td>
+              <td>
+                {% if prog.is_published %}
+                <span class="badge badge-free">公開</span>
+                {% else %}
+                <span class="badge badge-cat">非公開</span>
+                {% endif %}
+              </td>
+              <td style="display:flex;gap:.5rem;">
+                <a href="{{ url_for('admin_programs_edit', program_id=prog.id) }}" class="btn btn-ghost btn-sm">編集</a>
+                <form action="{{ url_for('admin_programs_delete', program_id=prog.id) }}" method="POST"
+                      onsubmit="return confirm('「{{ prog.title }}」を削除しますか？');">
+                  <button type="submit" class="btn btn-danger btn-sm">削除</button>
+                </form>
+              </td>
+            </tr>
+            {% else %}
+            <tr>
+              <td colspan="5" style="text-align:center;padding:3rem;color:var(--gray-400);">
+                プログラムがまだありません
+              </td>
+            </tr>
+            {% endfor %}
+          </tbody>
+        </table>
+      </div>
+    </div>
+
+    <div style="margin-top:1rem;">
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

@@ -378,6 +378,7 @@
         <a href="{{ url_for('search') }}" class="btn btn-ghost btn-sm" title="検索">🔍</a>
         {% if session.get('user_id') %}
           <a href="{{ url_for('learn') }}" class="btn btn-ghost btn-sm">記事</a>
+          <a href="{{ url_for('programs') }}" class="btn btn-ghost btn-sm">プログラム</a>
           <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm" style="position:relative;">
             ダッシュボード
             <span id="notice-badge" style="display:none;position:absolute;top:-4px;right:-4px;width:8px;height:8px;background:var(--orange);border-radius:50%;"></span>
@@ -404,6 +405,7 @@
       <a href="{{ url_for('search') }}" class="btn btn-ghost">🔍 検索</a>
       {% if session.get('user_id') %}
         <a href="{{ url_for('learn') }}" class="btn btn-ghost">記事</a>
+        <a href="{{ url_for('programs') }}" class="btn btn-ghost">プログラム</a>
         <a href="{{ url_for('dashboard') }}" class="btn btn-ghost">ダッシュボード</a>
         {% if session.get('role') == 'admin' %}
           <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost">管理画面</a>
