@@ -372,6 +372,20 @@ def ensure_tables():
         )
     ''')
     db_execute('ALTER TABLE ipb_comments ADD COLUMN IF NOT EXISTS approved BOOLEAN DEFAULT TRUE')
+    db_execute('''
+        CREATE TABLE IF NOT EXISTS ipb_questions (
+            id UUID DEFAULT gen_random_uuid() PRIMARY KEY,
+            user_id UUID REFERENCES ipb_users(id) ON DELETE SET NULL,
+            question TEXT NOT NULL,
+            answer TEXT,
+            is_anonymous BOOLEAN DEFAULT FALSE,
+            is_public BOOLEAN DEFAULT TRUE,
+            status TEXT DEFAULT 'pending',
+            user_name TEXT,
+            created_at TIMESTAMPTZ DEFAULT NOW(),
+            answered_at TIMESTAMPTZ
+        )
+    ''')
 
 ensure_tables()
 
@@ -1841,6 +1855,90 @@ def _save_program_drills(program_id, form):
 @login_required
 def step0():
     return render_template('step0.html')
+
+
+# ── Q&A ───────────────────────────────────────────────────────────────────────
+
+@app.route('/qa', methods=['GET', 'POST'])
+@login_required
+def qa():
+    if request.method == 'POST':
+        question = request.form.get('question', '').strip()
+        is_anonymous = request.form.get('is_anonymous') == '1'
+        if not question:
+            flash('質問を入力してください', 'error')
+            return redirect(url_for('qa'))
+        if len(question) > 1000:
+            flash('質問は1000文字以内で入力してください', 'error')
+            return redirect(url_for('qa'))
+        user_name = '' if is_anonymous else session.get('name', '')
+        db_execute(
+            'INSERT INTO ipb_questions (user_id, question, is_anonymous, user_name) VALUES (%s,%s,%s,%s)',
+            (session['user_id'], question, is_anonymous, user_name)
+        )
+        flash('質問を送信しました！回答をお待ちください。', 'success')
+        return redirect(url_for('qa'))
+
+    answered = db_fetchall(
+        "SELECT q.*, u.name as asker_name FROM ipb_questions q "
+        "LEFT JOIN ipb_users u ON u.id = q.user_id "
+        "WHERE q.status='answered' AND q.is_public=TRUE "
+        "ORDER BY q.answered_at DESC"
+    ) or []
+    my_questions = db_fetchall(
+        "SELECT * FROM ipb_questions WHERE user_id=%s ORDER BY created_at DESC LIMIT 10",
+        (session['user_id'],)
+    ) or []
+    return render_template('qa.html', answered=answered, my_questions=my_questions)
+
+
+@app.route('/admin/qa')
+@admin_required
+def admin_qa():
+    pending = db_fetchall(
+        "SELECT q.*, u.name as asker_name FROM ipb_questions q "
+        "LEFT JOIN ipb_users u ON u.id = q.user_id "
+        "WHERE q.status='pending' ORDER BY q.created_at ASC"
+    ) or []
+    answered = db_fetchall(
+        "SELECT q.*, u.name as asker_name FROM ipb_questions q "
+        "LEFT JOIN ipb_users u ON u.id = q.user_id "
+        "WHERE q.status='answered' ORDER BY q.answered_at DESC LIMIT 50"
+    ) or []
+    return render_template('admin/qa.html', pending=pending, answered=answered)
+
+
+@app.route('/admin/qa/<question_id>/answer', methods=['POST'])
+@admin_required
+def admin_qa_answer(question_id):
+    answer = request.form.get('answer', '').strip()
+    is_public = request.form.get('is_public') == '1'
+    if not answer:
+        flash('回答を入力してください', 'error')
+        return redirect(url_for('admin_qa'))
+    db_execute(
+        "UPDATE ipb_questions SET answer=%s, status='answered', is_public=%s, answered_at=NOW() WHERE id=%s",
+        (answer, is_public, question_id)
+    )
+    flash('回答しました', 'success')
+    return redirect(url_for('admin_qa'))
+
+
+@app.route('/admin/qa/<question_id>/delete', methods=['POST'])
+@admin_required
+def admin_qa_delete(question_id):
+    db_execute('DELETE FROM ipb_questions WHERE id=%s', (question_id,))
+    flash('削除しました', 'success')
+    return redirect(url_for('admin_qa'))
+
+
+@app.route('/admin/qa/<question_id>/toggle-public', methods=['POST'])
+@admin_required
+def admin_qa_toggle_public(question_id):
+    q = db_fetchone('SELECT is_public FROM ipb_questions WHERE id=%s', (question_id,))
+    if q:
+        db_execute('UPDATE ipb_questions SET is_public=%s WHERE id=%s', (not q['is_public'], question_id))
+    return redirect(url_for('admin_qa'))
 
 
 if __name__ == '__main__':

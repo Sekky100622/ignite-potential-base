@@ -1,0 +1,113 @@
+{% extends 'base.html' %}
+{% block title %}Q&A管理 | Ignite Potential Base{% endblock %}
+
+{% block extra_head %}
+<style>
+  .qa-admin-card {
+    background: var(--navy-light);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 12px;
+    padding: 1.25rem;
+    margin-bottom: 1rem;
+  }
+  .qa-admin-card.pending { border-left: 3px solid var(--orange); }
+  .qa-admin-card.answered { border-left: 3px solid var(--green); }
+  .qa-question-text { font-size: .95rem; line-height: 1.7; margin-bottom: .5rem; white-space: pre-wrap; }
+  .qa-answer-text { font-size: .9rem; line-height: 1.7; color: var(--gray-200); white-space: pre-wrap; }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <div style="display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:1rem;">
+      <div>
+        <h1>❓ Q&A管理</h1>
+        <p>未回答 {{ pending|length }}件 · 回答済み {{ answered|length }}件</p>
+      </div>
+      <a href="{{ url_for('qa') }}" class="btn btn-ghost btn-sm" target="_blank">公開ページを確認 →</a>
+    </div>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+
+    <!-- 未回答 -->
+    {% if pending %}
+    <h2 style="font-size:1rem;font-weight:800;color:var(--orange);margin-bottom:1rem;">
+      ⏳ 未回答（{{ pending|length }}件）
+    </h2>
+    {% for q in pending %}
+    <div class="qa-admin-card pending">
+      <div style="display:flex;justify-content:space-between;align-items:flex-start;gap:1rem;margin-bottom:.75rem;">
+        <div style="flex:1;">
+          <div style="font-size:.75rem;color:var(--gray-400);margin-bottom:.4rem;">
+            {% if q.is_anonymous %}匿名{% else %}{{ q.user_name or q.asker_name or '不明' }}{% endif %}
+            · {{ q.created_at[:16].replace('T',' ') if q.created_at else '' }}
+          </div>
+          <div class="qa-question-text">{{ q.question }}</div>
+        </div>
+        <form action="{{ url_for('admin_qa_delete', question_id=q.id) }}" method="POST"
+              onsubmit="return confirm('この質問を削除しますか？');">
+          <button type="submit" class="btn btn-danger btn-sm">削除</button>
+        </form>
+      </div>
+
+      <!-- 回答フォーム -->
+      <form action="{{ url_for('admin_qa_answer', question_id=q.id) }}" method="POST">
+        <textarea class="form-control" name="answer" rows="4" required
+                  placeholder="回答を入力してください..." style="margin-bottom:.75rem;"></textarea>
+        <div style="display:flex;align-items:center;gap:1rem;flex-wrap:wrap;">
+          <div class="form-check">
+            <input type="checkbox" name="is_public" value="1" id="pub-{{ q.id }}" checked>
+            <label for="pub-{{ q.id }}" style="cursor:pointer;font-size:.875rem;">全メンバーに公開する</label>
+          </div>
+          <button type="submit" class="btn btn-primary btn-sm">回答して公開</button>
+        </div>
+      </form>
+    </div>
+    {% endfor %}
+    {% else %}
+    <div style="background:rgba(34,197,94,.06);border:1px solid rgba(34,197,94,.2);border-radius:10px;padding:1rem 1.25rem;margin-bottom:1.5rem;font-size:.875rem;color:var(--green);">
+      ✓ 未回答の質問はありません
+    </div>
+    {% endif %}
+
+    <!-- 回答済み -->
+    {% if answered %}
+    <h2 style="font-size:1rem;font-weight:800;color:var(--green);margin-bottom:1rem;margin-top:2rem;">
+      ✓ 回答済み（{{ answered|length }}件）
+    </h2>
+    {% for q in answered %}
+    <div class="qa-admin-card answered">
+      <div style="font-size:.75rem;color:var(--gray-400);margin-bottom:.4rem;">
+        {% if q.is_anonymous %}匿名{% else %}{{ q.user_name or q.asker_name or '不明' }}{% endif %}
+        · {{ q.created_at[:10] if q.created_at else '' }}
+        · {% if q.is_public %}<span style="color:var(--green);">公開中</span>{% else %}<span style="color:var(--gray-400);">非公開</span>{% endif %}
+      </div>
+      <div class="qa-question-text" style="font-weight:600;">Q: {{ q.question }}</div>
+      <div class="qa-answer-text" style="margin-top:.5rem;padding-top:.5rem;border-top:1px solid rgba(255,255,255,.06);">
+        A: {{ q.answer }}
+      </div>
+      <div style="display:flex;gap:.5rem;margin-top:.75rem;flex-wrap:wrap;">
+        <form action="{{ url_for('admin_qa_toggle_public', question_id=q.id) }}" method="POST">
+          <button type="submit" class="btn btn-ghost btn-sm">
+            {% if q.is_public %}非公開にする{% else %}公開する{% endif %}
+          </button>
+        </form>
+        <form action="{{ url_for('admin_qa_delete', question_id=q.id) }}" method="POST"
+              onsubmit="return confirm('削除しますか？');">
+          <button type="submit" class="btn btn-danger btn-sm">削除</button>
+        </form>
+      </div>
+    </div>
+    {% endfor %}
+    {% endif %}
+
+    <div style="margin-top:1rem;">
+      <a href="{{ url_for('admin_dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

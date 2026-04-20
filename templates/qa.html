@@ -1,0 +1,189 @@
+{% extends 'base.html' %}
+{% block title %}Q&A | Ignite Potential Base{% endblock %}
+
+{% block extra_head %}
+<style>
+  .qa-card {
+    background: var(--navy-light);
+    border: 1px solid rgba(255,255,255,.08);
+    border-radius: 14px;
+    overflow: hidden;
+    margin-bottom: 1rem;
+  }
+  .qa-question-block {
+    padding: 1.25rem 1.5rem;
+    border-bottom: 1px solid rgba(255,255,255,.06);
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+  }
+  .qa-q-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(249,115,22,.2);
+    color: var(--orange);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .85rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    margin-top: .1rem;
+  }
+  .qa-a-icon {
+    width: 32px;
+    height: 32px;
+    border-radius: 50%;
+    background: rgba(34,197,94,.15);
+    color: var(--green);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: .85rem;
+    font-weight: 800;
+    flex-shrink: 0;
+    margin-top: .1rem;
+  }
+  .qa-answer-block {
+    padding: 1.25rem 1.5rem;
+    display: flex;
+    gap: 1rem;
+    align-items: flex-start;
+    background: rgba(34,197,94,.03);
+  }
+  .qa-text { font-size: .95rem; line-height: 1.8; white-space: pre-wrap; flex: 1; }
+  .qa-meta { font-size: .75rem; color: var(--gray-400); margin-top: .4rem; }
+  .my-q-card {
+    background: rgba(255,255,255,.03);
+    border: 1px solid rgba(255,255,255,.07);
+    border-radius: 10px;
+    padding: 1rem 1.25rem;
+    margin-bottom: .6rem;
+    display: flex;
+    justify-content: space-between;
+    align-items: flex-start;
+    gap: 1rem;
+  }
+  .status-pending { color: var(--gray-400); font-size: .75rem; }
+  .status-answered { color: var(--green); font-size: .75rem; font-weight: 600; }
+  .qa-layout {
+    display: grid;
+    grid-template-columns: 1fr 320px;
+    gap: 2rem;
+  }
+  @media (max-width: 768px) {
+    .qa-layout { grid-template-columns: 1fr; }
+  }
+</style>
+{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>❓ Q&A</h1>
+    <p>コーチへの質問を投稿できます。回答は全メンバーに公開されます。</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container">
+    <div class="qa-layout">
+
+      <!-- Left: Q&A list -->
+      <div>
+        <h2 style="font-size:1.1rem;font-weight:800;margin-bottom:1.25rem;">
+          回答済みQ&A
+          <span style="font-size:.8rem;color:var(--gray-400);font-weight:400;margin-left:.5rem;">{{ answered|length }}件</span>
+        </h2>
+
+        {% if answered %}
+          {% for q in answered %}
+          <div class="qa-card">
+            <div class="qa-question-block">
+              <div class="qa-q-icon">Q</div>
+              <div style="flex:1;">
+                <div class="qa-text">{{ q.question }}</div>
+                <div class="qa-meta">
+                  {% if q.is_anonymous %}匿名{% else %}{{ q.user_name or q.asker_name or '会員' }}{% endif %}
+                  · {{ q.created_at[:10] if q.created_at else '' }}
+                </div>
+              </div>
+            </div>
+            <div class="qa-answer-block">
+              <div class="qa-a-icon">A</div>
+              <div style="flex:1;">
+                <div class="qa-text">{{ q.answer }}</div>
+                <div class="qa-meta">積山コーチ · {{ q.answered_at[:10] if q.answered_at else '' }}</div>
+              </div>
+            </div>
+          </div>
+          {% endfor %}
+        {% else %}
+          <div style="text-align:center;padding:3rem 0;color:var(--gray-400);">
+            <div style="font-size:2.5rem;margin-bottom:.75rem;">💬</div>
+            <p>まだ回答済みのQ&Aがありません。最初の質問を投稿してみましょう！</p>
+          </div>
+        {% endif %}
+      </div>
+
+      <!-- Right: form + my questions -->
+      <div>
+        <!-- 質問フォーム -->
+        <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.5rem;margin-bottom:1.5rem;">
+          <h3 style="font-size:1rem;font-weight:700;margin-bottom:1rem;">質問を投稿する</h3>
+          <form method="POST" action="{{ url_for('qa') }}">
+            <div class="form-group">
+              <textarea class="form-control" name="question" rows="5" required
+                        placeholder="コーチへの質問を入力してください（例：バッティングフォームで意識すべきポイントは？）"
+                        maxlength="1000" id="questionTextarea"></textarea>
+              <div style="text-align:right;font-size:.75rem;color:var(--gray-400);margin-top:.25rem;">
+                <span id="charCount">0</span> / 1000
+              </div>
+            </div>
+            <div class="form-check" style="margin-bottom:1rem;">
+              <input type="checkbox" name="is_anonymous" value="1" id="anon">
+              <label for="anon" style="cursor:pointer;font-size:.875rem;">匿名で投稿する</label>
+            </div>
+            <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
+              質問を送る
+            </button>
+          </form>
+          <p style="font-size:.78rem;color:var(--gray-400);margin-top:.75rem;line-height:1.6;">
+            ※ 回答後、全メンバーに公開されます。個人情報は含めないでください。
+          </p>
+        </div>
+
+        <!-- 自分の質問 -->
+        {% if my_questions %}
+        <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:1.5rem;">
+          <h3 style="font-size:.95rem;font-weight:700;margin-bottom:1rem;">自分の質問</h3>
+          {% for q in my_questions %}
+          <div class="my-q-card">
+            <div style="font-size:.875rem;line-height:1.6;flex:1;min-width:0;overflow:hidden;display:-webkit-box;-webkit-line-clamp:2;-webkit-box-orient:vertical;">
+              {{ q.question }}
+            </div>
+            <div style="flex-shrink:0;">
+              {% if q.status == 'answered' %}
+              <span class="status-answered">✓ 回答済み</span>
+              {% else %}
+              <span class="status-pending">回答待ち</span>
+              {% endif %}
+            </div>
+          </div>
+          {% endfor %}
+        </div>
+        {% endif %}
+      </div>
+    </div>
+  </div>
+</section>
+
+<script>
+const ta = document.getElementById('questionTextarea');
+const counter = document.getElementById('charCount');
+if (ta && counter) {
+  ta.addEventListener('input', () => { counter.textContent = ta.value.length; });
+}
+</script>
+{% endblock %}
