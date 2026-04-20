@@ -908,30 +908,37 @@ def library():
     is_logged_in = bool(session.get('user_id'))
     q = request.args.get('q', '').strip()
     cat = request.args.get('cat', '').strip()
-    drills = pg_drills() or []
-
-    if q:
-        ql = q.lower()
-        drills = [d for d in drills if ql in (d.get('name') or '').lower()
-                  or ql in (d.get('purpose') or '').lower()
-                  or ql in (d.get('points') or '').lower()]
-
-    if cat:
-        drills = [d for d in drills if d.get('category') == cat]
-
     is_premium = session.get('plan') in ('premium', 'team') or session.get('is_team')
 
-    per_page = 12
-    page = max(1, int(request.args.get('page', 1)))
-    total = len(drills)
-    total_pages = max(1, (total + per_page - 1) // per_page)
-    page = min(page, total_pages)
-    drills_page = drills[(page - 1) * per_page: page * per_page]
-
-    return render_template('library.html', drills=drills_page, q=q, cat=cat,
-                           categories=DRILL_CATEGORIES, is_premium=is_premium,
-                           is_logged_in=is_logged_in,
-                           page=page, total_pages=total_pages, total=total, per_page=per_page)
+    if q or cat:
+        # フィルタ・検索時: フラットリスト + ページネーション
+        drills = pg_drills(q=q or None, category=cat or None) or []
+        per_page = 12
+        page = max(1, int(request.args.get('page', 1)))
+        total = len(drills)
+        total_pages = max(1, (total + per_page - 1) // per_page)
+        page = min(page, total_pages)
+        drills_page = drills[(page - 1) * per_page: page * per_page]
+        return render_template('library.html', drills=drills_page, q=q, cat=cat,
+                               categories=DRILL_CATEGORIES, is_premium=is_premium,
+                               is_logged_in=is_logged_in, drills_by_cat=None,
+                               page=page, total_pages=total_pages, total=total, per_page=per_page)
+    else:
+        # フィルタなし: カテゴリ別セクション表示
+        all_drills = pg_drills() or []
+        drills_by_cat = {}
+        for d in all_drills:
+            c = d.get('category') or 'その他'
+            drills_by_cat.setdefault(c, []).append(d)
+        # DRILL_CATEGORIES の順に並べ、未定義カテゴリは末尾
+        ordered = {c: drills_by_cat[c] for c in DRILL_CATEGORIES if c in drills_by_cat}
+        for c, ds in drills_by_cat.items():
+            if c not in ordered:
+                ordered[c] = ds
+        return render_template('library.html', drills=[], q=q, cat=cat,
+                               categories=DRILL_CATEGORIES, is_premium=is_premium,
+                               is_logged_in=is_logged_in, drills_by_cat=ordered,
+                               page=1, total_pages=1, total=len(all_drills), per_page=12)
 
 
 @app.route('/library/<drill_id>')
@@ -1677,6 +1684,21 @@ def robots_txt():
     content = f'User-agent: *\nAllow: /\nDisallow: /admin\nDisallow: /profile\nSitemap: {request.host_url}sitemap.xml\n'
     return content, 200, {'Content-Type': 'text/plain'}
 
+
+# ── YouTube helpers ────────────────────────────────────────────────────────────
+
+def _yt_video_id(url):
+    """YouTube URLから動画IDを抽出"""
+    for p in [r'youtu\.be/([^?&\s]+)', r'[?&]v=([^&\s]+)', r'/embed/([^?&\s]+)']:
+        m = re.search(p, url or '')
+        if m:
+            return m.group(1)
+    return ''
+
+@app.template_filter('yt_thumb')
+def yt_thumb_filter(url):
+    vid = _yt_video_id(url)
+    return f'https://img.youtube.com/vi/{vid}/hqdefault.jpg' if vid else ''
 
 # ── Programs (Roadmap) ────────────────────────────────────────────────────────
 
