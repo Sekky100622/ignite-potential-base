@@ -1,0 +1,119 @@
+{% extends 'base.html' %}
+{% block title %}プライバシーポリシー | Ignite Potential Base{% endblock %}
+
+{% block content %}
+<div class="page-header">
+  <div class="container">
+    <h1>プライバシーポリシー</h1>
+    <p>個人情報の取り扱いについて</p>
+  </div>
+</div>
+
+<section class="section-sm">
+  <div class="container" style="max-width:800px;">
+    <div style="background:var(--navy-light);border:1px solid rgba(255,255,255,.08);border-radius:14px;padding:2rem;line-height:1.9;color:var(--gray-200);">
+
+      <p style="font-size:.875rem;color:var(--gray-400);margin-bottom:2rem;">
+        制定日：2026年4月21日
+      </p>
+
+      <p>積山大輝（以下「運営者」）は、Ignite Potential Base（以下「本サービス」）における利用者の個人情報の取り扱いについて、以下のとおりプライバシーポリシーを定めます。</p>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,.08);margin:2rem 0;">
+
+      <!-- 1 -->
+      <h2 style="font-size:1.05rem;font-weight:800;color:var(--white);margin-bottom:.75rem;">1. 収集する個人情報</h2>
+      <p>本サービスでは、以下の個人情報を収集することがあります。</p>
+      <ul style="margin:.75rem 0 .75rem 1.5rem;">
+        <li>氏名（ニックネームを含む）</li>
+        <li>メールアドレス</li>
+        <li>パスワード（bcryptによりハッシュ化して保存）</li>
+        <li>Googleアカウント情報（Googleログインを利用した場合）</li>
+        <li>本サービス内での利用履歴（閲覧記録、Q&A投稿内容など）</li>
+      </ul>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,.08);margin:2rem 0;">
+
+      <!-- 2 -->
+      <h2 style="font-size:1.05rem;font-weight:800;color:var(--white);margin-bottom:.75rem;">2. 利用目的</h2>
+      <p>収集した個人情報は、以下の目的のために利用します。</p>
+      <ul style="margin:.75rem 0 .75rem 1.5rem;">
+        <li>会員登録・ログイン認証のため</li>
+        <li>会員向けコンテンツ（ドリルライブラリ・記事・プログラム等）の提供のため</li>
+        <li>Q&Aへの回答、お知らせの送付など、サービス運営に必要な連絡のため</li>
+        <li>利用状況の集計・サービス改善のため</li>
+        <li>不正利用の防止および本人確認のため</li>
+      </ul>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,.08);margin:2rem 0;">
+
+      <!-- 3 -->
+      <h2 style="font-size:1.05rem;font-weight:800;color:var(--white);margin-bottom:.75rem;">3. 第三者への提供</h2>
+      <p>運営者は、以下の場合を除き、利用者の個人情報を第三者に提供しません。</p>
+      <ul style="margin:.75rem 0 .75rem 1.5rem;">
+        <li>利用者本人の同意がある場合</li>
+        <li>法令に基づき開示が必要な場合</li>
+        <li>人の生命・身体・財産の保護のために必要であり、本人の同意を得ることが困難な場合</li>
+      </ul>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,.08);margin:2rem 0;">
+
+      <!-- 4 -->
+      <h2 style="font-size:1.05rem;font-weight:800;color:var(--white);margin-bottom:.75rem;">4. 外部サービスの利用</h2>
+      <p>本サービスは、以下の外部サービスを利用しており、各サービスのプライバシーポリシーが適用される場合があります。</p>
+      <ul style="margin:.75rem 0 .75rem 1.5rem;">
+        <li><strong>Supabase</strong>（データベース）：会員情報・コンテンツデータを保存</li>
+        <li><strong>Cloudinary</strong>（画像配信）：アップロードされた画像を保存・配信</li>
+        <li><strong>Render</strong>（サーバー）：本サービスのホスティング</li>
+        <li><strong>Google</strong>（Googleログイン・アクセス解析）：ログイン認証およびサイト改善のための利用状況の分析</li>
+      </ul>
+      <p>Googleアナリティクスによるデータ収集を希望しない場合は、<a href="https://tools.google.com/dlpage/gaoptout" target="_blank" rel="noopener" style="color:var(--orange);">Googleアナリティクス オプトアウトアドオン</a>をご利用ください。</p>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,.08);margin:2rem 0;">
+
+      <!-- 5 -->
+      <h2 style="font-size:1.05rem;font-weight:800;color:var(--white);margin-bottom:.75rem;">5. 個人情報の管理・安全対策</h2>
+      <p>運営者は、個人情報の漏えい・紛失・改ざん等を防ぐため、以下の措置を講じています。</p>
+      <ul style="margin:.75rem 0 .75rem 1.5rem;">
+        <li>パスワードのハッシュ化（bcrypt）による安全な保管</li>
+        <li>HTTPS通信による暗号化</li>
+        <li>CSRF対策・SQLインジェクション対策等のセキュリティ実装</li>
+        <li>管理者権限の厳格な管理</li>
+      </ul>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,.08);margin:2rem 0;">
+
+      <!-- 6 -->
+      <h2 style="font-size:1.05rem;font-weight:800;color:var(--white);margin-bottom:.75rem;">6. 個人情報の開示・訂正・削除</h2>
+      <p>利用者は、自身の個人情報について開示・訂正・削除を求めることができます。お問い合わせ先（下記）までご連絡ください。合理的な期間内に対応します。</p>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,.08);margin:2rem 0;">
+
+      <!-- 7 -->
+      <h2 style="font-size:1.05rem;font-weight:800;color:var(--white);margin-bottom:.75rem;">7. Cookieの利用</h2>
+      <p>本サービスでは、ログイン状態の維持およびサービス改善のためにCookieを使用しています。ブラウザの設定によりCookieを無効にすることも可能ですが、一部機能が利用できなくなる場合があります。</p>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,.08);margin:2rem 0;">
+
+      <!-- 8 -->
+      <h2 style="font-size:1.05rem;font-weight:800;color:var(--white);margin-bottom:.75rem;">8. プライバシーポリシーの変更</h2>
+      <p>本ポリシーは、必要に応じて改定することがあります。重要な変更がある場合は、本サービス上でお知らせします。最新のポリシーは常に本ページにて確認できます。</p>
+
+      <hr style="border:none;border-top:1px solid rgba(255,255,255,.08);margin:2rem 0;">
+
+      <!-- 9 -->
+      <h2 style="font-size:1.05rem;font-weight:800;color:var(--white);margin-bottom:.75rem;">9. お問い合わせ</h2>
+      <p>個人情報の取り扱いに関するご質問・ご要望は、以下までご連絡ください。</p>
+      <div style="background:rgba(255,255,255,.04);border:1px solid rgba(255,255,255,.08);border-radius:10px;padding:1rem 1.25rem;margin-top:.75rem;font-size:.9rem;">
+        <div><strong>運営者</strong>：積山大輝</div>
+        <div style="margin-top:.35rem;"><strong>メール</strong>：<a href="mailto:gd.sekky@gmail.com" style="color:var(--orange);">gd.sekky@gmail.com</a></div>
+      </div>
+
+    </div>
+
+    <div style="margin-top:1.5rem;">
+      <a href="{{ url_for('index') }}" class="btn btn-ghost btn-sm">← トップページへ</a>
+    </div>
+  </div>
+</section>
+{% endblock %}

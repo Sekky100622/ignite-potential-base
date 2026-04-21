@@ -472,6 +472,11 @@ def inject_globals():
 
 # ── Public routes ─────────────────────────────────────────────────────────────
 
+@app.route('/privacy')
+def privacy():
+    return render_template('privacy.html')
+
+
 @app.route('/')
 def index():
     free_articles = sb_get('ipb_articles', {
