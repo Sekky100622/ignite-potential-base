@@ -477,6 +477,11 @@ def privacy():
     return render_template('privacy.html')
 
 
+@app.route('/terms')
+def terms():
+    return render_template('terms.html')
+
+
 @app.route('/')
 def index():
     free_articles = sb_get('ipb_articles', {
@@ -1676,6 +1681,45 @@ def profile():
     users = sb_get('ipb_users', {'id': f'eq.{user_id}', 'select': 'id,name,email,plan,role,created_at'}, service=True)
     user = users[0] if users else {}
     return render_template('profile.html', user=user)
+
+
+@app.route('/account/delete', methods=['POST'])
+@login_required
+def account_delete():
+    user_id = session['user_id']
+    password = request.form.get('password', '')
+
+    # パスワード確認
+    users = sb_get('ipb_users', {'id': f'eq.{user_id}', 'select': 'password_hash,role'}, service=True)
+    if not users:
+        flash('アカウントが見つかりません', 'error')
+        return redirect(url_for('profile'))
+
+    user = users[0]
+    # 管理者は退会不可
+    if user.get('role') == 'admin':
+        flash('管理者アカウントは退会できません', 'error')
+        return redirect(url_for('profile'))
+
+    pw_hash = user.get('password_hash', '')
+    try:
+        valid = bool(pw_hash) and bcrypt.checkpw(password.encode(), pw_hash.encode())
+    except Exception:
+        valid = False
+
+    if not valid:
+        flash('パスワードが正しくありません', 'error')
+        return redirect(url_for('profile'))
+
+    # 関連データを削除してからユーザーを削除
+    db_execute('DELETE FROM ipb_likes WHERE user_id=%s', (user_id,))
+    db_execute('DELETE FROM ipb_comments WHERE user_id=%s', (user_id,))
+    db_execute('DELETE FROM ipb_bookmarks WHERE user_id=%s', (user_id,))
+    db_execute('DELETE FROM ipb_users WHERE id=%s', (user_id,))
+
+    session.clear()
+    flash('退会が完了しました。ご利用ありがとうございました。', 'success')
+    return redirect(url_for('index'))
 
 
 # ── Admin: CSV export / Sitemap / Robots ──────────────────────────────────────

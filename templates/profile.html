@@ -80,6 +80,36 @@
     <div>
       <a href="{{ url_for('dashboard') }}" class="btn btn-ghost btn-sm">← ダッシュボードへ</a>
     </div>
+
+    <!-- 退会 -->
+    <div style="background:rgba(239,68,68,.05);border:1px solid rgba(239,68,68,.2);border-radius:12px;padding:1.75rem;margin-top:2.5rem;">
+      <h3 style="font-size:1rem;font-weight:700;color:#f87171;margin-bottom:.5rem;">退会する</h3>
+      <p style="font-size:.85rem;color:var(--gray-400);margin-bottom:1.25rem;line-height:1.7;">
+        退会するとアカウントおよびすべての利用データが削除されます。この操作は取り消せません。
+      </p>
+      <button type="button" class="btn btn-danger btn-sm"
+              onclick="document.getElementById('deleteSection').style.display='block';this.style.display='none';">
+        退会手続きへ進む
+      </button>
+
+      <div id="deleteSection" style="display:none;margin-top:1.25rem;border-top:1px solid rgba(239,68,68,.2);padding-top:1.25rem;">
+        <p style="font-size:.875rem;color:#f87171;margin-bottom:1rem;">確認のため、現在のパスワードを入力してください。</p>
+        <form method="POST" action="{{ url_for('account_delete') }}"
+              onsubmit="return confirm('本当に退会しますか？\nこの操作は取り消せません。');">
+          <div class="form-group">
+            <input class="form-control" type="password" name="password"
+                   placeholder="現在のパスワード" required autocomplete="current-password"
+                   style="border-color:rgba(239,68,68,.4);">
+          </div>
+          <button type="submit" class="btn btn-danger btn-sm">退会してアカウントを削除する</button>
+          <button type="button" class="btn btn-ghost btn-sm"
+                  onclick="document.getElementById('deleteSection').style.display='none';document.querySelector('[onclick*=deleteSection]').style.display='';">
+            キャンセル
+          </button>
+        </form>
+      </div>
+    </div>
+
   </div>
 </section>
 {% endblock %}

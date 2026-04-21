@@ -46,7 +46,11 @@
           <input class="form-control" type="password" id="password" name="password"
                  placeholder="••••••••" required minlength="8" autocomplete="new-password">
         </div>
-        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;margin-top:.5rem;">
+        <p style="font-size:.78rem;color:var(--gray-400);margin-bottom:.75rem;line-height:1.6;">
+          登録することで、<a href="{{ url_for('terms') }}" target="_blank" style="color:var(--orange);">利用規約</a>および
+          <a href="{{ url_for('privacy') }}" target="_blank" style="color:var(--orange);">プライバシーポリシー</a>に同意したものとみなします。
+        </p>
+        <button type="submit" class="btn btn-primary" style="width:100%;justify-content:center;">
           登録する
         </button>
       </form>
