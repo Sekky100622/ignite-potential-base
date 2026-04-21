@@ -1777,6 +1777,20 @@ def _yt_video_id(url):
             return m.group(1)
     return ''
 
+@app.template_filter('fmt_date')
+def fmt_date_filter(value, fmt='%Y-%m-%d'):
+    """datetime オブジェクトにも ISO 文字列にも対応する日付フォーマットフィルター。
+    sb_get（Supabase REST）は文字列、db_fetchall（psycopg3）は datetime で返るため両対応。"""
+    if not value:
+        return '-'
+    if isinstance(value, str):
+        # 時刻フォーマット指定時は "2024-01-01T12:00" → "2024-01-01 12:00"
+        if '%H' in fmt or '%M' in fmt:
+            return value[:16].replace('T', ' ')
+        return value[:10]
+    return value.strftime(fmt)
+
+
 @app.template_filter('yt_thumb')
 def yt_thumb_filter(url):
     vid = _yt_video_id(url)

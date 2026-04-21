@@ -32,7 +32,7 @@
           <div style="margin-top:1rem;display:flex;align-items:center;justify-content:space-between;">
             <a href="{{ url_for('learn_detail', slug=article.slug) }}" class="btn btn-outline btn-sm">読む →</a>
             <span style="font-size:.75rem;color:var(--gray-400);">
-              {{ article.bookmarked_at.strftime('%m/%d') if article.bookmarked_at else '' }}
+              {{ article.bookmarked_at | fmt_date('%m/%d') }}
             </span>
           </div>
         </div>

@@ -39,7 +39,7 @@
           <div style="color:var(--gray-400);font-size:.85rem;line-height:1.6;">{{ notice.content }}</div>
           {% endif %}
           <div style="font-size:.75rem;color:var(--gray-400);margin-top:.5rem;">
-            {{ notice.created_at.strftime('%Y/%m/%d %H:%M') if notice.created_at else '' }}
+            {{ notice.created_at | fmt_date('%Y/%m/%d %H:%M') }}
           </div>
         </div>
         <form method="POST" action="{{ url_for('admin_notices_delete', notice_id=notice.id) }}" style="flex-shrink:0;">
